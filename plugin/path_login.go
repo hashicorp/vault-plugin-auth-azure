@@ -136,21 +136,6 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 		})
 	}
 
-	if resp.Auth.TTL == 0 {
-		resp.Auth.TTL = b.System().DefaultLeaseTTL()
-	}
-	if role.MaxTTL > 0 {
-		maxTTL := role.MaxTTL
-		if maxTTL > b.System().MaxLeaseTTL() {
-			maxTTL = b.System().MaxLeaseTTL()
-		}
-
-		if resp.Auth.TTL > maxTTL {
-			resp.Auth.TTL = maxTTL
-			resp.AddWarning(fmt.Sprintf("Effective TTL of '%s' exceeded the effective max_ttl of '%s'; TTL value is capped accordingly", resp.Auth.TTL, maxTTL))
-		}
-	}
-
 	return resp, nil
 }
 
