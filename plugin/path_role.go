@@ -261,15 +261,15 @@ func (b *azureAuthBackend) pathRoleCreateUpdate(ctx context.Context, req *logica
 	}
 
 	if tokenTTLRaw, ok := data.GetOk("ttl"); ok {
-		role.TTL = time.Second * time.Duration(tokenTTLRaw.(int))
+		role.TTL = time.Duration(tokenTTLRaw.(int)) * time.Second
 	} else if req.Operation == logical.CreateOperation {
-		role.TTL = time.Second * time.Duration(data.Get("ttl").(int))
+		role.TTL = time.Duration(data.Get("ttl").(int)) * time.Second
 	}
 
 	if tokenMaxTTLRaw, ok := data.GetOk("max_ttl"); ok {
-		role.MaxTTL = time.Second * time.Duration(tokenMaxTTLRaw.(int))
+		role.MaxTTL = time.Duration(tokenMaxTTLRaw.(int)) * time.Second
 	} else if req.Operation == logical.CreateOperation {
-		role.MaxTTL = time.Second * time.Duration(data.Get("max_ttl").(int))
+		role.MaxTTL = time.Duration(data.Get("max_ttl").(int)) * time.Second
 	}
 
 	if boundServicePrincipalIDs, ok := data.GetOk("bound_service_principal_ids"); ok {
@@ -292,10 +292,18 @@ func (b *azureAuthBackend) pathRoleCreateUpdate(ctx context.Context, req *logica
 		role.BoundLocations = boundLocations.([]string)
 	}
 
+	if len(role.BoundServicePrincipalIDs) == 0 &&
+		len(role.BoundGroupIDs) == 0 &&
+		len(role.BoundSubscriptionsIDs) == 0 &&
+		len(role.BoundResourceGroups) == 0 &&
+		len(role.BoundLocations) == 0 {
+		return logical.ErrorResponse("must have at least one bound constraint when creating/updating a role"), nil
+	}
+
 	// Check that the TTL value provided is less than the MaxTTL.
 	// Sanitizing the TTL and MaxTTL is not required now and can be performed
 	// at credential issue time.
-	if role.MaxTTL > time.Duration(0) && role.TTL > role.MaxTTL {
+	if role.MaxTTL > 0 && role.TTL > role.MaxTTL {
 		return logical.ErrorResponse("ttl should not be greater than max_ttl"), nil
 	}
 

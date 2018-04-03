@@ -121,6 +121,7 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 			LeaseOptions: logical.LeaseOptions{
 				Renewable: true,
 				TTL:       role.TTL,
+				MaxTTL:    role.MaxTTL,
 			},
 		},
 	}
@@ -159,7 +160,9 @@ func (b *azureAuthBackend) verifyClaims(claims *additionalClaims, role *azureRol
 		return fmt.Errorf("token is not yet valid (Token Not Before: %v)", notBefore)
 	}
 
-	if len(role.BoundServicePrincipalIDs) > 0 {
+	switch {
+	case len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*":
+	case len(role.BoundServicePrincipalIDs) > 0:
 		if !strutil.StrListContains(role.BoundServicePrincipalIDs, claims.ObjectID) {
 			return fmt.Errorf("service principal not authorized: %s", claims.ObjectID)
 		}
@@ -208,7 +211,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		return errors.New("token object id does not match virtual machine principal id")
 	}
 
-	// Check bound subsriptions
+	// Check bound subscriptions
 	if len(role.BoundSubscriptionsIDs) > 0 && !strutil.StrListContains(role.BoundSubscriptionsIDs, subscriptionID) {
 		return errors.New("subscription not authorized")
 	}
@@ -246,16 +249,9 @@ func (b *azureAuthBackend) pathLoginRenew(ctx context.Context, req *logical.Requ
 		return nil, fmt.Errorf("role %s does not exist during renewal", roleName)
 	}
 
-	// If 'Period' is set on the Role, the token should never expire.
-	// Replenish the TTL with 'Period's value.
-	if role.Period > time.Duration(0) {
-		// If 'Period' was updated after the token was issued,
-		// token will bear the updated 'Period' value as its TTL.
-		req.Auth.TTL = role.Period
-		return &logical.Response{Auth: req.Auth}, nil
-	}
-
-	return framework.LeaseExtend(role.TTL, role.MaxTTL, b.System())(ctx, req, data)
+	resp := &logical.Response{Auth: req.Auth}
+	resp.Auth.Period = role.Period
+	return resp, nil
 }
 
 type additionalClaims struct {
