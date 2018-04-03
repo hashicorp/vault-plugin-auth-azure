@@ -50,8 +50,7 @@ to 0, in which case the value will fall back to the system/mount defaults.`,
 be renewed. Defaults to 0, in which case the value will fall back to the system/mount defaults.`,
 				},
 				"period": &framework.FieldSchema{
-					Type:    framework.TypeDurationSecond,
-					Default: 0,
+					Type: framework.TypeDurationSecond,
 					Description: `If set, indicates that the token generated using this role
 should never expire. The token should be renewed within the
 duration specified by this value. At each renewal, the token's
@@ -243,9 +242,9 @@ func (b *azureAuthBackend) pathRoleCreateUpdate(ctx context.Context, req *logica
 
 	periodRaw, ok := data.GetOk("period")
 	if ok {
-		role.Period = time.Second * time.Duration(periodRaw.(int))
+		role.Period = time.Duration(periodRaw.(int)) * time.Second
 	} else if req.Operation == logical.CreateOperation {
-		role.Period = time.Second * time.Duration(data.Get("period").(int))
+		role.Period = time.Duration(data.Get("period").(int)) * time.Second
 	}
 	if role.Period > b.System().MaxLeaseTTL() {
 		return logical.ErrorResponse(fmt.Sprintf("'period' of '%q' is greater than the backend's maximum lease TTL of '%q'", role.Period.String(), b.System().MaxLeaseTTL().String())), nil

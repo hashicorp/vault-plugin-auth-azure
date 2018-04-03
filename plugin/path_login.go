@@ -250,6 +250,8 @@ func (b *azureAuthBackend) pathLoginRenew(ctx context.Context, req *logical.Requ
 	}
 
 	resp := &logical.Response{Auth: req.Auth}
+	resp.Auth.TTL = role.TTL
+	resp.Auth.MaxTTL = role.MaxTTL
 	resp.Auth.Period = role.Period
 	return resp, nil
 }
