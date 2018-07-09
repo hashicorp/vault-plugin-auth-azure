@@ -2,6 +2,7 @@ package azureauth
 
 import (
 	"context"
+	"strings"
 
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/framework"
@@ -99,6 +100,9 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 	resource, ok := data.GetOk("resource")
 	if ok {
 		config.Resource = resource.(string)
+		if !strings.HasSuffix(config.Resource, "/") {
+			config.Resource += "/"
+		}
 	}
 
 	environment, ok := data.GetOk("environment")
