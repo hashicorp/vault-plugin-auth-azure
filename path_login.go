@@ -177,7 +177,7 @@ func (b *azureAuthBackend) verifyClaims(claims *additionalClaims, role *azureRol
 
 func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, resourceGroupName, vmName string, vmssName string, claims *additionalClaims, role *azureRole) error {
 	// If not checking anything with the resource id, exit early
-	if len(role.BoundResourceGroups) == 0 && len(role.BoundSubscriptionsIDs) == 0 && len(role.BoundLocations) == 0 {
+	if len(role.BoundResourceGroups) == 0 && len(role.BoundSubscriptionsIDs) == 0 && len(role.BoundLocations) == 0 && len(role.BoundScaleSets) == 0 {
 		return nil
 	}
 
@@ -202,6 +202,11 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			return errors.New("vmss principal id is empty")
 		}
 
+		// Check bound scale sets
+		if len(role.BoundScaleSets) > 0 && !strListContains(role.BoundScaleSets, vmssName) {
+			return errors.New("scale set not authorized")
+		}
+
 		principalID = vmss.Identity.PrincipalID
 		location = vmss.Location
 
@@ -218,6 +223,11 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 
 		if vm.Identity.PrincipalID == nil {
 			return errors.New("vm principal id is empty")
+		}
+
+		// Check bound scale sets
+		if len(role.BoundScaleSets) > 0 {
+			return errors.New("bound scale set defined but this vm isn't in a scale set")
 		}
 
 		principalID = vm.Identity.PrincipalID

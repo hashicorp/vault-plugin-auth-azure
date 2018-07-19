@@ -297,6 +297,56 @@ func TestLogin_BoundLocation(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 }
 
+func TestLogin_BoundScaleSet(t *testing.T) {
+	principalID := "prinID"
+	c := func(vmName string) (compute.VirtualMachine, error) {
+		id := compute.VirtualMachineIdentity{
+			PrincipalID: &principalID,
+		}
+		return compute.VirtualMachine{
+			Identity: &id,
+		}, nil
+	}
+	v := func(vmssName string) (compute.VirtualMachineScaleSet, error) {
+		id := compute.VirtualMachineScaleSetIdentity{
+			PrincipalID: &principalID,
+		}
+		return compute.VirtualMachineScaleSet{
+			Identity: &id,
+		}, nil
+	}
+
+	b, s := getTestBackendWithComputeClient(t, c, v)
+
+	roleName := "testrole"
+	roleData := map[string]interface{}{
+		"name":             roleName,
+		"policies":         []string{"dev", "prod"},
+		"bound_scale_sets": []string{"goodvmss"},
+	}
+	testRoleCreate(t, b, s, roleData)
+
+	claims := map[string]interface{}{
+		"exp": time.Now().Add(60 * time.Second).Unix(),
+		"nbf": time.Now().Add(-60 * time.Second).Unix(),
+		"oid": principalID,
+	}
+
+	loginData := map[string]interface{}{
+		"role": roleName,
+	}
+	testLoginFailure(t, b, s, loginData, claims, roleData)
+
+	loginData["subscription_id"] = "sub"
+	loginData["resource_group_name"] = "rg"
+
+	loginData["vmss_name"] = "goodvmss"
+	testLoginSuccess(t, b, s, loginData, claims, roleData)
+
+	loginData["vmss_name"] = "badvmss"
+	testLoginFailure(t, b, s, loginData, claims, roleData)
+}
+
 func testLoginSuccess(t *testing.T, b *azureAuthBackend, s logical.Storage, loginData, claims, roleData map[string]interface{}) {
 	t.Helper()
 	if err := testLogin(t, b, s, loginData, claims, roleData); err != nil {
