@@ -181,13 +181,14 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		return nil
 	}
 
-	if subscriptionID == "" || resourceGroupName == "" || (vmName == "" && vmssName == "") {
-		return errors.New("subscription_id, resource_group_name, and either vm_name or vmss_name are required")
+	if subscriptionID == "" || resourceGroupName == "" {
+		return errors.New("subscription_id and resource_group_name are required")
 	}
 
 	var principalID, location *string
 
-	if vmssName != "" {
+	switch {
+	case vmssName != "":
 		client := b.provider.VMSSClient(subscriptionID)
 		vmss, err := client.Get(ctx, resourceGroupName, vmssName)
 		if err != nil {
@@ -203,7 +204,8 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 
 		principalID = vmss.Identity.PrincipalID
 		location = vmss.Location
-	} else {
+
+	case vmName != "":
 		client := b.provider.ComputeClient(subscriptionID)
 		vm, err := client.Get(ctx, resourceGroupName, vmName, compute.InstanceView)
 		if err != nil {
@@ -220,6 +222,8 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 
 		principalID = vm.Identity.PrincipalID
 		location = vm.Location
+	default:
+		return errors.New("either vm_name or vmss_name is required")
 	}
 
 	// Ensure the principal id for the VM matches the verified token OID
