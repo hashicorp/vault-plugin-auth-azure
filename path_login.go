@@ -190,7 +190,6 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	if vmssName != "" {
 		client := b.provider.VMSSClient(subscriptionID)
 		vmss, err := client.Get(ctx, resourceGroupName, vmssName)
-
 		if err != nil {
 			return errwrap.Wrapf("unable to retries virtual machine scale set metadata: {{err}}", err)
 		}
@@ -198,7 +197,6 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		if vmss.Identity == nil {
 			return errors.New("vmss client did not return identity information")
 		}
-
 		if vmss.Identity.PrincipalID == nil {
 			return errors.New("vmss principal id is empty")
 		}
@@ -208,7 +206,6 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	} else {
 		client := b.provider.ComputeClient(subscriptionID)
 		vm, err := client.Get(ctx, resourceGroupName, vmName, compute.InstanceView)
-
 		if err != nil {
 			return errwrap.Wrapf("unable to retrieve virtual machine metadata: {{err}}", err)
 		}
