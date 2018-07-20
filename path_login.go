@@ -188,7 +188,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	var principalID, location *string
 
 	switch {
-	case vmssName != "" && vmName == "":
+	case vmssName != "":
 		client := b.provider.VMSSClient(subscriptionID)
 		vmss, err := client.Get(ctx, resourceGroupName, vmssName)
 		if err != nil {
@@ -210,7 +210,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		principalID = vmss.Identity.PrincipalID
 		location = vmss.Location
 
-	case vmName != "" && vmssName == "":
+	case vmName != "":
 		client := b.provider.ComputeClient(subscriptionID)
 		vm, err := client.Get(ctx, resourceGroupName, vmName, compute.InstanceView)
 		if err != nil {
