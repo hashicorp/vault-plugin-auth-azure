@@ -188,6 +188,8 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	var principalID, location *string
 
 	switch {
+	case vmssName != "" && vmName != "":
+		return errors.New("only one of vm_name or vmss_name should be specified")
 	case vmssName != "":
 		client := b.provider.VMSSClient(subscriptionID)
 		vmss, err := client.Get(ctx, resourceGroupName, vmssName)

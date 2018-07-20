@@ -150,9 +150,10 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 
 	loginData["vmss_name"] = "vmss"
 	testLoginSuccess(t, b, s, loginData, claims, roleData)
-	delete(loginData, "vmss_name")
 
 	loginData["vm_name"] = "vm"
+	testLoginFailure(t, b, s, loginData, claims, roleData)
+	delete(loginData, "vmss_name")
 	testLoginSuccess(t, b, s, loginData, claims, roleData)
 
 	loginData["subscription_id"] = "bad sub"
