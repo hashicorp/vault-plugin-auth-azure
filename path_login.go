@@ -39,7 +39,7 @@ func pathLogin(b *azureAuthBackend) *framework.Path {
 			},
 			"vmss_name": &framework.FieldSchema{
 				Type:        framework.TypeString,
-				Description: `The name of the virtual machine scale set the instance is in`,
+				Description: `The name of the virtual machine scale set the instance is in.`,
 			},
 		},
 
@@ -192,7 +192,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		client := b.provider.VMSSClient(subscriptionID)
 		vmss, err := client.Get(ctx, resourceGroupName, vmssName)
 		if err != nil {
-			return errwrap.Wrapf("unable to retries virtual machine scale set metadata: {{err}}", err)
+			return errwrap.Wrapf("unable to retrieve virtual machine scale set metadata: {{err}}", err)
 		}
 
 		if vmss.Identity == nil {
