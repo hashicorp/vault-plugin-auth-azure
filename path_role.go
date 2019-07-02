@@ -361,7 +361,7 @@ func (b *azureAuthBackend) pathRoleCreateUpdate(ctx context.Context, req *logica
 	}
 
 	if role.TokenPeriod > b.System().MaxLeaseTTL() {
-		return logical.ErrorResponse(fmt.Sprintf("token period of '%q' is greater than the backend's maximum lease TTL of '%q'", role.TokenPeriod.String(), b.System().MaxLeaseTTL().String())), nil
+		return logical.ErrorResponse("token period of %q is greater than the backend's maximum lease TTL of %q", role.TokenPeriod.String(), b.System().MaxLeaseTTL().String()), nil
 	}
 
 	if role.TokenNumUses < 0 {
