@@ -11,26 +11,26 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 	return &framework.Path{
 		Pattern: "config",
 		Fields: map[string]*framework.FieldSchema{
-			"tenant_id": &framework.FieldSchema{
+			"tenant_id": {
 				Type: framework.TypeString,
 				Description: `The tenant id for the Azure Active Directory.  This is sometimes
-				referred to as Directory ID in AD.  This value can also be provided with the 
+				referred to as Directory ID in AD.  This value can also be provided with the
 				AZURE_TENANT_ID environment variable.`,
 				DisplayAttrs: &framework.DisplayAttributes{
 					Name: "Tenant ID",
 				},
 			},
-			"resource": &framework.FieldSchema{
+			"resource": {
 				Type: framework.TypeString,
 				Description: `The resource URL for the vault application in Azure Active Directory.
 				This value can also be provided with the AZURE_AD_RESOURCE environment variable.`,
 			},
-			"environment": &framework.FieldSchema{
+			"environment": {
 				Type: framework.TypeString,
 				Description: `The Azure environment name. If not provided, AzurePublicCloud is used.
 				This value can also be provided with the AZURE_ENVIRONMENT environment variable.`,
 			},
-			"client_id": &framework.FieldSchema{
+			"client_id": {
 				Type: framework.TypeString,
 				Description: `The OAuth2 client id to connection to Azure.
 				This value can also be provided with the AZURE_CLIENT_ID environment variable.`,
@@ -38,17 +38,25 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 					Name: "Client ID",
 				},
 			},
-			"client_secret": &framework.FieldSchema{
+			"client_secret": {
 				Type: framework.TypeString,
 				Description: `The OAuth2 client secret to connection to Azure.
 				This value can also be provided with the AZURE_CLIENT_SECRET environment variable.`,
 			},
 		},
-		Callbacks: map[logical.Operation]framework.OperationFunc{
-			logical.ReadOperation:   b.pathConfigRead,
-			logical.CreateOperation: b.pathConfigWrite,
-			logical.UpdateOperation: b.pathConfigWrite,
-			logical.DeleteOperation: b.pathConfigDelete,
+		Operations: map[logical.Operation]framework.OperationHandler{
+			logical.ReadOperation: &framework.PathOperation{
+				Callback: b.pathConfigRead,
+			},
+			logical.CreateOperation: &framework.PathOperation{
+				Callback: b.pathConfigWrite,
+			},
+			logical.UpdateOperation: &framework.PathOperation{
+				Callback: b.pathConfigWrite,
+			},
+			logical.DeleteOperation: &framework.PathOperation{
+				Callback: b.pathConfigDelete,
+			},
 		},
 		ExistenceCheck: b.pathConfigExistenceCheck,
 
@@ -81,7 +89,7 @@ func (b *azureAuthBackend) config(ctx context.Context, s logical.Storage) (*azur
 	return config, nil
 }
 
-func (b *azureAuthBackend) pathConfigExistenceCheck(ctx context.Context, req *logical.Request, data *framework.FieldData) (bool, error) {
+func (b *azureAuthBackend) pathConfigExistenceCheck(ctx context.Context, req *logical.Request, _ *framework.FieldData) (bool, error) {
 	config, err := b.config(ctx, req.Storage)
 	if err != nil {
 		return false, err
@@ -143,7 +151,7 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 	return nil, nil
 }
 
-func (b *azureAuthBackend) pathConfigRead(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {
+func (b *azureAuthBackend) pathConfigRead(ctx context.Context, req *logical.Request, _ *framework.FieldData) (*logical.Response, error) {
 	config, err := b.config(ctx, req.Storage)
 	if err != nil {
 		return nil, err
@@ -163,7 +171,7 @@ func (b *azureAuthBackend) pathConfigRead(ctx context.Context, req *logical.Requ
 	return resp, nil
 }
 
-func (b *azureAuthBackend) pathConfigDelete(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {
+func (b *azureAuthBackend) pathConfigDelete(ctx context.Context, req *logical.Request, _ *framework.FieldData) (*logical.Response, error) {
 	err := req.Storage.Delete(ctx, "config")
 
 	if err == nil {
