@@ -63,29 +63,24 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 					Description: `Comma-separated list of subscription ids that login is restricted to.`,
 				},
 				"bound_resource_groups": {
-					Type: framework.TypeCommaStringSlice,
-					Description: `Comma-separated list of resource groups that login 
-						is restricted to.`,
+					Type:        framework.TypeCommaStringSlice,
+					Description: `Comma-separated list of resource groups that login is restricted to.`,
 				},
 				"bound_group_ids": {
-					Type: framework.TypeCommaStringSlice,
-					Description: `Comma-separated list of group ids that login 
-						is restricted to.`,
+					Type:        framework.TypeCommaStringSlice,
+					Description: `Comma-separated list of group ids that login is restricted to.`,
 				},
 				"bound_service_principal_ids": {
-					Type: framework.TypeCommaStringSlice,
-					Description: `Comma-separated list of service principal ids that login 
-						is restricted to.`,
+					Type:        framework.TypeCommaStringSlice,
+					Description: `Comma-separated list of service principal ids that login is restricted to.`,
 				},
 				"bound_locations": {
-					Type: framework.TypeCommaStringSlice,
-					Description: `Comma-separated list of locations that login 
-						is restricted to.`,
+					Type:        framework.TypeCommaStringSlice,
+					Description: `Comma-separated list of locations that login is restricted to.`,
 				},
 				"bound_scale_sets": {
-					Type: framework.TypeCommaStringSlice,
-					Description: `Comma-separated list of scale sets that login 
-						is restricted to.`,
+					Type:        framework.TypeCommaStringSlice,
+					Description: `Comma-separated list of scale sets that login is restricted to.`,
 				},
 			},
 			ExistenceCheck: b.pathRoleExistenceCheck,
