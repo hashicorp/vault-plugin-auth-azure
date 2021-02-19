@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/vault/sdk/helper/pluginutil"
+	"github.com/hashicorp/vault/sdk/version"
 )
 
 // Using the same time parsing logic from https://github.com/coreos/go-oidc
@@ -46,12 +47,31 @@ func strListContains(haystack []string, needle string) bool {
 	return false
 }
 
+const ossVault = `15cd22ce-24af-43a4-aa83-4c1a36a4b177`
+const entVault = `b2c13ec1-60e8-4733-9a76-88dbb2ce2471`
+
 // userAgent determines the User Agent to send on HTTP requests. This is mostly copied
 // from the useragent helper in vault and may get replaced with something more general
 // for plugins
 func userAgent() string {
-	version := os.Getenv(pluginutil.PluginVaultVersionEnv)
+	pluginVersion := os.Getenv(pluginutil.PluginVaultVersionEnv)
+
 	projectURL := "https://www.vaultproject.io/"
 	rt := runtime.Version()
-	return fmt.Sprintf("Vault/%s (+%s; %s)", version, projectURL, rt)
+
+	// assign a GUID to the user-agent used in making requests
+	// create the basic user agent string
+	ua := fmt.Sprintf("Vault/%s (+%s; %s)", pluginVersion, projectURL, rt)
+
+	// ent has many version variations, so if it's not "dev" or "" we'll assume
+	// it's an enterprise variation
+	guid := ossVault
+	ver := version.GetVersion()
+	if ver.VersionMetadata != "" && ver.VersionMetadata != "dev" {
+		guid = entVault
+	}
+
+	vaultIDString := fmt.Sprintf("; %s)", guid)
+
+	return strings.Replace(ua, ")", vaultIDString, 1)
 }
