@@ -3,11 +3,14 @@ package azureauth
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
+	"os"
+	"runtime"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/vault/sdk/helper/pluginutil"
 	"github.com/hashicorp/vault/sdk/version"
+	"github.com/ryboe/q"
 )
 
 func TestJsonTime(t *testing.T) {
@@ -43,6 +46,15 @@ func TestUserAgent(t *testing.T) {
 	// 15cd22ce-24af-43a4-aa83-4c1a36a4b177  Vault OSS
 	//
 	// b2c13ec1-60e8-4733-9a76-88dbb2ce2471  Vault Ent
+	// ossVersionStr:=fmt.Sprintf("Vault/ (+https://www.vaultproject.io/; go1.16; %s)",ossVaultGUID)
+	// entVersionStr:=fmt.Sprintf("Vault/ (+https://www.vaultproject.io/; go1.16; %s)",entVaultGUID)
+
+	// old way of generating version
+	pluginVersion := os.Getenv(pluginutil.PluginVaultVersionEnv)
+	projectURL := "https://www.vaultproject.io/"
+	rt := runtime.Version()
+	ossVersionStr := fmt.Sprintf("Vault/%s (+%s; %s; %s)", pluginVersion, projectURL, rt, ossVaultGUID)
+	entVersionStr := fmt.Sprintf("Vault/%s (+%s; %s; %s)", pluginVersion, projectURL, rt, entVaultGUID)
 
 	testCases := map[string]struct {
 		meta     string
@@ -50,23 +62,23 @@ func TestUserAgent(t *testing.T) {
 	}{
 		"none": {
 			meta:     "",
-			expected: ossVault,
+			expected: ossVersionStr,
 		},
 		"dev": {
 			meta:     "dev",
-			expected: ossVault,
+			expected: ossVersionStr,
 		},
 		"ent": {
 			meta:     "ent",
-			expected: entVault,
+			expected: entVersionStr,
 		},
 		"prem": {
 			meta:     "prem.hsm",
-			expected: entVault,
+			expected: entVersionStr,
 		},
 		"unknown": {
 			meta:     "glhf",
-			expected: entVault,
+			expected: entVersionStr,
 		},
 	}
 
@@ -74,7 +86,8 @@ func TestUserAgent(t *testing.T) {
 		t.Run(n, func(t *testing.T) {
 			version.VersionMetadata = tc.meta
 			userAgentStr := userAgent()
-			if !strings.Contains(userAgentStr, tc.expected) {
+			q.Q(userAgentStr)
+			if userAgentStr != tc.expected {
 				t.Fatalf("expected userAgent string to contain (%s), got: %s", tc.expected, userAgentStr)
 			}
 		})
