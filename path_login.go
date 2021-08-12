@@ -184,16 +184,17 @@ func (b *azureAuthBackend) verifyClaims(claims *additionalClaims, role *azureRol
 	}
 	switch {
 	case len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*":
-		// Only need to check claims.GroupIDs are in role GroupIDs
+		// Globbing on PrincipalIDs; can skip Service Principal ID check
 	case len(role.BoundServicePrincipalIDs) > 0:
 		if !strListContains(role.BoundServicePrincipalIDs, claims.ObjectID) {
 			return fmt.Errorf("service principal not authorized: %s", claims.ObjectID)
 		}
-	case len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*":
-		// No PrincipalID checks required
 	}
 
-	if len(role.BoundGroupIDs) > 0 {
+	switch {
+	case len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*":
+		// Globbing on GroupIDs; can skip group ID check
+	case len(role.BoundGroupIDs) > 0:
 		var found bool
 		for _, group := range claims.GroupIDs {
 			if strListContains(role.BoundGroupIDs, group) {
