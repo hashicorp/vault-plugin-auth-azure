@@ -180,7 +180,7 @@ func (b *azureAuthBackend) verifyClaims(claims *additionalClaims, role *azureRol
 
 	if (len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*") &&
 		(len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*") {
-		return fmt.Errorf("expected a specific BoundGroupID or BoundServicePrincipalID; both cannot be '*'")
+		return fmt.Errorf("expected specific bound_group_ids or bound_service_principal_ids; both cannot be '*'")
 	}
 	switch {
 	case len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*":
