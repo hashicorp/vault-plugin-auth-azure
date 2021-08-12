@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -477,16 +478,59 @@ func TestVerifyClaims(t *testing.T) {
 	if err := idToken.Claims(claims); err != nil {
 		t.Fatalf("err: %v", err)
 	}
-
-	err = b.verifyClaims(claims, new(azureRole))
+	role := new(azureRole)
+	err = b.verifyClaims(claims, role)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
 	claims.NotBefore = jsonTime(time.Now().Add(10 * time.Second))
-	err = b.verifyClaims(claims, new(azureRole))
+	err = b.verifyClaims(claims, role)
 	if err == nil {
 		t.Fatal("expected claim verification error")
+	}
+
+	claims = new(additionalClaims)
+	if err = idToken.Claims(claims); err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// Should error since both fields can't be globbed together
+	role.BoundGroupIDs = []string{"*"}
+	role.BoundServicePrincipalIDs = []string{"*"}
+	err = b.verifyClaims(claims, role)
+	if !strings.Contains(err.Error(), "both cannot be '*'") {
+		t.Fatalf("expected an error since groups and service Ids are both '*'")
+	}
+
+	// Should error since claim GroupID not in role GroupIDs
+	role.BoundGroupIDs = []string{"test-group-1"}
+	claims.GroupIDs = []string{"test-group-2"}
+	err = b.verifyClaims(claims, role)
+	if !strings.Contains(err.Error(), "groups not authorized") {
+		t.Fatalf("expected an error since claim groups not in BoundGroupIDs")
+	}
+
+	// Should pass. Claim GroupID added
+	role.BoundGroupIDs = append(role.BoundGroupIDs, "test-group-2")
+	err = b.verifyClaims(claims, role)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// Should error since claims OID not in role SPIDs
+	claims.ObjectID = "test-Object-id"
+	role.BoundServicePrincipalIDs = []string{"sPId1"}
+	err = b.verifyClaims(claims, role)
+	if !strings.Contains(err.Error(), "service principal not authorized") {
+		t.Fatalf("err: %v", err)
+	}
+
+	// Should pass. Claim OID added
+	role.BoundServicePrincipalIDs = append(role.BoundServicePrincipalIDs, "test-Object-id")
+	err = b.verifyClaims(claims, role)
+	if err != nil {
+		t.Fatalf("err: %v", err)
 	}
 }
 
