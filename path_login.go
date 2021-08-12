@@ -178,12 +178,19 @@ func (b *azureAuthBackend) verifyClaims(claims *additionalClaims, role *azureRol
 		return fmt.Errorf("token is not yet valid (Token Not Before: %v)", notBefore)
 	}
 
+	if (len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*") &&
+		(len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*") {
+		return fmt.Errorf("expected a specific BoundGroupID or BoundServicePrincipalID; both cannot be '*'")
+	}
 	switch {
 	case len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*":
+		// Only need to check claims.GroupIDs are in role GroupIDs
 	case len(role.BoundServicePrincipalIDs) > 0:
 		if !strListContains(role.BoundServicePrincipalIDs, claims.ObjectID) {
 			return fmt.Errorf("service principal not authorized: %s", claims.ObjectID)
 		}
+	case len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*":
+		// No PrincipalID checks required
 	}
 
 	if len(role.BoundGroupIDs) > 0 {
