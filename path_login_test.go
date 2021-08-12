@@ -532,8 +532,8 @@ func TestVerifyClaims(t *testing.T) {
 			bspIds: []string{"spId1"},
 			claims: additionalClaims{
 				claims.NotBefore,
-				claims.ObjectID,
-				[]string{"test-oid"},
+				"test-oid",
+				claims.GroupIDs,
 			},
 			error: "service principal not authorized",
 		},
@@ -542,10 +542,10 @@ func TestVerifyClaims(t *testing.T) {
 			bspIds: []string{"spId1", "test-oid"},
 			claims: additionalClaims{
 				claims.NotBefore,
-				claims.ObjectID,
-				[]string{"test-oid"},
+				"test-oid",
+				claims.GroupIDs,
 			},
-			error: "service principal not authorized",
+			error: "",
 		},
 	}
 
@@ -557,7 +557,7 @@ func TestVerifyClaims(t *testing.T) {
 
 			err = b.verifyClaims(claims, role)
 
-			if testCase.error != "" && !strings.Contains(err.Error(), testCase.error) {
+			if err != nil && testCase.error != "" && !strings.Contains(err.Error(), testCase.error) {
 				t.Fatalf("expected an error %s, got %v", testCase.error, err)
 			}
 		})
