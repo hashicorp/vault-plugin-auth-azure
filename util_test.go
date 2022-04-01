@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/vault/sdk/version"
+	"github.com/hashicorp/vault/sdk/logical"
 )
 
 func TestJsonTime(t *testing.T) {
@@ -37,43 +37,42 @@ func TestJsonTime(t *testing.T) {
 
 func TestUserAgent(t *testing.T) {
 	// VersionMetadata contains the version of Vault, typically "ent" or "prem" etc
-	// for enterprise versions, and "" for OSS version. Dev versions will contain
-	// "dev"
+	// for enterprise versions, and "" for OSS version.
 	// GUID
-	// 15cd22ce-24af-43a4-aa83-4c1a36a4b177  Vault OSS
+	// pid-15cd22ce-24af-43a4-aa83-4c1a36a4b177  Vault OSS
 	//
-	// b2c13ec1-60e8-4733-9a76-88dbb2ce2471  Vault Ent
+	// pid-b2c13ec1-60e8-4733-9a76-88dbb2ce2471  Vault Ent
 
 	testCases := map[string]struct {
-		meta     string
-		expected string
+		pluginEnv *logical.PluginEnvironment
+		expected  string
 	}{
-		"none": {
-			meta:     "",
+		"empty version metadata": {
+			pluginEnv: &logical.PluginEnvironment{
+				VaultVersion:         "1.9.4",
+				VaultVersionMetadata: "",
+			},
 			expected: ossVaultGUID,
 		},
-		"dev": {
-			meta:     "dev",
-			expected: ossVaultGUID,
-		},
-		"ent": {
-			meta:     "ent",
+		"ent version metadata": {
+			pluginEnv: &logical.PluginEnvironment{
+				VaultVersion:         "1.10.0",
+				VaultVersionMetadata: "ent",
+			},
 			expected: entVaultGUID,
 		},
-		"prem": {
-			meta:     "prem.hsm",
-			expected: entVaultGUID,
-		},
-		"unknown": {
-			meta:     "glhf",
+		"prem.hsm version metadata": {
+			pluginEnv: &logical.PluginEnvironment{
+				VaultVersion:         "1.11.0",
+				VaultVersionMetadata: "prem.hsm",
+			},
 			expected: entVaultGUID,
 		},
 	}
 
 	for n, tc := range testCases {
 		t.Run(n, func(t *testing.T) {
-			version.VersionMetadata = tc.meta
-			userAgentStr := userAgent()
+			userAgentStr := userAgent(tc.pluginEnv)
 			if !strings.Contains(userAgentStr, tc.expected) {
 				t.Fatalf("expected userAgent string to contain (%s), got: %s", tc.expected, userAgentStr)
 			}
