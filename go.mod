@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hashicorp/go-hclog v1.1.0
 	github.com/hashicorp/vault/api v1.3.1
-	github.com/hashicorp/vault/sdk v0.4.2-0.20220401184911-6f11de6657a8
+	github.com/hashicorp/vault/sdk v0.4.2-0.20220407204703-33e5b32dd5fc
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 )
 
