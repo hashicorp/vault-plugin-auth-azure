@@ -21,9 +21,9 @@ GIT_COMMIT="$(git rev-parse HEAD)"
 GIT_DIRTY="$(test -n "`git status --porcelain`" && echo "+CHANGES" || true)"
 
 # Determine the arch/os combos we're building for
-XC_ARCH=${XC_ARCH:-"386 amd64"}
+XC_ARCH=${XC_ARCH:-"386 amd64 arm arm64"}
 XC_OS=${XC_OS:-linux darwin windows freebsd openbsd netbsd solaris}
-XC_OSARCH=${XC_OSARCH:-"linux/386 linux/amd64 linux/arm linux/arm64 darwin/amd64 windows/386 windows/amd64 freebsd/386 freebsd/amd64 freebsd/arm openbsd/386 openbsd/amd64 openbsd/arm netbsd/386 netbsd/amd64 netbsd/arm solaris/amd64"}
+XC_OSARCH=${XC_OSARCH:-"linux/386 linux/amd64 linux/arm linux/arm64 darwin/amd64 darwin/arm64 windows/386 windows/amd64 freebsd/386 freebsd/amd64 freebsd/arm freebsd/arm64 openbsd/386 openbsd/amd64 openbsd/arm openbsd/arm64 netbsd/386 netbsd/amd64 netbsd/arm netbsd/arm64 solaris/amd64"}
 
 GOPATH=${GOPATH:-$(go env GOPATH)}
 case $(uname) in
@@ -65,19 +65,6 @@ for F in $(find ${DEV_PLATFORM} -mindepth 1 -maxdepth 1 -type f); do
     cp ${F} bin/
     cp ${F} ${MAIN_GOPATH}/bin/
 done
-
-if [ "${VAULT_DEV_BUILD}x" = "x" ]; then
-    # Zip and copy to the dist dir
-    echo "==> Packaging..."
-    for PLATFORM in $(find ./pkg -mindepth 1 -maxdepth 1 -type d); do
-        OSARCH=$(basename ${PLATFORM})
-        echo "--> ${OSARCH}"
-
-        pushd $PLATFORM >/dev/null 2>&1
-        zip ../${OSARCH}.zip ./*
-        popd >/dev/null 2>&1
-    done
-fi
 
 # Done!
 echo
