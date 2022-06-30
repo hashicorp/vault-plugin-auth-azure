@@ -91,8 +91,6 @@ jobs:
           - os: netbsd # I guess "Of course it runs NetBSD" is no longer true
             arch: arm64
           - os: openbsd
-            arch: arm
-          - os: openbsd
             arch: arm64
           - os: solaris
             arch: "386"
