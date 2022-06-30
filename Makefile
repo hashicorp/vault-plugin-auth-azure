@@ -1,7 +1,7 @@
 TOOL?=vault-plugin-auth-azure
 TEST?=$$(go list ./...)
 EXTERNAL_TOOLS=\
-	github.com/mitchellh/gox
+	github.com/swenson/gox
 BUILD_TAGS?=${TOOL}
 GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
 
