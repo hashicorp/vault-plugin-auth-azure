@@ -41,7 +41,7 @@ generate:
 bootstrap:
 	@for tool in $(EXTERNAL_TOOLS) ; do \
 		echo "Installing/Updating $$tool" ; \
-		go install $$tool@latest; \
+		go install $$tool@v1.0.3; \
 	done
 
 fmt:
