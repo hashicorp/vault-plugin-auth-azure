@@ -19,6 +19,13 @@ func TestResolveRole(t *testing.T) {
 	b, storage := getTestBackend(t)
 	role := "testrole"
 
+	roleData := map[string]interface{}{
+		"name":                        role,
+		"policies":                    []string{"dev", "prod"},
+		"bound_service_principal_ids": []string{"*"},
+	}
+	testRoleCreate(t, b, storage, roleData)
+
 	loginData := map[string]interface{}{
 		"role": role,
 	}

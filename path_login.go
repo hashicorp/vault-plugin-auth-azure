@@ -66,6 +66,15 @@ func (b *azureAuthBackend) pathResolveRole(ctx context.Context, req *logical.Req
 	if roleName == "" {
 		return logical.ErrorResponse("role is required"), nil
 	}
+
+	role, err := b.role(ctx, req.Storage, roleName)
+	if err != nil {
+		return nil, err
+	}
+	if role == nil {
+		return logical.ErrorResponse(fmt.Sprintf("invalid role name %q", roleName)), nil
+	}
+
 	return logical.ResolveRoleResponse(roleName)
 }
 
