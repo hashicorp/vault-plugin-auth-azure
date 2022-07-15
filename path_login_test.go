@@ -15,6 +15,33 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
+func TestResolveRole(t *testing.T) {
+	b, storage := getTestBackend(t)
+	role := "testrole"
+
+	loginData := map[string]interface{}{
+		"role": role,
+	}
+	loginReq := &logical.Request{
+		Operation: logical.ResolveRoleOperation,
+		Path:      "login",
+		Storage:   storage,
+		Data:      loginData,
+		Connection: &logical.Connection{
+			RemoteAddr: "127.0.0.1",
+		},
+	}
+
+	resp, err := b.HandleRequest(context.Background(), loginReq)
+	if err != nil || (resp != nil && resp.IsError()) {
+		t.Fatalf("err:%v resp:%#v", err, resp)
+	}
+
+	if resp.Data["role"] != role {
+		t.Fatalf("Role was not as expected. Expected %s, received %s", role, resp.Data["role"])
+	}
+}
+
 func TestLogin(t *testing.T) {
 	b, s := getTestBackend(t)
 

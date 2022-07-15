@@ -51,11 +51,22 @@ func pathLogin(b *azureAuthBackend) *framework.Path {
 			logical.AliasLookaheadOperation: &framework.PathOperation{
 				Callback: b.pathLogin,
 			},
+			logical.ResolveRoleOperation: &framework.PathOperation{
+				Callback: b.pathResolveRole,
+			},
 		},
 
 		HelpSynopsis:    pathLoginHelpSyn,
 		HelpDescription: pathLoginHelpDesc,
 	}
+}
+
+func (b *azureAuthBackend) pathResolveRole(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {
+	roleName := data.Get("role").(string)
+	if roleName == "" {
+		return logical.ErrorResponse("role is required"), nil
+	}
+	return logical.ResolveRoleResponse(roleName)
 }
 
 func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, data *framework.FieldData) (*logical.Response, error) {
