@@ -49,6 +49,38 @@ func TestResolveRole(t *testing.T) {
 	}
 }
 
+func TestResolveRole_RoleDoesNotExist(t *testing.T) {
+	b, storage := getTestBackend(t)
+	role := "testrole"
+
+	loginData := map[string]interface{}{
+		"role": role,
+	}
+	loginReq := &logical.Request{
+		Operation: logical.ResolveRoleOperation,
+		Path:      "login",
+		Storage:   storage,
+		Data:      loginData,
+		Connection: &logical.Connection{
+			RemoteAddr: "127.0.0.1",
+		},
+	}
+
+	resp, err := b.HandleRequest(context.Background(), loginReq)
+	if resp == nil && !resp.IsError() {
+		t.Fatalf("Response was not an error: err:%v resp:%#v", err, resp)
+	}
+
+	errString, ok := resp.Data["error"].(string)
+	if !ok {
+		t.Fatal("Error not part of response.")
+	}
+
+	if !strings.Contains(errString, "invalid role name") {
+		t.Fatalf("Error was not due to invalid role name. Error: %s", errString)
+	}
+}
+
 func TestLogin(t *testing.T) {
 	b, s := getTestBackend(t)
 
