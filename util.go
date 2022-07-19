@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/vault/sdk/helper/useragent"
-
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
@@ -45,9 +44,8 @@ func strListContains(haystack []string, needle string) bool {
 	return false
 }
 
-// userAgent determines the User Agent to send on HTTP requests. This is mostly copied
-// from the useragent helper in vault and may get replaced with something more general
-// for plugins
+// userAgent returns the User-Agent header that's included in HTTP requests
+// made by this plugin. Returns an empty string if the pluginEnv is nil.
 func userAgent(pluginEnv *logical.PluginEnvironment) string {
 	if pluginEnv == nil {
 		return ""
