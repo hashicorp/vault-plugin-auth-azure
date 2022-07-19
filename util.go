@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/vault/sdk/helper/useragent"
+
+	"github.com/hashicorp/vault/sdk/logical"
 )
 
 // Using the same time parsing logic from https://github.com/coreos/go-oidc
@@ -46,8 +48,10 @@ func strListContains(haystack []string, needle string) bool {
 // userAgent determines the User Agent to send on HTTP requests. This is mostly copied
 // from the useragent helper in vault and may get replaced with something more general
 // for plugins
-func userAgent() string {
-	ua := useragent.String()
+func userAgent(pluginEnv *logical.PluginEnvironment) string {
+	if pluginEnv == nil {
+		return ""
+	}
 
-	return ua
+	return useragent.PluginString(pluginEnv, "azure-auth")
 }
