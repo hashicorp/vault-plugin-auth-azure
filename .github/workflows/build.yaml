@@ -118,7 +118,7 @@ jobs:
         run: |
           make bin &&
           ([ -d out ] || mkdir out) &&
-          zip -r -j out/${{ env.PKG_NAME }}_${{ needs.get-product-version.outputs.product-version }}_${{ matrix.os }}_${{ matrix.arch }}.zip pkg/
+          zip -r -j out/${{ env.PKG_NAME }}_${{ needs.get-product-version.outputs.product-version }}_${{ matrix.os }}_${{ matrix.arch }}.zip bin/*
 
       - name: Upload
         uses: actions/upload-artifact@v3
