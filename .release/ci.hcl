@@ -16,6 +16,7 @@ project "vault-plugin-auth-azure" {
         "release/vault-1.10.x",
         "release/vault-1.11.x",
         "release/vault-1.12.x",
+        "vault-4378/crt", // for testing
     ]
 
   }
