@@ -111,7 +111,8 @@ jobs:
 
       - name: Build
         env:
-          XC_OSARCH: ${{ matrix.os }}/${{ matrix.arch }}
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
           VERSION: ${{ needs.get-product-version.outputs.product-version }}
           CGO_ENABLED: "0"
         run: |
