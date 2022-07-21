@@ -124,7 +124,7 @@ jobs:
         if: matrix.os == 'linux' && matrix.arch == 'amd64'
         run: |
           docker pull vault &&
-          docker run --name vault -d --mount type=bind,src=./bin,dst=/vault/file --cap-add=IPC_LOCK -e 'VAULT_DEV_ROOT_TOKEN_ID=myroot' -e 'VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200' vault -- server -dev -dev-plugin-dir /vault/file &&
+          docker run --name vault -d --mount type=bind,src=${PWD}/bin,dst=/vault/file --cap-add=IPC_LOCK -e 'VAULT_DEV_ROOT_TOKEN_ID=myroot' -e 'VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200' vault -- server -dev -dev-plugin-dir /vault/file &&
           timeout 30 sh -c 'until nc -vzw1 localhost 8200; do sleep 1; done' &&
           docker exec -t vault -- vault auth enable vault-plugin-auth-azure
 
