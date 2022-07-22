@@ -3,6 +3,7 @@ TEST?=$$(go list ./...)
 EXTERNAL_TOOLS=
 BUILD_TAGS?=${TOOL}
 GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
+VERSION ?= $(shell scripts/version.sh version/version.go)
 
 # bin generates the releaseable binaries for this plugin
 bin: generate
@@ -16,7 +17,7 @@ default: dev
 quickdev: generate
 	@CGO_ENABLED=0 go build -i -tags='$(BUILD_TAGS)' -o bin/${TOOL}
 dev: generate
-	@CGO_ENABLED=0 BUILD_TAGS='$(BUILD_TAGS)' VAULT_DEV_BUILD=1 sh -c "'$(CURDIR)/scripts/build.sh'"
+	@CGO_ENABLED=0 BUILD_TAGS='$(BUILD_TAGS)' VERSION='$(VERSION)' VAULT_DEV_BUILD=1 sh -c "'$(CURDIR)/scripts/build.sh'"
 
 testcompile: generate
 	@for pkg in $(TEST) ; do \
@@ -51,4 +52,7 @@ deps:
 	@echo "==> Updating deps for ${TOOL}"
 	@dep ensure -update
 
-.PHONY: bin default generate test bootstrap fmt deps
+version:
+	@echo $(VERSION)
+
+.PHONY: bin default generate test bootstrap fmt deps version

@@ -29,7 +29,7 @@ mkdir -p bin/
 # Build!
 echo "==> Building..."
 go build \
-    -ldflags "${LD_FLAGS} -X github.com/hashicorp/${TOOL}/version.GitCommit='${GIT_COMMIT}${GIT_DIRTY}'" \
+    -ldflags "${LD_FLAGS} -X github.com/hashicorp/${TOOL}/version.Version=v${VERSION} -X github.com/hashicorp/${TOOL}/version.GitCommit='${GIT_COMMIT}${GIT_DIRTY}'" \
     -o "bin/${TOOL}" \
     -tags="${BUILD_TAGS}" \
     ./cmd/$TOOL
