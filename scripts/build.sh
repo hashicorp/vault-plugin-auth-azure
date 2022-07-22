@@ -2,7 +2,7 @@
 
 TOOL=vault-plugin-auth-azure
 #
-# This script builds the application from source for multiple platforms.
+# This script builds the application from source for a platform.
 set -e
 
 # Get the parent directory of where this script is.
@@ -20,19 +20,9 @@ BUILD_TAGS="${BUILD_TAGS}:-${TOOL}"
 GIT_COMMIT="$(git rev-parse HEAD)"
 GIT_DIRTY="$(test -n "`git status --porcelain`" && echo "+CHANGES" || true)"
 
-# Determine the arch/os combos we're building for
-
-GOPATH=${GOPATH:-$(go env GOPATH)}
-case $(uname) in
-    CYGWIN*)
-        GOPATH="$(cygpath $GOPATH)"
-        ;;
-esac
-
 # Delete the old dir
 echo "==> Removing old directory..."
 rm -f bin/*
-rm -rf pkg/*
 mkdir -p bin/
 
 
