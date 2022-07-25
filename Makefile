@@ -7,7 +7,7 @@ VERSION ?= $(shell scripts/version.sh version/version.go)
 
 # bin generates the releaseable binaries for this plugin
 bin: generate
-	@CGO_ENABLED=0 BUILD_TAGS='$(BUILD_TAGS)' sh -c "'$(CURDIR)/scripts/build.sh'"
+	@CGO_ENABLED=0 BUILD_TAGS='$(BUILD_TAGS)' VERSION='$(VERSION)' sh -c "'$(CURDIR)/scripts/build.sh'"
 
 default: dev
 
