@@ -210,16 +210,6 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
 	loginData["subscription_id"] = subID
-	testLoginFailure(t, b, s, loginData, claims, roleData)
-
-	loginData["resource_group_name"] = "rg"
-	testLoginFailure(t, b, s, loginData, claims, roleData)
-
-	loginData["vmss_name"] = "vmss"
-	testLoginSuccess(t, b, s, loginData, claims, roleData)
-
-	loginData["vm_name"] = "vm"
-	delete(loginData, "vmss_name")
 	testLoginSuccess(t, b, s, loginData, claims, roleData)
 
 	loginData["subscription_id"] = "bad sub"
@@ -270,13 +260,6 @@ func TestLogin_BoundResourceGroup(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
 	loginData["resource_group_name"] = rg
-	testLoginFailure(t, b, s, loginData, claims, roleData)
-
-	loginData["vmss_name"] = "vmss"
-	testLoginSuccess(t, b, s, loginData, claims, roleData)
-	delete(loginData, "vmss_name")
-
-	loginData["vm_name"] = "vm"
 	testLoginSuccess(t, b, s, loginData, claims, roleData)
 
 	loginData["resource_group_name"] = "bad rg"
@@ -318,6 +301,7 @@ func TestLogin_BoundResourceGroupWithUserAssignedID(t *testing.T) {
 		"name":                  roleName,
 		"policies":              []string{"dev", "prod"},
 		"bound_resource_groups": []string{rg},
+		"bound_scale_sets":      []string{"vmss"},
 	}
 	testRoleCreate(t, b, s, roleData)
 
@@ -345,9 +329,7 @@ func TestLogin_BoundResourceGroupWithUserAssignedID(t *testing.T) {
 
 	loginData["vmss_name"] = "vmss"
 	testLoginSuccess(t, b, s, loginData, claims, roleData)
-	delete(loginData, "vmss_name")
 
-	loginData["vm_name"] = "vm"
 	testLoginSuccess(t, b, s, loginData, claims, roleData)
 	testLoginFailure(t, b, s, loginData, badClaims, roleData)
 

@@ -230,16 +230,29 @@ func (b *azureAuthBackend) verifyClaims(claims *additionalClaims, role *azureRol
 	return nil
 }
 
-func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, resourceGroupName, vmName string, vmssName string, claims *additionalClaims, role *azureRole) error {
-	// If not checking anything with the resource id, exit early
-	if len(role.BoundResourceGroups) == 0 && len(role.BoundSubscriptionsIDs) == 0 && len(role.BoundLocations) == 0 && len(role.BoundScaleSets) == 0 {
-		return nil
-	}
+type verifyFuncAlias func(ctx context.Context, subscriptionID, resourceGroupName, vmName string, vmssName string, claims *additionalClaims, role *azureRole) error
 
-	if subscriptionID == "" || resourceGroupName == "" {
-		return errors.New("subscription_id and resource_group_name are required")
+func (b *azureAuthBackend) verifySubscriptions(ctx context.Context, subscriptionID, resourceGroupName, vmName string, vmssName string, claims *additionalClaims, role *azureRole) error {
+	if subscriptionID == "" {
+		return errors.New("subscription_id is required")
 	}
+	if len(role.BoundSubscriptionsIDs) > 0 && !strListContains(role.BoundSubscriptionsIDs, subscriptionID) {
+		return errors.New("subscription not authorized")
+	}
+	return nil
+}
 
+func (b *azureAuthBackend) verifyResourceGroups(ctx context.Context, subscriptionID, resourceGroupName, vmName string, vmssName string, claims *additionalClaims, role *azureRole) error {
+	if resourceGroupName == "" {
+		return errors.New("resourceGroupName is required")
+	}
+	if len(role.BoundResourceGroups) > 0 && !strListContains(role.BoundResourceGroups, resourceGroupName) {
+		return errors.New("resource group not authorized")
+	}
+	return nil
+}
+
+func (b *azureAuthBackend) verifyLocationAndScaleSets(ctx context.Context, subscriptionID, resourceGroupName, vmName string, vmssName string, claims *additionalClaims, role *azureRole) error {
 	var location *string
 	principalIDs := map[string]struct{}{}
 
@@ -314,16 +327,6 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		return errors.New("token object id does not match virtual machine identities")
 	}
 
-	// Check bound subscriptions
-	if len(role.BoundSubscriptionsIDs) > 0 && !strListContains(role.BoundSubscriptionsIDs, subscriptionID) {
-		return errors.New("subscription not authorized")
-	}
-
-	// Check bound resource groups
-	if len(role.BoundResourceGroups) > 0 && !strListContains(role.BoundResourceGroups, resourceGroupName) {
-		return errors.New("resource group not authorized")
-	}
-
 	// Check bound locations
 	if len(role.BoundLocations) > 0 {
 		if location == nil {
@@ -334,6 +337,27 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		}
 	}
 
+	return nil
+}
+
+func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, resourceGroupName, vmName string, vmssName string, claims *additionalClaims, role *azureRole) error {
+	var verifyFuncs []verifyFuncAlias
+	// Verify subscriptions if any resources under it are defined
+	if len(role.BoundSubscriptionsIDs) != 0 || len(role.BoundResourceGroups) != 0 || len(role.BoundLocations) != 0 || len(role.BoundScaleSets) != 0 {
+		verifyFuncs = append(verifyFuncs, b.verifySubscriptions)
+	}
+	// Verify resource groups if it or anything under it is bound
+	if len(role.BoundResourceGroups) != 0 || len(role.BoundLocations) != 0 || len(role.BoundScaleSets) != 0 {
+		verifyFuncs = append(verifyFuncs, b.verifyResourceGroups)
+	}
+	if len(role.BoundLocations) != 0 || len(role.BoundScaleSets) != 0 {
+		verifyFuncs = append(verifyFuncs, b.verifyLocationAndScaleSets)
+	}
+	for _, verifyFunc := range verifyFuncs {
+		if err := verifyFunc(ctx, subscriptionID, resourceGroupName, vmName, vmssName, claims, role); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
