@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-11-01/compute"
@@ -273,8 +274,24 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			principalIDs[to.String(vmss.Identity.PrincipalID)] = struct{}{}
 		}
 		// if not, look for user-assigned identities
-		for _, userIdentity := range vmss.Identity.UserAssignedIdentities {
-			principalIDs[to.String(userIdentity.PrincipalID)] = struct{}{}
+		for userIdentityID := range vmss.Identity.UserAssignedIdentities {
+			var elements []string = strings.Split(userIdentityID, "/")
+			msiSubscriptionID := elements[2]
+			msiResourceGroupName := elements[4]
+			msiResourceName := elements[8]
+
+			msiClient, err := b.provider.MSIClient(msiSubscriptionID)
+			if err != nil {
+				return errwrap.Wrapf("unable to create msi client: {{err}}", err)
+			}
+			userIdentity, err := msiClient.Get(ctx, msiResourceGroupName, msiResourceName)
+			if err != nil {
+				return errwrap.Wrapf("unable to retrieve user assigned identity metadata: {{err}}", err)
+			}
+
+			if userIdentity.PrincipalID != nil {
+				principalIDs[userIdentity.PrincipalID.String()] = struct{}{}
+			}
 		}
 	case vmName != "":
 		client, err := b.provider.ComputeClient(subscriptionID)
