@@ -274,10 +274,16 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			principalIDs[to.String(vmss.Identity.PrincipalID)] = struct{}{}
 		}
 		// if not, look for user-assigned identities
-		for userIdentityID := range vmss.Identity.UserAssignedIdentities {
+		for userIdentityID, userIdentity := range vmss.Identity.UserAssignedIdentities {
+			// Principal ID is not nil for VMSS uniform orchestration mode
+			if userIdentity.PrincipalID != nil {
+				principalIDs[to.String(userIdentity.PrincipalID)] = struct{}{}
+				continue
+			}
+
 			elements := strings.Split(userIdentityID, "/")
 			if len(elements) < 9 {
-				return fmt.Errorf("ubable to parse the userIdentityID: %s", userIdentityID)
+				return fmt.Errorf("unable to parse the userIdentityID: %s", userIdentityID)
 			}
 			msiSubscriptionID := elements[2]
 			msiResourceGroupName := elements[4]
