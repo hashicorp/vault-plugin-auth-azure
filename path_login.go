@@ -275,18 +275,21 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		}
 		// if not, look for user-assigned identities
 		for userIdentityID := range vmss.Identity.UserAssignedIdentities {
-			var elements []string = strings.Split(userIdentityID, "/")
+			elements := strings.Split(userIdentityID, "/")
+			if len(elements) < 9 {
+				return fmt.Errorf("ubable to parse the userIdentityID: %s", userIdentityID)
+			}
 			msiSubscriptionID := elements[2]
 			msiResourceGroupName := elements[4]
 			msiResourceName := elements[8]
 
 			msiClient, err := b.provider.MSIClient(msiSubscriptionID)
 			if err != nil {
-				return errwrap.Wrapf("unable to create msi client: {{err}}", err)
+				return fmt.Errorf("unable to create msi client: %w", err)
 			}
 			userIdentity, err := msiClient.Get(ctx, msiResourceGroupName, msiResourceName)
 			if err != nil {
-				return errwrap.Wrapf("unable to retrieve user assigned identity metadata: {{err}}", err)
+				return fmt.Errorf("unable to retrieve user assigned identity metadata: %w", err)
 			}
 
 			if userIdentity.PrincipalID != nil {
