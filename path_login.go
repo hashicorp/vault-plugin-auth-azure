@@ -289,6 +289,8 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			msiResourceGroupName := elements[4]
 			msiResourceName := elements[8]
 
+			// Principal ID is nil for VMSS flex orchestration mode, so we
+			// must look up the user-assigned identity using the MSI client
 			msiClient, err := b.provider.MSIClient(msiSubscriptionID)
 			if err != nil {
 				return fmt.Errorf("unable to create msi client: %w", err)
