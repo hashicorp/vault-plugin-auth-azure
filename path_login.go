@@ -283,7 +283,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 
 			elements := strings.Split(userIdentityID, "/")
 			if len(elements) < 9 {
-				return fmt.Errorf("unable to parse the userIdentityID: %s", userIdentityID)
+				return fmt.Errorf("unable to parse the user-assigned identity resource ID: %s", userIdentityID)
 			}
 			msiSubscriptionID := elements[2]
 			msiResourceGroupName := elements[4]
