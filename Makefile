@@ -3,12 +3,17 @@ PLUGIN_NAME := $(shell command ls cmd/)
 PLUGIN_DIR ?= $$GOPATH/vault-plugins
 PLUGIN_PATH ?= local-auth-azure
 
+# bin generates the releasable binaries for this plugin
+.PHONY: bin
+bin:
+	@CGO_ENABLED=0 BUILD_TAGS='$(BUILD_TAGS)' sh -c "'$(CURDIR)/scripts/build.sh'"
+
 .PHONY: default
 default: dev
 
 .PHONY: dev
 dev:
-	CGO_ENABLED=0 go build -o bin/$(PLUGIN_NAME) cmd/$(PLUGIN_NAME)/main.go
+	@CGO_ENABLED=0 BUILD_TAGS='$(BUILD_TAGS)' VAULT_DEV_BUILD=1 sh -c "'$(CURDIR)/scripts/build.sh'"
 
 .PHONY: bootstrap
 bootstrap:
