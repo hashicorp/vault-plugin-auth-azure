@@ -6,7 +6,6 @@ FEATURES:
 
 IMPROVEMENTS:
 
-TODO:
 * Updates dependencies: `github.com/Azure/azure-sdk-for-go v67.0.0+incompatible`, 
   `github.com/Azure/go-autorest/autorest v0.11.28`, `github.com/hashicorp/go-hclog v1.3.1`,
   `github.com/hashicorp/vault/api v1.8.2`, `github.com/hashicorp/vault/api v1.8.2`, 
