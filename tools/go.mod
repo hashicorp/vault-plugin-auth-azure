@@ -1,6 +1,6 @@
 module github.com/hashicorp/vault-plugin-scaffolding/tools
 
-go 1.17
+go 1.19
 
 require mvdan.cc/gofumpt v0.3.1
 
