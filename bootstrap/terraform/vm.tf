@@ -112,7 +112,7 @@ resource "azurerm_network_security_group" "vault_azure_sg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
-    source_address_prefix      = chomp(data.http.my_ip.body)
+    source_address_prefix      = chomp(data.http.my_ip.response_body)
     destination_address_prefix = "*"
   }
 }
