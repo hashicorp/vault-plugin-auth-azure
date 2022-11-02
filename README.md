@@ -145,6 +145,12 @@ directory as a result of running `make setup-env`. This file contains environmen
 variables needed to configure the auth method. The values can also be accessed
 via `terraform output`.
 
+To access the virtual machine via SSH:
+
+```sh
+ssh adminuser@${VM_IP_ADDRESS}
+```
+
 Once you're finished with plugin development, you can run the following to
 destroy the Azure resources:
 
