@@ -123,7 +123,7 @@ Before applying the Terraform configuration, you'll need to:
 
 1. [Authenticate](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs#authenticating-to-azure)
    the Terraform provider to Azure
-2. Provide an SSH public key for access to the Azure VM via the `TF_VAR_SSH_PUBLIC_KEY_PATH`
+2. Provide an SSH public key for access to the Azure VM via the `TF_VAR_ssh_public_key_path`
    variable (defaults to `~/.ssh/id_rsa.pub`)
 
 To provision the Azure resources, run the following:
