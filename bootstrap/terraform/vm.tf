@@ -8,13 +8,11 @@ terraform {
       source  = "hashicorp/azuread"
       version = "2.30.0"
     }
+    http = {
+      source  = "hashicorp/http"
+      version = "3.2.0"
+    }
   }
-}
-
-variable "ssh_public_key_path" {
-  type        = string
-  description = "Path to an SSH public key which should be used for authentication"
-  default     = "~/.ssh/id_rsa.pub"
 }
 
 data "azurerm_client_config" "current" {}
@@ -43,11 +41,11 @@ resource "azurerm_role_assignment" "vault_azure_msi_assignment" {
 }
 
 # Uncomment below for user assigned managed identity
-resource "azurerm_user_assigned_identity" "vault_azure_uid" {
-  name                = "vault_azure_uid"
-  resource_group_name = azurerm_resource_group.vault_azure_rg.name
-  location            = azurerm_resource_group.vault_azure_rg.location
-}
+# resource "azurerm_user_assigned_identity" "vault_azure_uid" {
+#   name                = "vault_azure_uid"
+#   resource_group_name = azurerm_resource_group.vault_azure_rg.name
+#   location            = azurerm_resource_group.vault_azure_rg.location
+# }
 
 resource "azurerm_role_assignment" "app_assignment_vm_read" {
   role_definition_name = "Reader"
@@ -57,7 +55,7 @@ resource "azurerm_role_assignment" "app_assignment_vm_read" {
 
 resource "azurerm_resource_group" "vault_azure_rg" {
   name     = "vault_azure_rg"
-  location = "westus2"
+  location = var.region
 }
 
 resource "azurerm_virtual_network" "vault_azure_vnet" {

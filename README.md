@@ -117,7 +117,8 @@ Successfully enabled 'plugin' at 'azure-plugin'!
 
 A Terraform [configuration](bootstrap/terraform) is included in this repository that
 automates provisioning of Azure resources necessary to configure and authenticate
-using the auth method.
+using the auth method. By default, the resources are created in `westus2`. See 
+[variables.tf](bootstrap/terraform/variables.tf) for the available variables.
 
 Before applying the Terraform configuration, you'll need to:
 
@@ -125,6 +126,13 @@ Before applying the Terraform configuration, you'll need to:
    the Terraform provider to Azure
 2. Provide an SSH public key for access to the Azure VM via the `TF_VAR_ssh_public_key_path`
    variable (defaults to `~/.ssh/id_rsa.pub`)
+
+The Terraform configuration will create:
+
+* A service principal with necessary role assignments
+* A virtual network, subnet, and security group with only SSH access from your local 
+  machine's public IP address
+* A linux virtual machine instance
 
 To provision the Azure resources, run the following:
 
@@ -134,7 +142,8 @@ $ make setup-env
 
 The `local_environment_setup.sh` file will be created in the `bootstrap/terraform`
 directory as a result of running `make setup-env`. This file contains environment
-variables needed to configure the auth method.
+variables needed to configure the auth method. The values can also be accessed
+via `terraform output`.
 
 Once you're finished with plugin development, you can run the following to
 destroy the Azure resources:
