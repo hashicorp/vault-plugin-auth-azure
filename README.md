@@ -177,9 +177,9 @@ path. Default values from the Makefile will be used if arguments aren't provided
 
 ```sh
 $ PLUGIN_NAME=vault-plugin-auth-azure \
-  PLUGIN_DIR=path/to/plugin/directory \
+  PLUGIN_DIR=$GOPATH/vault-plugins \
   PLUGIN_PATH=local-auth-azure \
-  make configure 
+  make configure
 ```
 
 ### Tests
