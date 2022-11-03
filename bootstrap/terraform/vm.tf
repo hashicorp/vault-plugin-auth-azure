@@ -40,12 +40,11 @@ resource "azurerm_role_assignment" "vault_azure_msi_assignment" {
   principal_id         = azurerm_linux_virtual_machine.vault_azure_vm.identity[0].principal_id
 }
 
-# Uncomment below for user assigned managed identity
-# resource "azurerm_user_assigned_identity" "vault_azure_uid" {
-#   name                = "vault_azure_uid"
-#   resource_group_name = azurerm_resource_group.vault_azure_rg.name
-#   location            = azurerm_resource_group.vault_azure_rg.location
-# }
+resource "azurerm_user_assigned_identity" "vault_azure_uid" {
+  name                = "vault_azure_uid"
+  resource_group_name = azurerm_resource_group.vault_azure_rg.name
+  location            = azurerm_resource_group.vault_azure_rg.location
+}
 
 resource "azurerm_role_assignment" "app_assignment_vm_read" {
   role_definition_name = "Reader"
@@ -148,13 +147,11 @@ resource "azurerm_linux_virtual_machine" "vault_azure_vm" {
   }
 
   identity {
-    type = "SystemAssigned"
+    type = "SystemAssigned, UserAssigned"
 
-    # Uncomment below for user assigned managed identity
-    # type = "UserAssigned"
-    # identity_ids = [
-    #  azurerm_user_assigned_identity.vault_azure_uid.id,
-    # ]
+    identity_ids = [
+      azurerm_user_assigned_identity.vault_azure_uid.id,
+    ]
   }
 }
 
