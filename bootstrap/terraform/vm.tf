@@ -5,7 +5,7 @@ provider "azurerm" {
 }
 
 resource "azuread_application" "vault_azure_app" {
-  display_name = "vault_azure_app"
+  display_name = "vault_azure_tests"
 }
 
 resource "azuread_service_principal" "vault_azure_sp" {
@@ -24,7 +24,7 @@ resource "azurerm_role_assignment" "vault_azure_msi_assignment" {
 }
 
 resource "azurerm_user_assigned_identity" "vault_azure_uid" {
-  name                = "vault_azure_uid"
+  name                = "vault_azure_tests"
   resource_group_name = azurerm_resource_group.vault_azure_rg.name
   location            = azurerm_resource_group.vault_azure_rg.location
 }
@@ -36,26 +36,26 @@ resource "azurerm_role_assignment" "app_assignment_vm_read" {
 }
 
 resource "azurerm_resource_group" "vault_azure_rg" {
-  name     = "vault_azure_rg"
+  name     = "vault_azure_tests"
   location = var.region
 }
 
 resource "azurerm_virtual_network" "vault_azure_vnet" {
-  name                = "vault_azure_vnet"
+  name                = "vault_azure_tests"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.vault_azure_rg.location
   resource_group_name = azurerm_resource_group.vault_azure_rg.name
 }
 
 resource "azurerm_subnet" "vault_azure_subnet" {
-  name                 = "internal"
+  name                 = "vault_azure_tests"
   resource_group_name  = azurerm_resource_group.vault_azure_rg.name
   virtual_network_name = azurerm_virtual_network.vault_azure_vnet.name
   address_prefixes     = ["10.0.2.0/24"]
 }
 
 resource "azurerm_network_interface" "vault_azure_nic" {
-  name                = "vault_azure_nic"
+  name                = "vault_azure_tests"
   location            = azurerm_resource_group.vault_azure_rg.location
   resource_group_name = azurerm_resource_group.vault_azure_rg.name
 
@@ -68,7 +68,7 @@ resource "azurerm_network_interface" "vault_azure_nic" {
 }
 
 resource "azurerm_public_ip" "vault_azure_pub_ip" {
-  name                = "vault_azure_pub_ip"
+  name                = "vault_azure_tests"
   resource_group_name = azurerm_resource_group.vault_azure_rg.name
   location            = azurerm_resource_group.vault_azure_rg.location
   allocation_method   = "Static"
@@ -80,7 +80,7 @@ data "http" "my_ip" {
 }
 
 resource "azurerm_network_security_group" "vault_azure_sg" {
-  name                = "vault_azure_sg"
+  name                = "vault_azure_tests"
   location            = azurerm_resource_group.vault_azure_rg.location
   resource_group_name = azurerm_resource_group.vault_azure_rg.name
 
@@ -103,7 +103,7 @@ resource "azurerm_network_interface_security_group_association" "vault_azure_vm_
 }
 
 resource "azurerm_linux_virtual_machine" "vault_azure_vm" {
-  name                = "vault-azure-vm"
+  name                = "vault-azure-tests-vm"
   resource_group_name = azurerm_resource_group.vault_azure_rg.name
   location            = azurerm_resource_group.vault_azure_rg.location
   size                = "Standard_F1"
