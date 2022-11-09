@@ -337,13 +337,26 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			principalIDs[convertPtrToString(userIdentity.PrincipalID)] = struct{}{}
 		}
 	default:
-		return errors.New("either vm_name or vmss_name is required")
+		// this is the generic case that should enable Azure services that
+		// support managed identities to authenticate to Vault
+		if len(role.BoundServicePrincipalIDs) == 0 {
+			return errors.New("expected bound_service_principal_ids to be set")
+		}
+		if !strListContains(role.BoundServicePrincipalIDs, claims.ObjectID) {
+			return fmt.Errorf("service principal not authorized: %s", claims.ObjectID)
+		}
+		if len(role.BoundScaleSets) > 0 {
+			return errors.New("scale set requires the vmss_name field to be set")
+		}
+		for _, id := range role.BoundServicePrincipalIDs {
+			principalIDs[id] = struct{}{}
+		}
 	}
 
 	// Ensure the token OID is the principal id of the system-assigned identity
-	// or one of the user-assigned identities of the VM
+	// or one of the user-assigned identities
 	if _, ok := principalIDs[claims.ObjectID]; !ok {
-		return errors.New("token object id does not match virtual machine identities")
+		return errors.New("token object id does not match expected identities")
 	}
 
 	// Check bound subscriptions
@@ -359,7 +372,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	// Check bound locations
 	if len(role.BoundLocations) > 0 {
 		if location == nil {
-			return errors.New("vm location is empty")
+			return errors.New("location is empty")
 		}
 		if !strListContains(role.BoundLocations, convertPtrToString(location)) {
 			return errors.New("location not authorized")
