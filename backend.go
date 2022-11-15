@@ -2,7 +2,9 @@ package azureauth
 
 import (
 	"context"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
@@ -23,10 +25,14 @@ type azureAuthBackend struct {
 	l sync.RWMutex
 
 	provider provider
+
+	updatePassword bool
 }
 
 func backend() *azureAuthBackend {
-	b := new(azureAuthBackend)
+	b := azureAuthBackend{
+		updatePassword: true,
+	}
 
 	b.Backend = &framework.Backend{
 		AuthRenew:   b.pathLoginRenew,
@@ -43,14 +49,93 @@ func backend() *azureAuthBackend {
 		},
 		Paths: framework.PathAppend(
 			[]*framework.Path{
-				pathLogin(b),
-				pathConfig(b),
+				pathLogin(&b),
+				pathConfig(&b),
+				pathRotateRoot(&b),
 			},
-			pathsRole(b),
+			pathsRole(&b),
 		),
+		WALRollback:  b.walRollback,
+		PeriodicFunc: b.periodicFunc,
 	}
 
-	return b
+	return &b
+}
+
+func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Request) error {
+	b.Logger().Debug("starting periodic func")
+	if !b.updatePassword {
+		b.Logger().Debug("periodic func", "rotate-root", "no rotate-root update")
+		return nil
+	}
+
+	config, err := b.config(ctx, sys.Storage)
+	if err != nil {
+		return err
+	}
+
+	// Config can be nil if deleted or when the engine is enabled
+	// but not yet configured.
+	if config == nil {
+		return nil
+	}
+
+	// Password should be at least a minute old before we process it
+	if config.NewClientSecret == "" || (time.Since(config.NewClientSecretCreated) < time.Minute) {
+		return nil
+	}
+
+	b.Logger().Debug("periodic func", "rotate-root", "new password detected, swapping in storage")
+	client, err := b.getClient(ctx, sys.Storage)
+	if err != nil {
+		return err
+	}
+
+	apps, err := client.provider.ListApplications(ctx, fmt.Sprintf("appId eq '%s'", config.ClientID))
+	if err != nil {
+		return err
+	}
+
+	if len(apps) == 0 {
+		return fmt.Errorf("no application found")
+	}
+	if len(apps) > 1 {
+		return fmt.Errorf("multiple applications found - double check your client_id")
+	}
+
+	app := apps[0]
+
+	credsToDelete := []string{}
+	for _, cred := range app.PasswordCredentials {
+		if *cred.KeyID != config.NewClientSecretKeyID {
+			credsToDelete = append(credsToDelete, *cred.KeyID)
+		}
+	}
+
+	if len(credsToDelete) != 0 {
+		b.Logger().Debug("periodic func", "rotate-root", "removing old passwords from Azure")
+		err = removeApplicationPasswords(ctx, client.provider, *app.ID, credsToDelete...)
+		if err != nil {
+			return err
+		}
+	}
+
+	b.Logger().Debug("periodic func", "rotate-root", "updating config with new password")
+	config.ClientSecret = config.NewClientSecret
+	config.ClientSecretKeyID = config.NewClientSecretKeyID
+	config.RootPasswordExpirationDate = config.NewClientSecretExpirationDate
+	config.NewClientSecret = ""
+	config.NewClientSecretKeyID = ""
+	config.NewClientSecretCreated = time.Time{}
+
+	err = b.saveConfig(ctx, config, sys.Storage)
+	if err != nil {
+		return err
+	}
+
+	b.updatePassword = false
+
+	return nil
 }
 
 func (b *azureAuthBackend) invalidate(ctx context.Context, key string) {
