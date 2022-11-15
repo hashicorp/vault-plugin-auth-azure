@@ -86,12 +86,12 @@ func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Reques
 	}
 
 	b.Logger().Debug("periodic func", "rotate-root", "new password detected, swapping in storage")
-	client, err := b.getClient(ctx, sys.Storage)
+	provider, err := b.getProvider(ctx, config)
 	if err != nil {
 		return err
 	}
 
-	apps, err := client.provider.ListApplications(ctx, fmt.Sprintf("appId eq '%s'", config.ClientID))
+	apps, err := provider.ListApplications(ctx, fmt.Sprintf("appId eq '%s'", config.ClientID))
 	if err != nil {
 		return err
 	}

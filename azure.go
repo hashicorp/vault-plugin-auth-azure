@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/vault-plugin-auth-azure/api"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -55,6 +56,8 @@ type azureProvider struct {
 	authorizer           autorest.Authorizer
 	authorizerExpiration time.Time
 	lock                 sync.RWMutex
+
+	appClient api.ApplicationsClient
 }
 
 type oidcDiscoveryInfo struct {
@@ -108,10 +111,28 @@ func (b *azureAuthBackend) newAzureProvider(ctx context.Context, config *azureCo
 	}
 	oidcVerifier := oidc.NewVerifier(discoveryInfo.Issuer, remoteKeySet, verifierConfig)
 
+	graphURI, err := api.GetGraphURI(settings.Environment.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	c := auth.NewMSIConfig()
+	config.Resource = settings.Environment.ResourceManagerEndpoint
+	authorizer, err := c.Authorizer()
+	if err != nil {
+		return nil, err
+	}
+
+	msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
+	if err != nil {
+		return nil, err
+	}
+
 	return &azureProvider{
 		settings:     settings,
 		oidcVerifier: oidcVerifier,
 		httpClient:   httpClient,
+		appClient:    msGraphAppClient,
 	}, nil
 }
 
@@ -204,12 +225,13 @@ func (p *azureProvider) getAuthorizer() (autorest.Authorizer, error) {
 }
 
 type azureSettings struct {
-	TenantID     string
-	ClientID     string
-	ClientSecret string
-	Environment  azure.Environment
-	Resource     string
-	PluginEnv    *logical.PluginEnvironment
+	SubscriptionID string
+	TenantID       string
+	ClientID       string
+	ClientSecret   string
+	Environment    azure.Environment
+	Resource       string
+	PluginEnv      *logical.PluginEnvironment
 }
 
 func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureConfig) (*azureSettings, error) {
