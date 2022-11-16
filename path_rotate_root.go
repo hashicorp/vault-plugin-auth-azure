@@ -44,14 +44,14 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 	}
 	expiration := time.Now().Add(expDur)
 
-	client, err := b.getProvider(ctx, req.Storage)
+	provider, err := b.getProvider(ctx, config)
 	if err != nil {
 		return nil, err
 	}
 
 	// We need to use List instead of Get here because we don't have the Object ID
 	// (which is different from the Application/Client ID)
-	apps, err := client.provider.ListApplications(ctx, fmt.Sprintf("appId eq '%s'", config.ClientID))
+	apps, err := provider.provider.ListApplications(ctx, fmt.Sprintf("appId eq '%s'", config.ClientID))
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 
 	// This could have the same username customization logic put on it if we really wanted it here
 	passwordDisplayName := fmt.Sprintf("vault-%s", uniqueID)
-	newPasswordResp, err := client.provider.AddApplicationPassword(ctx, *app.ID, passwordDisplayName, expiration)
+	newPasswordResp, err := provider.provider.AddApplicationPassword(ctx, *app.ID, passwordDisplayName, expiration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add new password: %w", err)
 	}
@@ -80,7 +80,7 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 	var wal walRotateRoot
 	walID, walErr := framework.PutWAL(ctx, req.Storage, walRotateRootCreds, wal)
 	if walErr != nil {
-		err = client.provider.RemoveApplicationPassword(ctx, *app.ID, *newPasswordResp.PasswordCredential.KeyID)
+		err = provider.provider.RemoveApplicationPassword(ctx, *app.ID, *newPasswordResp.PasswordCredential.KeyID)
 		merr := multierror.Append(err, err)
 		return &logical.Response{}, merr
 	}
