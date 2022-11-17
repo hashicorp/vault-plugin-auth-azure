@@ -23,7 +23,6 @@ type AzureProvider interface {
 		roleAssignmentName string,
 		parameters authorization.RoleAssignmentCreateParameters) (authorization.RoleAssignment, error)
 	DeleteRoleAssignmentByID(ctx context.Context, roleID string) (authorization.RoleAssignment, error)
-
 	ListRoleDefinitions(ctx context.Context, scope string, filter string) ([]authorization.RoleDefinition, error)
 	GetRoleDefinitionByID(ctx context.Context, roleID string) (authorization.RoleDefinition, error)
 }

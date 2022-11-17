@@ -13,6 +13,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/msi/mgmt/2018-11-30/msi"
 	"github.com/coreos/go-oidc"
 	"github.com/gofrs/uuid"
+	"github.com/hashicorp/vault-plugin-auth-azure/api"
 	"github.com/hashicorp/vault/sdk/helper/policyutil"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -199,7 +200,25 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 		}, nil
 	}
 
-	b, s := getTestBackendWithComputeClient(t, c, v, m)
+	d := func(ctx context.Context, applicationObjectID string) error {
+		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
+		if err != nil {
+			return err
+		}
+
+		return msGraphAppClient.DeleteApplication(ctx, applicationObjectID)
+	}
+
+	g := func() (api.ApplicationsClient, error) {
+		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
+		if err != nil {
+			return nil, err
+		}
+
+		return msGraphAppClient, nil
+	}
+
+	b, s := getTestBackendWithComputeClient(t, c, v, m, d, g)
 
 	roleName := "testrole"
 	subID := "subID"
@@ -267,7 +286,25 @@ func TestLogin_BoundResourceGroup(t *testing.T) {
 		}, nil
 	}
 
-	b, s := getTestBackendWithComputeClient(t, c, v, m)
+	d := func(ctx context.Context, applicationObjectID string) error {
+		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
+		if err != nil {
+			return err
+		}
+
+		return msGraphAppClient.DeleteApplication(ctx, applicationObjectID)
+	}
+
+	g := func() (api.ApplicationsClient, error) {
+		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
+		if err != nil {
+			return nil, err
+		}
+
+		return msGraphAppClient, nil
+	}
+
+	b, s := getTestBackendWithComputeClient(t, c, v, m, d, g)
 
 	roleName := "testrole"
 	rg := "rg"
@@ -343,7 +380,25 @@ func TestLogin_BoundResourceGroupWithUserAssignedID(t *testing.T) {
 		}, nil
 	}
 
-	b, s := getTestBackendWithComputeClient(t, c, v, m)
+	d := func(ctx context.Context, applicationObjectID string) error {
+		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
+		if err != nil {
+			return err
+		}
+
+		return msGraphAppClient.DeleteApplication(ctx, applicationObjectID)
+	}
+
+	g := func() (api.ApplicationsClient, error) {
+		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
+		if err != nil {
+			return nil, err
+		}
+
+		return msGraphAppClient, nil
+	}
+
+	b, s := getTestBackendWithComputeClient(t, c, v, m, d, g)
 
 	roleName := "testrole"
 	rg := "rg"
@@ -440,7 +495,25 @@ func TestLogin_BoundLocation(t *testing.T) {
 		}, nil
 	}
 
-	b, s := getTestBackendWithComputeClient(t, c, v, m)
+	d := func(ctx context.Context, applicationObjectID string) error {
+		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
+		if err != nil {
+			return err
+		}
+
+		return msGraphAppClient.DeleteApplication(ctx, applicationObjectID)
+	}
+
+	g := func() (api.ApplicationsClient, error) {
+		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
+		if err != nil {
+			return nil, err
+		}
+
+		return msGraphAppClient, nil
+	}
+
+	b, s := getTestBackendWithComputeClient(t, c, v, m, d, g)
 
 	roleName := "testrole"
 	roleData := map[string]interface{}{
@@ -508,7 +581,25 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 		}, nil
 	}
 
-	b, s := getTestBackendWithComputeClient(t, c, v, m)
+	d := func(ctx context.Context, applicationObjectID string) error {
+		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
+		if err != nil {
+			return err
+		}
+
+		return msGraphAppClient.DeleteApplication(ctx, applicationObjectID)
+	}
+
+	g := func() (api.ApplicationsClient, error) {
+		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
+		if err != nil {
+			return nil, err
+		}
+
+		return msGraphAppClient, nil
+	}
+
+	b, s := getTestBackendWithComputeClient(t, c, v, m, d, g)
 
 	roleName := "testrole"
 	roleData := map[string]interface{}{

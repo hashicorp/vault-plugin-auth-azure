@@ -78,7 +78,7 @@ type vmssClientFunc func(vmssName string) (compute.VirtualMachineScaleSet, error
 
 type msiClientFunc func(resourceName string) (msi.Identity, error)
 
-type deleteApplication func(resourceName string) error
+type deleteApplication func(ctx context.Context, applicationObjectID string) error
 
 type getClient func() api.ApplicationsClient
 
