@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/vault-plugin-auth-azure/api"
+
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-11-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/msi/mgmt/2018-11-30/msi"
 	"github.com/coreos/go-oidc"
@@ -76,17 +78,33 @@ type vmssClientFunc func(vmssName string) (compute.VirtualMachineScaleSet, error
 
 type msiClientFunc func(resourceName string) (msi.Identity, error)
 
+type deleteApplication func(resourceName string) error
+
+type getClient func() api.ApplicationsClient
+
 type mockProvider struct {
 	computeClientFunc
 	vmssClientFunc
 	msiClientFunc
+	deleteApplication
+	getClient
 }
 
-func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc) *mockProvider {
+func (p *mockProvider) GetClient() api.ApplicationsClient {
+	return p.GetClient()
+}
+
+func (p *mockProvider) DeleteApplication(ctx context.Context, applicationObjectID string) error {
+	return p.DeleteApplication(ctx, applicationObjectID)
+}
+
+func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, d deleteApplication, g getClient) *mockProvider {
 	return &mockProvider{
 		computeClientFunc: c,
 		vmssClientFunc:    v,
 		msiClientFunc:     m,
+		deleteApplication: d,
+		getClient:         g,
 	}
 }
 

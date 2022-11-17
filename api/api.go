@@ -14,8 +14,8 @@ import (
 // level operations atop AzureProvider.
 type AzureProvider interface {
 	ApplicationsClient
-	//GroupsClient
-	//ServicePrincipalClient
+	// GroupsClient
+	// ServicePrincipalClient
 
 	CreateRoleAssignment(
 		ctx context.Context,

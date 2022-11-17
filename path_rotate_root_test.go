@@ -19,7 +19,6 @@ func TestRotateRootSuccess(t *testing.T) {
 		Data:      map[string]interface{}{},
 		Storage:   s,
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +85,6 @@ func TestRotateRootPeriodicFunctionBeforeMinute(t *testing.T) {
 		Data:      map[string]interface{}{},
 		Storage:   s,
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}

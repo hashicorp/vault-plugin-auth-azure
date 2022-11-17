@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/vault-plugin-auth-azure/api"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/hashicorp/vault-plugin-auth-azure/api"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-11-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/msi/mgmt/2018-11-30/msi"
@@ -47,6 +48,8 @@ type provider interface {
 	ComputeClient(subscriptionID string) (computeClient, error)
 	VMSSClient(subscriptionID string) (vmssClient, error)
 	MSIClient(subscriptionID string) (msiClient, error)
+	GetClient() api.ApplicationsClient
+	DeleteApplication(ctx context.Context, applicationObjectID string) error
 }
 
 type azureProvider struct {
@@ -58,6 +61,10 @@ type azureProvider struct {
 	lock                 sync.RWMutex
 
 	appClient api.ApplicationsClient
+}
+
+func (p *azureProvider) GetClient() api.ApplicationsClient {
+	return p.appClient
 }
 
 type oidcDiscoveryInfo struct {
@@ -156,11 +163,6 @@ func (p *azureProvider) RemoveApplicationPassword(ctx context.Context, applicati
 // This will in turn remove the service principal (but not the role assignments).
 func (p *azureProvider) DeleteApplication(ctx context.Context, applicationObjectID string) error {
 	return p.appClient.DeleteApplication(ctx, applicationObjectID)
-}
-
-// deleteApp deletes an Azure application.
-func (p *azureProvider) deleteApp(ctx context.Context, appObjectID string) error {
-	return p.provider.DeleteApplication(ctx, appObjectID)
 }
 
 func (p *azureProvider) ComputeClient(subscriptionID string) (computeClient, error) {

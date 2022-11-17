@@ -91,7 +91,9 @@ func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Reques
 		return err
 	}
 
-	apps, err := provider.ListApplications(ctx, fmt.Sprintf("appId eq '%s'", config.ClientID))
+	client := provider.GetClient()
+
+	apps, err := client.ListApplications(ctx, fmt.Sprintf("appId eq '%s'", config.ClientID))
 	if err != nil {
 		return err
 	}
@@ -114,7 +116,7 @@ func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Reques
 
 	if len(credsToDelete) != 0 {
 		b.Logger().Debug("periodic func", "rotate-root", "removing old passwords from Azure")
-		err = removeApplicationPasswords(ctx, provider.provider, *app.ID, credsToDelete...)
+		err = removeApplicationPasswords(ctx, client, *app.ID, credsToDelete...)
 		if err != nil {
 			return err
 		}

@@ -139,7 +139,7 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		config.ClientSecret = clientSecret.(string)
 	}
 
-	config.RootPasswordTTL = defaultRootPasswordTTL * time.Hour
+	config.RootPasswordTTL = defaultRootPasswordTTL
 	rootExpirationRaw, ok := data.GetOk("root_password_ttl")
 	if ok {
 		config.RootPasswordTTL = time.Second * time.Duration(rootExpirationRaw.(int))
@@ -203,7 +203,6 @@ func (b *azureAuthBackend) pathConfigDelete(ctx context.Context, req *logical.Re
 
 func (b *azureAuthBackend) saveConfig(ctx context.Context, config *azureConfig, s logical.Storage) error {
 	entry, err := logical.StorageEntryJSON(configStoragePath, config)
-
 	if err != nil {
 		return err
 	}

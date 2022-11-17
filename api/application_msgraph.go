@@ -17,8 +17,8 @@ import (
 
 var _ ApplicationsClient = (*AppClient)(nil)
 
-//var _ GroupsClient = (*AppClient)(nil)
-//var _ ServicePrincipalClient = (*AppClient)(nil)
+// var _ GroupsClient = (*AppClient)(nil)
+// var _ ServicePrincipalClient = (*AppClient)(nil)
 
 type AppClient struct {
 	client   authorization.BaseClient
@@ -129,7 +129,6 @@ func (c *AppClient) CreateApplication(ctx context.Context, displayName string) (
 	result, err = c.createApplicationResponder(resp)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "provider", "CreateApplication", resp, "Failure responding to request")
-
 	}
 
 	return result, nil
