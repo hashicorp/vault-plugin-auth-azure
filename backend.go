@@ -91,7 +91,7 @@ func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Reques
 		return err
 	}
 
-	client := provider.GetClient()
+	client := provider.ApplicationsClient()
 
 	apps, err := client.ListApplications(ctx, fmt.Sprintf("appId eq '%s'", config.ClientID))
 	if err != nil {

@@ -48,8 +48,7 @@ type provider interface {
 	ComputeClient(subscriptionID string) (computeClient, error)
 	VMSSClient(subscriptionID string) (vmssClient, error)
 	MSIClient(subscriptionID string) (msiClient, error)
-	GetClient() api.ApplicationsClient
-	DeleteApplication(ctx context.Context, applicationObjectID string) error
+	ApplicationsClient() api.ApplicationsClient
 }
 
 type azureProvider struct {
@@ -63,7 +62,7 @@ type azureProvider struct {
 	appClient api.ApplicationsClient
 }
 
-func (p *azureProvider) GetClient() api.ApplicationsClient {
+func (p *azureProvider) ApplicationsClient() api.ApplicationsClient {
 	return p.appClient
 }
 

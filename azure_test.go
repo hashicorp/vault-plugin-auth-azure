@@ -78,33 +78,31 @@ type vmssClientFunc func(vmssName string) (compute.VirtualMachineScaleSet, error
 
 type msiClientFunc func(resourceName string) (msi.Identity, error)
 
-type deleteApplication func(ctx context.Context, applicationObjectID string) error
+type applicationsClient func() (api.ApplicationsClient, error)
 
-type getClient func() api.ApplicationsClient
+// func() (api.ApplicationsClient, error)
 
 type mockProvider struct {
 	computeClientFunc
 	vmssClientFunc
 	msiClientFunc
-	deleteApplication
-	getClient
+	applicationsClient
 }
 
-func (p *mockProvider) GetClient() api.ApplicationsClient {
-	return p.GetClient()
+func (p *mockProvider) ApplicationsClient() api.ApplicationsClient {
+	return p.ApplicationsClient()
 }
 
 func (p *mockProvider) DeleteApplication(ctx context.Context, applicationObjectID string) error {
 	return p.DeleteApplication(ctx, applicationObjectID)
 }
 
-func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, d deleteApplication, g getClient) *mockProvider {
+func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, g applicationsClient) *mockProvider {
 	return &mockProvider{
-		computeClientFunc: c,
-		vmssClientFunc:    v,
-		msiClientFunc:     m,
-		deleteApplication: d,
-		getClient:         g,
+		computeClientFunc:  c,
+		vmssClientFunc:     v,
+		msiClientFunc:      m,
+		applicationsClient: g,
 	}
 }
 
