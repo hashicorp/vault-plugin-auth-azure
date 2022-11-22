@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Azure/go-autorest/autorest/azure/auth"
+
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-11-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/msi/mgmt/2018-11-30/msi"
 	"github.com/coreos/go-oidc"
@@ -201,6 +203,21 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 	}
 
 	d := func(ctx context.Context, applicationObjectID string) error {
+		settings := new(azureSettings)
+
+		graphURI, err := api.GetGraphURI(settings.Environment.Name)
+		if err != nil {
+			return err
+		}
+
+		c := auth.NewMSIConfig()
+		config := new(azureConfig)
+		config.Resource = settings.Environment.ResourceManagerEndpoint
+		authorizer, err := c.Authorizer()
+		if err != nil {
+			return err
+		}
+
 		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
 		if err != nil {
 			return err
@@ -210,6 +227,21 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 	}
 
 	g := func() (api.ApplicationsClient, error) {
+		settings := new(azureSettings)
+
+		graphURI, err := api.GetGraphURI(settings.Environment.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		c := auth.NewMSIConfig()
+		config := new(azureConfig)
+		config.Resource = settings.Environment.ResourceManagerEndpoint
+		authorizer, err := c.Authorizer()
+		if err != nil {
+			return nil, err
+		}
+
 		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
 		if err != nil {
 			return nil, err
@@ -287,6 +319,21 @@ func TestLogin_BoundResourceGroup(t *testing.T) {
 	}
 
 	d := func(ctx context.Context, applicationObjectID string) error {
+		settings := new(azureSettings)
+
+		graphURI, err := api.GetGraphURI(settings.Environment.Name)
+		if err != nil {
+			return err
+		}
+
+		c := auth.NewMSIConfig()
+		config := new(azureConfig)
+		config.Resource = settings.Environment.ResourceManagerEndpoint
+		authorizer, err := c.Authorizer()
+		if err != nil {
+			return err
+		}
+
 		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
 		if err != nil {
 			return err
@@ -296,6 +343,21 @@ func TestLogin_BoundResourceGroup(t *testing.T) {
 	}
 
 	g := func() (api.ApplicationsClient, error) {
+		settings := new(azureSettings)
+
+		graphURI, err := api.GetGraphURI(settings.Environment.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		c := auth.NewMSIConfig()
+		config := new(azureConfig)
+		config.Resource = settings.Environment.ResourceManagerEndpoint
+		authorizer, err := c.Authorizer()
+		if err != nil {
+			return nil, err
+		}
+
 		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
 		if err != nil {
 			return nil, err
@@ -381,6 +443,21 @@ func TestLogin_BoundResourceGroupWithUserAssignedID(t *testing.T) {
 	}
 
 	d := func(ctx context.Context, applicationObjectID string) error {
+		settings := new(azureSettings)
+
+		graphURI, err := api.GetGraphURI(settings.Environment.Name)
+		if err != nil {
+			return err
+		}
+
+		c := auth.NewMSIConfig()
+		config := new(azureConfig)
+		config.Resource = settings.Environment.ResourceManagerEndpoint
+		authorizer, err := c.Authorizer()
+		if err != nil {
+			return err
+		}
+
 		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
 		if err != nil {
 			return err
@@ -390,6 +467,21 @@ func TestLogin_BoundResourceGroupWithUserAssignedID(t *testing.T) {
 	}
 
 	g := func() (api.ApplicationsClient, error) {
+		settings := new(azureSettings)
+
+		graphURI, err := api.GetGraphURI(settings.Environment.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		c := auth.NewMSIConfig()
+		config := new(azureConfig)
+		config.Resource = settings.Environment.ResourceManagerEndpoint
+		authorizer, err := c.Authorizer()
+		if err != nil {
+			return nil, err
+		}
+
 		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
 		if err != nil {
 			return nil, err
@@ -496,6 +588,21 @@ func TestLogin_BoundLocation(t *testing.T) {
 	}
 
 	d := func(ctx context.Context, applicationObjectID string) error {
+		settings := new(azureSettings)
+
+		graphURI, err := api.GetGraphURI(settings.Environment.Name)
+		if err != nil {
+			return err
+		}
+
+		c := auth.NewMSIConfig()
+		config := new(azureConfig)
+		config.Resource = settings.Environment.ResourceManagerEndpoint
+		authorizer, err := c.Authorizer()
+		if err != nil {
+			return err
+		}
+
 		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
 		if err != nil {
 			return err
@@ -505,6 +612,21 @@ func TestLogin_BoundLocation(t *testing.T) {
 	}
 
 	g := func() (api.ApplicationsClient, error) {
+		settings := new(azureSettings)
+
+		graphURI, err := api.GetGraphURI(settings.Environment.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		c := auth.NewMSIConfig()
+		config := new(azureConfig)
+		config.Resource = settings.Environment.ResourceManagerEndpoint
+		authorizer, err := c.Authorizer()
+		if err != nil {
+			return nil, err
+		}
+
 		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
 		if err != nil {
 			return nil, err
@@ -582,6 +704,21 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 	}
 
 	d := func(ctx context.Context, applicationObjectID string) error {
+		settings := new(azureSettings)
+
+		graphURI, err := api.GetGraphURI(settings.Environment.Name)
+		if err != nil {
+			return err
+		}
+
+		c := auth.NewMSIConfig()
+		config := new(azureConfig)
+		config.Resource = settings.Environment.ResourceManagerEndpoint
+		authorizer, err := c.Authorizer()
+		if err != nil {
+			return err
+		}
+
 		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
 		if err != nil {
 			return err
@@ -591,6 +728,21 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 	}
 
 	g := func() (api.ApplicationsClient, error) {
+		settings := new(azureSettings)
+
+		graphURI, err := api.GetGraphURI(settings.Environment.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		c := auth.NewMSIConfig()
+		config := new(azureConfig)
+		config.Resource = settings.Environment.ResourceManagerEndpoint
+		authorizer, err := c.Authorizer()
+		if err != nil {
+			return nil, err
+		}
+
 		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
 		if err != nil {
 			return nil, err
