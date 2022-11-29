@@ -146,24 +146,6 @@ func (p *azureProvider) Verifier() tokenVerifier {
 	return p.oidcVerifier
 }
 
-func (p *azureProvider) ListApplications(ctx context.Context, filter string) ([]api.ApplicationResult, error) {
-	return p.appClient.ListApplications(ctx, filter)
-}
-
-func (p *azureProvider) AddApplicationPassword(ctx context.Context, applicationObjectID string, displayName string, endDateTime time.Time) (result api.PasswordCredentialResult, err error) {
-	return p.appClient.AddApplicationPassword(ctx, applicationObjectID, displayName, endDateTime)
-}
-
-func (p *azureProvider) RemoveApplicationPassword(ctx context.Context, applicationObjectID string, keyID string) (err error) {
-	return p.appClient.RemoveApplicationPassword(ctx, applicationObjectID, keyID)
-}
-
-// DeleteApplication deletes an Azure application object.
-// This will in turn remove the service principal (but not the role assignments).
-func (p *azureProvider) DeleteApplication(ctx context.Context, applicationObjectID string) error {
-	return p.appClient.DeleteApplication(ctx, applicationObjectID)
-}
-
 func (p *azureProvider) ComputeClient(subscriptionID string) (computeClient, error) {
 	authorizer, err := p.getAuthorizer()
 	if err != nil {

@@ -80,21 +80,11 @@ type msiClientFunc func(resourceName string) (msi.Identity, error)
 
 type applicationsClient func() (api.ApplicationsClient, error)
 
-// func() (api.ApplicationsClient, error)
-
 type mockProvider struct {
 	computeClientFunc
 	vmssClientFunc
 	msiClientFunc
 	applicationsClient
-}
-
-func (p *mockProvider) ApplicationsClient() api.ApplicationsClient {
-	return p.ApplicationsClient()
-}
-
-func (p *mockProvider) DeleteApplication(ctx context.Context, applicationObjectID string) error {
-	return p.DeleteApplication(ctx, applicationObjectID)
 }
 
 func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, g applicationsClient) *mockProvider {
@@ -126,4 +116,8 @@ func (p *mockProvider) MSIClient(string) (msiClient, error) {
 	return &mockMSIClient{
 		msiClientFunc: p.msiClientFunc,
 	}, nil
+}
+
+func (p *mockProvider) ApplicationsClient() api.ApplicationsClient {
+	return p.ApplicationsClient()
 }
