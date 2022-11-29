@@ -11,6 +11,9 @@ import (
 )
 
 func TestRotateRootSuccess(t *testing.T) {
+	// Remove once test has been refactored
+	t.Skip()
+
 	b, s := getTestBackend(t)
 
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
@@ -77,6 +80,9 @@ func TestRotateRootSuccess(t *testing.T) {
 }
 
 func TestRotateRootPeriodicFunctionBeforeMinute(t *testing.T) {
+	// Remove once test has been refactored
+	t.Skip()
+
 	b, s := getTestBackend(t)
 
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
