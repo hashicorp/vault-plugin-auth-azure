@@ -111,6 +111,103 @@ func TestLogin(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 }
 
+func TestLogin_ManagedIdentity(t *testing.T) {
+	principalID := "123e4567-e89b-12d3-a456-426655440000"
+	subscriptionID := "sub-id"
+	roleName := "test-role"
+	testCases := map[string]struct {
+		claims      map[string]interface{}
+		roleData    map[string]interface{}
+		loginData   map[string]interface{}
+		expectError bool
+	}{
+		"login happy path": {
+			claims: map[string]interface{}{
+				"exp": time.Now().Add(60 * time.Second).Unix(),
+				"nbf": time.Now().Add(-60 * time.Second).Unix(),
+				"oid": principalID,
+			},
+			roleData: map[string]interface{}{
+				"name":                        roleName,
+				"policies":                    []string{"dev", "prod"},
+				"bound_subscription_ids":      []string{subscriptionID},
+				"bound_service_principal_ids": []string{principalID},
+			},
+			loginData: map[string]interface{}{
+				"role":                roleName,
+				"resource_group_name": "rg",
+				"subscription_id":     subscriptionID,
+			},
+			expectError: false,
+		},
+		"login fails when missing resource_group_name and subscription_id": {
+			claims: map[string]interface{}{
+				"exp": time.Now().Add(60 * time.Second).Unix(),
+				"nbf": time.Now().Add(-60 * time.Second).Unix(),
+				"oid": principalID,
+			},
+			roleData: map[string]interface{}{
+				"name":                        roleName,
+				"policies":                    []string{"dev", "prod"},
+				"bound_subscription_ids":      []string{subscriptionID},
+				"bound_service_principal_ids": []string{principalID},
+			},
+			loginData: map[string]interface{}{
+				"role": roleName,
+			},
+			expectError: true,
+		},
+		"login fails when missing resource_group_name": {
+			claims: map[string]interface{}{
+				"exp": time.Now().Add(60 * time.Second).Unix(),
+				"nbf": time.Now().Add(-60 * time.Second).Unix(),
+				"oid": principalID,
+			},
+			roleData: map[string]interface{}{
+				"name":                        roleName,
+				"policies":                    []string{"dev", "prod"},
+				"bound_subscription_ids":      []string{subscriptionID},
+				"bound_service_principal_ids": []string{principalID},
+			},
+			loginData: map[string]interface{}{
+				"role":            roleName,
+				"subscription_id": subscriptionID,
+			},
+			expectError: true,
+		},
+		"login fails when missing subscription_id": {
+			claims: map[string]interface{}{
+				"exp": time.Now().Add(60 * time.Second).Unix(),
+				"nbf": time.Now().Add(-60 * time.Second).Unix(),
+				"oid": principalID,
+			},
+			roleData: map[string]interface{}{
+				"name":                        roleName,
+				"policies":                    []string{"dev", "prod"},
+				"bound_subscription_ids":      []string{subscriptionID},
+				"bound_service_principal_ids": []string{principalID},
+			},
+			loginData: map[string]interface{}{
+				"role":                roleName,
+				"resource_group_name": "rg",
+			},
+			expectError: true,
+		},
+	}
+
+	for tt, tc := range testCases {
+		t.Run(tt, func(t *testing.T) {
+			b, s := getTestBackend(t)
+			testRoleCreate(t, b, s, tc.roleData)
+			if tc.expectError {
+				testLoginFailure(t, b, s, tc.loginData, tc.claims, tc.roleData)
+			} else {
+				testLoginSuccess(t, b, s, tc.loginData, tc.claims, tc.roleData)
+			}
+		})
+	}
+}
+
 func TestLogin_BoundServicePrincipalID(t *testing.T) {
 	b, s := getTestBackend(t)
 
