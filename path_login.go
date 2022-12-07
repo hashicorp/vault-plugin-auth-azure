@@ -114,6 +114,7 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 	resourceGroupName := data.Get("resource_group_name").(string)
 	vmssName := data.Get("vmss_name").(string)
 	vmName := data.Get("vm_name").(string)
+	resourceID := data.Get("resource_id").(string)
 
 	config, err := b.config(ctx, req.Storage)
 	if err != nil {
@@ -145,7 +146,7 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 		return nil, err
 	}
 
-	if err := b.verifyResource(ctx, subscriptionID, resourceGroupName, vmName, vmssName, claims, role); err != nil {
+	if err := b.verifyResource(ctx, subscriptionID, resourceGroupName, vmName, vmssName, resourceID, claims, role); err != nil {
 		return nil, err
 	}
 
@@ -175,6 +176,10 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 	if vmssName != "" {
 		auth.Alias.Metadata["vmss_name"] = vmssName
 		auth.Metadata["vmss_name"] = vmssName
+	}
+	if resourceID != "" {
+		auth.Alias.Metadata["resource_id"] = resourceID
+		auth.Metadata["resource_id"] = resourceID
 	}
 
 	role.PopulateTokenAuth(auth)
@@ -234,7 +239,7 @@ func (b *azureAuthBackend) verifyClaims(claims *additionalClaims, role *azureRol
 	return nil
 }
 
-func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, resourceGroupName, vmName string, vmssName string, claims *additionalClaims, role *azureRole) error {
+func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, resourceGroupName, vmName, vmssName, resourceID string, claims *additionalClaims, role *azureRole) error {
 	// If not checking anything with the resource id, exit early
 	if len(role.BoundResourceGroups) == 0 && len(role.BoundSubscriptionsIDs) == 0 && len(role.BoundLocations) == 0 && len(role.BoundScaleSets) == 0 {
 		return nil
@@ -354,7 +359,6 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		if err != nil {
 			return fmt.Errorf("unable to create resource client: %w", err)
 		}
-		resourceID := ""
 		resp, err := client.GetByID(ctx, resourceID, "2022-03-01", nil)
 		if err != nil {
 			return fmt.Errorf("unable to retrieve user assigned identity metadata: %w", err)
@@ -364,11 +368,11 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		}
 		// if system-assigned identity's principal id is available
 		if resp.Identity.PrincipalID != nil {
-			principalIDs[to.String(resp.Identity.PrincipalID)] = struct{}{}
+			principalIDs[convertPtrToString(resp.Identity.PrincipalID)] = struct{}{}
 		}
 		// if not, look for user-assigned identities
 		for _, userIdentity := range resp.Identity.UserAssignedIdentities {
-			principalIDs[to.String(userIdentity.PrincipalID)] = struct{}{}
+			principalIDs[convertPtrToString(userIdentity.PrincipalID)] = struct{}{}
 		}
 	}
 
