@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	az "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
@@ -59,6 +61,25 @@ type azureProvider struct {
 type oidcDiscoveryInfo struct {
 	Issuer  string `json:"issuer"`
 	JWKSURL string `json:"jwks_uri"`
+}
+
+type transporter struct {
+	pluginEnv *logical.PluginEnvironment
+	sender    *http.Client
+}
+
+func (tp transporter) Do(req *http.Request) (*http.Response, error) {
+	req.Header.Set("User-Agent", userAgent(tp.pluginEnv))
+
+	client := tp.sender
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 func (b *azureAuthBackend) newAzureProvider(ctx context.Context, config *azureConfig) (*azureProvider, error) {
@@ -124,14 +145,19 @@ func (p *azureProvider) ComputeClient(subscriptionID string) (computeClient, err
 		return nil, err
 	}
 
-	client, err := armcompute.NewVirtualMachinesClient(subscriptionID, cred, nil)
+	clientOptions := &arm.ClientOptions{
+		ClientOptions: policy.ClientOptions{
+			Transport: transporter{
+				pluginEnv: p.settings.PluginEnv,
+				sender:    p.httpClient,
+			},
+		},
+	}
+	client, err := armcompute.NewVirtualMachinesClient(subscriptionID, cred, clientOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	// client := compute.NewVirtualMachinesClientWithBaseURI(p.settings.Environment.ResourceManagerEndpoint, subscriptionID)
-	// client.Sender = p.httpClient
-	// client.AddToUserAgent(userAgent(p.settings.PluginEnv))
 	return client, nil
 }
 
@@ -141,14 +167,19 @@ func (p *azureProvider) VMSSClient(subscriptionID string) (vmssClient, error) {
 		return nil, err
 	}
 
-	client, err := armcompute.NewVirtualMachineScaleSetsClient(subscriptionID, cred, nil)
+	clientOptions := &arm.ClientOptions{
+		ClientOptions: policy.ClientOptions{
+			Transport: transporter{
+				pluginEnv: p.settings.PluginEnv,
+				sender:    p.httpClient,
+			},
+		},
+	}
+	client, err := armcompute.NewVirtualMachineScaleSetsClient(subscriptionID, cred, clientOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	// client := compute.NewVirtualMachineScaleSetsClientWithBaseURI(p.settings.Environment.ResourceManagerEndpoint, subscriptionID)
-	// client.Sender = p.httpClient
-	// client.AddToUserAgent(userAgent(p.settings.PluginEnv))
 	return client, nil
 }
 
@@ -158,13 +189,19 @@ func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
 		return nil, err
 	}
 
-	client, err := armmsi.NewUserAssignedIdentitiesClient(subscriptionID, cred, nil)
+	clientOptions := &arm.ClientOptions{
+		ClientOptions: policy.ClientOptions{
+			Transport: transporter{
+				pluginEnv: p.settings.PluginEnv,
+				sender:    p.httpClient,
+			},
+		},
+	}
+	client, err := armmsi.NewUserAssignedIdentitiesClient(subscriptionID, cred, clientOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	// client.Sender = p.httpClient
-	// client.AddToUserAgent(userAgent(p.settings.PluginEnv))
 	return client, nil
 }
 

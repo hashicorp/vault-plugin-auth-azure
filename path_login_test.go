@@ -171,7 +171,7 @@ func TestLogin_BoundGroupID(t *testing.T) {
 
 func TestLogin_BoundSubscriptionID(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
-	c, v, m := getTestBackendFunctions()
+	c, v, m := getTestBackendFunctions(false)
 
 	b, s := getTestBackendWithComputeClient(t, c, v, m)
 
@@ -214,7 +214,7 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 
 func TestLogin_BoundResourceGroup(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
-	c, v, m := getTestBackendFunctions()
+	c, v, m := getTestBackendFunctions(false)
 
 	b, s := getTestBackendWithComputeClient(t, c, v, m)
 
@@ -258,7 +258,7 @@ func TestLogin_BoundResourceGroup(t *testing.T) {
 func TestLogin_BoundResourceGroupWithUserAssignedID(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	badPrincipalID := "badID"
-	c, v, m := getTestBackendFunctions()
+	c, v, m := getTestBackendFunctions(false)
 
 	b, s := getTestBackendWithComputeClient(t, c, v, m)
 
@@ -308,7 +308,7 @@ func TestLogin_BoundResourceGroupWithUserAssignedID(t *testing.T) {
 func TestLogin_BoundLocation(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	location := "loc"
-	c, v, m := getTestBackendFunctions()
+	c, v, m := getTestBackendFunctions(true)
 
 	b, s := getTestBackendWithComputeClient(t, c, v, m)
 
@@ -351,7 +351,7 @@ func TestLogin_BoundLocation(t *testing.T) {
 
 func TestLogin_BoundScaleSet(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
-	c, v, m := getTestBackendFunctions()
+	c, v, m := getTestBackendFunctions(false)
 
 	b, s := getTestBackendWithComputeClient(t, c, v, m)
 
@@ -549,39 +549,94 @@ func testJWT(t *testing.T, payload map[string]interface{}) string {
 	return fmt.Sprintf("%s.%s.%s", fixedHeader, encodedPayload, fixedSignature)
 }
 
-func getTestBackendFunctions() (
+func getTestBackendFunctions(withLocation bool) (
 	func(_ string) (armcompute.VirtualMachinesClientGetResponse, error),
 	func(_ string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error),
 	func(_ string) (armmsi.UserAssignedIdentitiesClientGetResponse, error),
 ) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
-	c := func(_ string) (armcompute.VirtualMachinesClientGetResponse, error) {
-		id := armcompute.VirtualMachineIdentity{
-			PrincipalID: &principalID,
+
+	if !withLocation {
+		c := func(_ string) (armcompute.VirtualMachinesClientGetResponse, error) {
+			id := armcompute.VirtualMachineIdentity{
+				PrincipalID: &principalID,
+			}
+			return armcompute.VirtualMachinesClientGetResponse{
+				armcompute.VirtualMachine{
+					Identity: &id,
+				},
+			}, nil
 		}
-		return armcompute.VirtualMachinesClientGetResponse{
-			armcompute.VirtualMachine{
+		v := func(_ string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error) {
+			id := armcompute.VirtualMachineScaleSetIdentity{
+				PrincipalID: &principalID,
+			}
+			return armcompute.VirtualMachineScaleSetsClientGetResponse{armcompute.VirtualMachineScaleSet{
 				Identity: &id,
-			},
-		}, nil
-	}
-	v := func(_ string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error) {
-		id := armcompute.VirtualMachineScaleSetIdentity{
-			PrincipalID: &principalID,
+			}}, nil
 		}
-		return armcompute.VirtualMachineScaleSetsClientGetResponse{armcompute.VirtualMachineScaleSet{
-			Identity: &id,
-		}}, nil
-	}
 
-	m := func(_ string) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
-		userAssignedIdentityProperties := armmsi.UserAssignedIdentityProperties{
-			PrincipalID: &principalID,
+		m := func(_ string) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
+			userAssignedIdentityProperties := armmsi.UserAssignedIdentityProperties{
+				PrincipalID: &principalID,
+			}
+			return armmsi.UserAssignedIdentitiesClientGetResponse{armmsi.Identity{
+				Properties: &userAssignedIdentityProperties,
+			}}, nil
 		}
-		return armmsi.UserAssignedIdentitiesClientGetResponse{armmsi.Identity{
-			Properties: &userAssignedIdentityProperties,
-		}}, nil
-	}
 
-	return c, v, m
+		return c, v, m
+	} else {
+		location := "loc"
+
+		c := func(vmName string) (armcompute.VirtualMachinesClientGetResponse, error) {
+			id := armcompute.VirtualMachineIdentity{
+				PrincipalID: &principalID,
+			}
+			switch vmName {
+			case "good":
+				return armcompute.VirtualMachinesClientGetResponse{armcompute.VirtualMachine{
+					Identity: &id,
+					Location: &location,
+				}}, nil
+			case "bad":
+				badLoc := "bad"
+				return armcompute.VirtualMachinesClientGetResponse{armcompute.VirtualMachine{
+					Identity: &id,
+					Location: &badLoc,
+				}}, nil
+			}
+			return armcompute.VirtualMachinesClientGetResponse{}, nil
+		}
+		v := func(vmssName string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error) {
+			id := armcompute.VirtualMachineScaleSetIdentity{
+				PrincipalID: &principalID,
+			}
+			switch vmssName {
+			case "good":
+				return armcompute.VirtualMachineScaleSetsClientGetResponse{armcompute.VirtualMachineScaleSet{
+					Identity: &id,
+					Location: &location,
+				}}, nil
+			case "bad":
+				badLoc := "bad"
+				return armcompute.VirtualMachineScaleSetsClientGetResponse{armcompute.VirtualMachineScaleSet{
+					Identity: &id,
+					Location: &badLoc,
+				}}, nil
+			}
+			return armcompute.VirtualMachineScaleSetsClientGetResponse{}, nil
+		}
+
+		m := func(_ string) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
+			userAssignedIdentityProperties := armmsi.UserAssignedIdentityProperties{
+				PrincipalID: &principalID,
+			}
+			return armmsi.UserAssignedIdentitiesClientGetResponse{armmsi.Identity{
+				Properties: &userAssignedIdentityProperties,
+			}}, nil
+		}
+
+		return c, v, m
+	}
 }
