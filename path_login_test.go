@@ -11,6 +11,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/vault/sdk/helper/policyutil"
 	"github.com/hashicorp/vault/sdk/logical"
@@ -114,14 +115,171 @@ func TestLogin(t *testing.T) {
 func TestLogin_ManagedIdentity(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	subscriptionID := "sub-id"
+	resourceID := "resource-id"
 	roleName := "test-role"
+
+	// setup test response functions that mock the client GetByID response
+	nilIdentityRespFunc := func(_ string) (armresources.ClientGetByIDResponse, error) {
+		return armresources.ClientGetByIDResponse{}, nil
+	}
+	userAssignedRespFunc, systemAssignedRespFunc := getResourceByIDResponses(t, principalID)
+	noIdentityUserAssignedRespFunc, noIdentitySystemAssignedRespFunc := getResourceByIDResponses(t, "")
+
 	testCases := map[string]struct {
 		claims      map[string]interface{}
 		roleData    map[string]interface{}
 		loginData   map[string]interface{}
+		clientFunc  func(resourceID string) (armresources.ClientGetByIDResponse, error)
 		expectError bool
 	}{
-		"login happy path": {
+		"login happy path user-assigned managed identity": {
+			claims: map[string]interface{}{
+				"exp": time.Now().Add(60 * time.Second).Unix(),
+				"nbf": time.Now().Add(-60 * time.Second).Unix(),
+				"oid": principalID,
+			},
+			roleData: map[string]interface{}{
+				"name":                        roleName,
+				"policies":                    []string{"dev", "prod"},
+				"bound_subscription_ids":      []string{subscriptionID},
+				"bound_service_principal_ids": []string{principalID},
+			},
+			loginData: map[string]interface{}{
+				"role":                roleName,
+				"resource_group_name": "rg",
+				"subscription_id":     subscriptionID,
+				"resource_id":         resourceID,
+			},
+			clientFunc:  userAssignedRespFunc,
+			expectError: false,
+		},
+		"login happy path system-assigned managed identity": {
+			claims: map[string]interface{}{
+				"exp": time.Now().Add(60 * time.Second).Unix(),
+				"nbf": time.Now().Add(-60 * time.Second).Unix(),
+				"oid": principalID,
+			},
+			roleData: map[string]interface{}{
+				"name":                        roleName,
+				"policies":                    []string{"dev", "prod"},
+				"bound_subscription_ids":      []string{subscriptionID},
+				"bound_service_principal_ids": []string{principalID},
+			},
+			loginData: map[string]interface{}{
+				"role":                roleName,
+				"resource_group_name": "rg",
+				"subscription_id":     subscriptionID,
+				"resource_id":         resourceID,
+			},
+			clientFunc:  systemAssignedRespFunc,
+			expectError: false,
+		},
+		"login fails when no identity data is returned": {
+			claims: map[string]interface{}{
+				"exp": time.Now().Add(60 * time.Second).Unix(),
+				"nbf": time.Now().Add(-60 * time.Second).Unix(),
+				"oid": principalID,
+			},
+			roleData: map[string]interface{}{
+				"name":                        roleName,
+				"policies":                    []string{"dev", "prod"},
+				"bound_subscription_ids":      []string{subscriptionID},
+				"bound_service_principal_ids": []string{principalID},
+			},
+			loginData: map[string]interface{}{
+				"role":                roleName,
+				"resource_group_name": "rg",
+				"subscription_id":     subscriptionID,
+				"resource_id":         resourceID,
+			},
+			clientFunc:  nilIdentityRespFunc,
+			expectError: true,
+		},
+		"login fails when user-assigned identity data is not returned in response": {
+			claims: map[string]interface{}{
+				"exp": time.Now().Add(60 * time.Second).Unix(),
+				"nbf": time.Now().Add(-60 * time.Second).Unix(),
+				"oid": principalID,
+			},
+			roleData: map[string]interface{}{
+				"name":                        roleName,
+				"policies":                    []string{"dev", "prod"},
+				"bound_subscription_ids":      []string{subscriptionID},
+				"bound_service_principal_ids": []string{principalID},
+			},
+			loginData: map[string]interface{}{
+				"role":                roleName,
+				"resource_group_name": "rg",
+				"subscription_id":     subscriptionID,
+				"resource_id":         resourceID,
+			},
+			clientFunc:  noIdentityUserAssignedRespFunc,
+			expectError: true,
+		},
+		"login fails when system-assigned identity data is not returned in response": {
+			claims: map[string]interface{}{
+				"exp": time.Now().Add(60 * time.Second).Unix(),
+				"nbf": time.Now().Add(-60 * time.Second).Unix(),
+				"oid": principalID,
+			},
+			roleData: map[string]interface{}{
+				"name":                        roleName,
+				"policies":                    []string{"dev", "prod"},
+				"bound_subscription_ids":      []string{subscriptionID},
+				"bound_service_principal_ids": []string{principalID},
+			},
+			loginData: map[string]interface{}{
+				"role":                roleName,
+				"resource_group_name": "rg",
+				"subscription_id":     subscriptionID,
+				"resource_id":         resourceID,
+			},
+			clientFunc:  noIdentitySystemAssignedRespFunc,
+			expectError: true,
+		},
+		"login fails when bound_scale_sets is set": {
+			claims: map[string]interface{}{
+				"exp": time.Now().Add(60 * time.Second).Unix(),
+				"nbf": time.Now().Add(-60 * time.Second).Unix(),
+				"oid": principalID,
+			},
+			roleData: map[string]interface{}{
+				"name":                        roleName,
+				"policies":                    []string{"dev", "prod"},
+				"bound_subscription_ids":      []string{subscriptionID},
+				"bound_service_principal_ids": []string{principalID},
+				"bound_scale_sets":            []string{"bad-vmss"},
+			},
+			loginData: map[string]interface{}{
+				"role":                roleName,
+				"resource_group_name": "rg",
+				"subscription_id":     subscriptionID,
+				"resource_id":         resourceID,
+			},
+			clientFunc:  systemAssignedRespFunc,
+			expectError: true,
+		},
+		"login fails when missing bound_service_principal_ids": {
+			claims: map[string]interface{}{
+				"exp": time.Now().Add(60 * time.Second).Unix(),
+				"nbf": time.Now().Add(-60 * time.Second).Unix(),
+				"oid": principalID,
+			},
+			roleData: map[string]interface{}{
+				"name":                   roleName,
+				"policies":               []string{"dev", "prod"},
+				"bound_subscription_ids": []string{subscriptionID},
+			},
+			loginData: map[string]interface{}{
+				"role":                roleName,
+				"resource_group_name": "rg",
+				"subscription_id":     subscriptionID,
+				"resource_id":         resourceID,
+			},
+			clientFunc:  systemAssignedRespFunc,
+			expectError: true,
+		},
+		"login fails when missing resource_id": {
 			claims: map[string]interface{}{
 				"exp": time.Now().Add(60 * time.Second).Unix(),
 				"nbf": time.Now().Add(-60 * time.Second).Unix(),
@@ -138,7 +296,8 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 				"resource_group_name": "rg",
 				"subscription_id":     subscriptionID,
 			},
-			expectError: false,
+			clientFunc:  systemAssignedRespFunc,
+			expectError: true,
 		},
 		"login fails when missing resource_group_name and subscription_id": {
 			claims: map[string]interface{}{
@@ -153,8 +312,10 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 				"bound_service_principal_ids": []string{principalID},
 			},
 			loginData: map[string]interface{}{
-				"role": roleName,
+				"role":        roleName,
+				"resource_id": resourceID,
 			},
+			clientFunc:  systemAssignedRespFunc,
 			expectError: true,
 		},
 		"login fails when missing resource_group_name": {
@@ -172,7 +333,9 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 			loginData: map[string]interface{}{
 				"role":            roleName,
 				"subscription_id": subscriptionID,
+				"resource_id":     resourceID,
 			},
+			clientFunc:  systemAssignedRespFunc,
 			expectError: true,
 		},
 		"login fails when missing subscription_id": {
@@ -190,14 +353,16 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 			loginData: map[string]interface{}{
 				"role":                roleName,
 				"resource_group_name": "rg",
+				"resource_id":         resourceID,
 			},
+			clientFunc:  systemAssignedRespFunc,
 			expectError: true,
 		},
 	}
 
 	for tt, tc := range testCases {
 		t.Run(tt, func(t *testing.T) {
-			b, s := getTestBackend(t)
+			b, s := getTestBackendWithResourceClient(t, tc.clientFunc)
 			testRoleCreate(t, b, s, tc.roleData)
 			if tc.expectError {
 				testLoginFailure(t, b, s, tc.loginData, tc.claims, tc.roleData)
@@ -491,7 +656,7 @@ func testLoginSuccess(t *testing.T, b *azureAuthBackend, s logical.Storage, logi
 func testLoginFailure(t *testing.T, b *azureAuthBackend, s logical.Storage, loginData, claims, roleData map[string]interface{}) {
 	t.Helper()
 	if err := testLogin(t, b, s, loginData, claims, roleData); err == nil {
-		t.Fatal("no error thown when expected")
+		t.Fatal("no error thrown when expected")
 	}
 }
 
@@ -575,6 +740,7 @@ func TestVerifyClaims(t *testing.T) {
 				claims.NotBefore,
 				claims.ObjectID,
 				[]string{"test-group-2"},
+				"",
 			},
 			error: "groups not authorized",
 		},
@@ -585,6 +751,7 @@ func TestVerifyClaims(t *testing.T) {
 				claims.NotBefore,
 				claims.ObjectID,
 				[]string{"test-group-2"},
+				"",
 			},
 			error: "",
 		},
@@ -595,6 +762,7 @@ func TestVerifyClaims(t *testing.T) {
 				claims.NotBefore,
 				"test-oid",
 				claims.GroupIDs,
+				"",
 			},
 			error: "service principal not authorized",
 		},
@@ -605,6 +773,7 @@ func TestVerifyClaims(t *testing.T) {
 				claims.NotBefore,
 				"test-oid",
 				claims.GroupIDs,
+				"",
 			},
 			error: "",
 		},
@@ -623,6 +792,47 @@ func TestVerifyClaims(t *testing.T) {
 			}
 		})
 	}
+}
+
+// getResourceByIDResponses is a test helper to get the functions that return
+// the azure arm resource client responses. If principalID is an empty string
+// then no identity data will be set in the response.
+func getResourceByIDResponses(t *testing.T, principalID string) (
+	func(_ string) (armresources.ClientGetByIDResponse, error),
+	func(_ string) (armresources.ClientGetByIDResponse, error),
+) {
+	t.Helper()
+	u := armresources.ClientGetByIDResponse{
+		armresources.GenericResource{
+			Identity: &armresources.Identity{
+				UserAssignedIdentities: map[string]*armresources.IdentityUserAssignedIdentitiesValue{},
+			},
+		},
+	}
+	s := armresources.ClientGetByIDResponse{
+		armresources.GenericResource{
+			Identity: &armresources.Identity{},
+		},
+	}
+	if principalID != "" {
+		identityValue := map[string]*armresources.IdentityUserAssignedIdentitiesValue{
+			"mockuserassignedmsi": {
+				PrincipalID: &principalID,
+			},
+		}
+
+		u.GenericResource.Identity.UserAssignedIdentities = identityValue
+		s.GenericResource.Identity.PrincipalID = &principalID
+	}
+
+	userAssignedRespFunc := func(_ string) (armresources.ClientGetByIDResponse, error) {
+		return u, nil
+	}
+	systemAssignedRespFunc := func(_ string) (armresources.ClientGetByIDResponse, error) {
+		return s, nil
+	}
+
+	return userAssignedRespFunc, systemAssignedRespFunc
 }
 
 func testJWT(t *testing.T, payload map[string]interface{}) string {

@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
+var resourceClientAPIVersion = "2022-03-01"
+
 func pathLogin(b *azureAuthBackend) *framework.Path {
 	return &framework.Path{
 		Pattern: "login$",
@@ -348,6 +350,9 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	default:
 		// this is the generic case that should enable Azure services that
 		// support managed identities to authenticate to Vault
+		if resourceID == "" {
+			return errors.New("resource_id is required")
+		}
 		if len(role.BoundServicePrincipalIDs) == 0 {
 			return errors.New("expected bound_service_principal_ids to be set")
 		}
@@ -359,7 +364,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		if err != nil {
 			return fmt.Errorf("unable to create resource client: %w", err)
 		}
-		resp, err := client.GetByID(ctx, resourceID, "2022-03-01", nil)
+		resp, err := client.GetByID(ctx, resourceID, resourceClientAPIVersion, nil)
 		if err != nil {
 			return fmt.Errorf("unable to retrieve user assigned identity metadata: %w", err)
 		}
