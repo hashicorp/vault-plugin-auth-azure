@@ -11,14 +11,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-11-01/compute"
-	"github.com/Azure/azure-sdk-for-go/services/msi/mgmt/2018-11-30/msi"
-	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
+	az "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-cleanhttp"
+	azure "github.com/hashicorp/vault-plugin-auth-azure/internal/azure"
 	"github.com/hashicorp/vault/sdk/logical"
 	"golang.org/x/oauth2"
 )
@@ -26,15 +25,15 @@ import (
 var authorizerLifetime = 30 * time.Minute
 
 type computeClient interface {
-	Get(ctx context.Context, resourceGroup, vmName string, instanceView compute.InstanceViewTypes) (compute.VirtualMachine, error)
+	Get(ctx context.Context, resourceGroupName string, vmName string, options *armcompute.VirtualMachinesClientGetOptions) (armcompute.VirtualMachinesClientGetResponse, error)
 }
 
 type vmssClient interface {
-	Get(ctx context.Context, resourceGroup, vmssName string, expandTypes compute.ExpandTypesForGetVMScaleSets) (compute.VirtualMachineScaleSet, error)
+	Get(ctx context.Context, resourceGroupName string, vmScaleSetName string, options *armcompute.VirtualMachineScaleSetsClientGetOptions) (armcompute.VirtualMachineScaleSetsClientGetResponse, error)
 }
 
 type msiClient interface {
-	Get(ctx context.Context, resourceGroup, resourceName string) (result msi.Identity, err error)
+	Get(ctx context.Context, resourceGroupName string, resourceName string, options *armmsi.UserAssignedIdentitiesClientGetOptions) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 }
 
 type tokenVerifier interface {
@@ -52,7 +51,6 @@ type azureProvider struct {
 	oidcVerifier         *oidc.IDTokenVerifier
 	settings             *azureSettings
 	httpClient           *http.Client
-	authorizer           autorest.Authorizer
 	authorizerExpiration time.Time
 	lock                 sync.RWMutex
 }
@@ -120,87 +118,55 @@ func (p *azureProvider) Verifier() tokenVerifier {
 }
 
 func (p *azureProvider) ComputeClient(subscriptionID string) (computeClient, error) {
-	authorizer, err := p.getAuthorizer()
+	cred, err := az.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	client := compute.NewVirtualMachinesClientWithBaseURI(p.settings.Environment.ResourceManagerEndpoint, subscriptionID)
-	client.Authorizer = authorizer
-	client.Sender = p.httpClient
-	client.AddToUserAgent(userAgent(p.settings.PluginEnv))
+	client, err := armcompute.NewVirtualMachinesClient(subscriptionID, cred, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// client := compute.NewVirtualMachinesClientWithBaseURI(p.settings.Environment.ResourceManagerEndpoint, subscriptionID)
+	// client.Sender = p.httpClient
+	// client.AddToUserAgent(userAgent(p.settings.PluginEnv))
 	return client, nil
 }
 
 func (p *azureProvider) VMSSClient(subscriptionID string) (vmssClient, error) {
-	authorizer, err := p.getAuthorizer()
+
+	cred, err := az.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	client := compute.NewVirtualMachineScaleSetsClientWithBaseURI(p.settings.Environment.ResourceManagerEndpoint, subscriptionID)
-	client.Authorizer = authorizer
-	client.Sender = p.httpClient
-	client.AddToUserAgent(userAgent(p.settings.PluginEnv))
+	client, err := armcompute.NewVirtualMachineScaleSetsClient(subscriptionID, cred, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// client := compute.NewVirtualMachineScaleSetsClientWithBaseURI(p.settings.Environment.ResourceManagerEndpoint, subscriptionID)
+	// client.Sender = p.httpClient
+	// client.AddToUserAgent(userAgent(p.settings.PluginEnv))
 	return client, nil
 }
 
 func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
-	authorizer, err := p.getAuthorizer()
+
+	cred, err := az.NewManagedIdentityCredential(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	client := msi.NewUserAssignedIdentitiesClientWithBaseURI(p.settings.Environment.ResourceManagerEndpoint, subscriptionID)
-	client.Authorizer = authorizer
-	client.Sender = p.httpClient
-	client.AddToUserAgent(userAgent(p.settings.PluginEnv))
+	client, err := armmsi.NewUserAssignedIdentitiesClient(subscriptionID, cred, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// client.Sender = p.httpClient
+	// client.AddToUserAgent(userAgent(p.settings.PluginEnv))
 	return client, nil
-}
-
-func (p *azureProvider) getAuthorizer() (autorest.Authorizer, error) {
-	p.lock.RLock()
-	unlockFunc := p.lock.RUnlock
-	defer func() { unlockFunc() }()
-
-	if p.authorizer != nil && time.Now().Before(p.authorizerExpiration) {
-		return p.authorizer, nil
-	}
-
-	// Upgrade lock
-	p.lock.RUnlock()
-	p.lock.Lock()
-	unlockFunc = p.lock.Unlock
-
-	if p.authorizer != nil && time.Now().Before(p.authorizerExpiration) {
-		return p.authorizer, nil
-	}
-
-	// Create an OAuth2 client for retrieving VM data
-	var authorizer autorest.Authorizer
-	var err error
-	switch {
-	// Use environment/config first
-	case p.settings.ClientSecret != "":
-		config := auth.NewClientCredentialsConfig(p.settings.ClientID, p.settings.ClientSecret, p.settings.TenantID)
-		config.AADEndpoint = p.settings.Environment.ActiveDirectoryEndpoint
-		config.Resource = p.settings.Environment.ResourceManagerEndpoint
-		authorizer, err = config.Authorizer()
-		if err != nil {
-			return nil, err
-		}
-	// By default use MSI
-	default:
-		config := auth.NewMSIConfig()
-		config.Resource = p.settings.Environment.ResourceManagerEndpoint
-		authorizer, err = config.Authorizer()
-		if err != nil {
-			return nil, err
-		}
-	}
-	p.authorizer = authorizer
-	p.authorizerExpiration = time.Now().Add(authorizerLifetime)
-	return authorizer, nil
 }
 
 type azureSettings struct {
