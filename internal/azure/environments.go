@@ -1,8 +1,8 @@
 package internal
 
-// Internal implementation of Azure Environments package
-// Original code at:
-// https://github.com/Azure/go-autorest/blob/main/autorest/azure/environments.go
+// This file describes Azure Environment types
+// and constants required by our Azure provider
+// implementation
 
 import (
 	"encoding/json"
@@ -16,18 +16,11 @@ const (
 	// EnvironmentFilepathName captures the name of the environment variable containing the path to the file
 	// to be used while populating the Azure Environment.
 	EnvironmentFilepathName = "AZURE_ENVIRONMENT_FILEPATH"
-
-	// NotAvailable is used for endpoints and resource IDs that are not available for a given cloud.
-	NotAvailable = "N/A"
 )
 
 var environments = map[string]Environment{
-	"AZURECHINACLOUD":        ChinaCloud,
-	"AZUREGERMANCLOUD":       GermanCloud,
-	"AZURECLOUD":             PublicCloud,
-	"AZUREPUBLICCLOUD":       PublicCloud,
-	"AZUREUSGOVERNMENT":      USGovernmentCloud,
-	"AZUREUSGOVERNMENTCLOUD": USGovernmentCloud, // TODO: deprecate
+	"AZURECLOUD":       PublicCloud,
+	"AZUREPUBLICCLOUD": PublicCloud,
 }
 
 // ResourceIdentifier contains a set of Azure resource IDs.
@@ -131,163 +124,10 @@ var (
 			MicrosoftGraph:      "https://graph.microsoft.com/",
 		},
 	}
-
-	// USGovernmentCloud is the cloud environment for the US Government
-	USGovernmentCloud = Environment{
-		Name:                         "AzureUSGovernmentCloud",
-		ManagementPortalURL:          "https://manage.windowsazure.us/",
-		PublishSettingsURL:           "https://manage.windowsazure.us/publishsettings/index",
-		ServiceManagementEndpoint:    "https://management.core.usgovcloudapi.net/",
-		ResourceManagerEndpoint:      "https://management.usgovcloudapi.net/",
-		ActiveDirectoryEndpoint:      "https://login.microsoftonline.us/",
-		GalleryEndpoint:              "https://gallery.usgovcloudapi.net/",
-		KeyVaultEndpoint:             "https://vault.usgovcloudapi.net/",
-		ManagedHSMEndpoint:           NotAvailable,
-		GraphEndpoint:                "https://graph.windows.net/",
-		ServiceBusEndpoint:           "https://servicebus.usgovcloudapi.net/",
-		BatchManagementEndpoint:      "https://batch.core.usgovcloudapi.net/",
-		MicrosoftGraphEndpoint:       "https://graph.microsoft.us/",
-		StorageEndpointSuffix:        "core.usgovcloudapi.net",
-		CosmosDBDNSSuffix:            "documents.azure.us",
-		MariaDBDNSSuffix:             "mariadb.database.usgovcloudapi.net",
-		MySQLDatabaseDNSSuffix:       "mysql.database.usgovcloudapi.net",
-		PostgresqlDatabaseDNSSuffix:  "postgres.database.usgovcloudapi.net",
-		SQLDatabaseDNSSuffix:         "database.usgovcloudapi.net",
-		TrafficManagerDNSSuffix:      "usgovtrafficmanager.net",
-		KeyVaultDNSSuffix:            "vault.usgovcloudapi.net",
-		ManagedHSMDNSSuffix:          NotAvailable,
-		ServiceBusEndpointSuffix:     "servicebus.usgovcloudapi.net",
-		ServiceManagementVMDNSSuffix: "usgovcloudapp.net",
-		ResourceManagerVMDNSSuffix:   "cloudapp.usgovcloudapi.net",
-		ContainerRegistryDNSSuffix:   "azurecr.us",
-		TokenAudience:                "https://management.usgovcloudapi.net/",
-		APIManagementHostNameSuffix:  "azure-api.us",
-		SynapseEndpointSuffix:        "dev.azuresynapse.usgovcloudapi.net",
-		DatalakeSuffix:               NotAvailable,
-		ResourceIdentifiers: ResourceIdentifier{
-			Graph:               "https://graph.windows.net/",
-			KeyVault:            "https://vault.usgovcloudapi.net",
-			Datalake:            NotAvailable,
-			Batch:               "https://batch.core.usgovcloudapi.net/",
-			OperationalInsights: "https://api.loganalytics.us",
-			OSSRDBMS:            "https://ossrdbms-aad.database.usgovcloudapi.net",
-			Storage:             "https://storage.azure.com/",
-			Synapse:             "https://dev.azuresynapse.usgovcloudapi.net",
-			ServiceBus:          "https://servicebus.azure.net/",
-			SQLDatabase:         "https://database.usgovcloudapi.net/",
-			CosmosDB:            "https://cosmos.azure.com",
-			ManagedHSM:          NotAvailable,
-			MicrosoftGraph:      "https://graph.microsoft.us/",
-		},
-	}
-
-	// ChinaCloud is the cloud environment operated in China
-	ChinaCloud = Environment{
-		Name:                         "AzureChinaCloud",
-		ManagementPortalURL:          "https://manage.chinacloudapi.com/",
-		PublishSettingsURL:           "https://manage.chinacloudapi.com/publishsettings/index",
-		ServiceManagementEndpoint:    "https://management.core.chinacloudapi.cn/",
-		ResourceManagerEndpoint:      "https://management.chinacloudapi.cn/",
-		ActiveDirectoryEndpoint:      "https://login.chinacloudapi.cn/",
-		GalleryEndpoint:              "https://gallery.chinacloudapi.cn/",
-		KeyVaultEndpoint:             "https://vault.azure.cn/",
-		ManagedHSMEndpoint:           NotAvailable,
-		GraphEndpoint:                "https://graph.chinacloudapi.cn/",
-		ServiceBusEndpoint:           "https://servicebus.chinacloudapi.cn/",
-		BatchManagementEndpoint:      "https://batch.chinacloudapi.cn/",
-		MicrosoftGraphEndpoint:       "https://microsoftgraph.chinacloudapi.cn/",
-		StorageEndpointSuffix:        "core.chinacloudapi.cn",
-		CosmosDBDNSSuffix:            "documents.azure.cn",
-		MariaDBDNSSuffix:             "mariadb.database.chinacloudapi.cn",
-		MySQLDatabaseDNSSuffix:       "mysql.database.chinacloudapi.cn",
-		PostgresqlDatabaseDNSSuffix:  "postgres.database.chinacloudapi.cn",
-		SQLDatabaseDNSSuffix:         "database.chinacloudapi.cn",
-		TrafficManagerDNSSuffix:      "trafficmanager.cn",
-		KeyVaultDNSSuffix:            "vault.azure.cn",
-		ManagedHSMDNSSuffix:          NotAvailable,
-		ServiceBusEndpointSuffix:     "servicebus.chinacloudapi.cn",
-		ServiceManagementVMDNSSuffix: "chinacloudapp.cn",
-		ResourceManagerVMDNSSuffix:   "cloudapp.chinacloudapi.cn",
-		ContainerRegistryDNSSuffix:   "azurecr.cn",
-		TokenAudience:                "https://management.chinacloudapi.cn/",
-		APIManagementHostNameSuffix:  "azure-api.cn",
-		SynapseEndpointSuffix:        "dev.azuresynapse.azure.cn",
-		DatalakeSuffix:               NotAvailable,
-		ResourceIdentifiers: ResourceIdentifier{
-			Graph:               "https://graph.chinacloudapi.cn/",
-			KeyVault:            "https://vault.azure.cn",
-			Datalake:            NotAvailable,
-			Batch:               "https://batch.chinacloudapi.cn/",
-			OperationalInsights: NotAvailable,
-			OSSRDBMS:            "https://ossrdbms-aad.database.chinacloudapi.cn",
-			Storage:             "https://storage.azure.com/",
-			Synapse:             "https://dev.azuresynapse.net",
-			ServiceBus:          "https://servicebus.azure.net/",
-			SQLDatabase:         "https://database.chinacloudapi.cn/",
-			CosmosDB:            "https://cosmos.azure.com",
-			ManagedHSM:          NotAvailable,
-			MicrosoftGraph:      "https://microsoftgraph.chinacloudapi.cn",
-		},
-	}
-
-	// GermanCloud is the cloud environment operated in Germany
-	GermanCloud = Environment{
-		Name:                         "AzureGermanCloud",
-		ManagementPortalURL:          "http://portal.microsoftazure.de/",
-		PublishSettingsURL:           "https://manage.microsoftazure.de/publishsettings/index",
-		ServiceManagementEndpoint:    "https://management.core.cloudapi.de/",
-		ResourceManagerEndpoint:      "https://management.microsoftazure.de/",
-		ActiveDirectoryEndpoint:      "https://login.microsoftonline.de/",
-		GalleryEndpoint:              "https://gallery.cloudapi.de/",
-		KeyVaultEndpoint:             "https://vault.microsoftazure.de/",
-		ManagedHSMEndpoint:           NotAvailable,
-		GraphEndpoint:                "https://graph.cloudapi.de/",
-		ServiceBusEndpoint:           "https://servicebus.cloudapi.de/",
-		BatchManagementEndpoint:      "https://batch.cloudapi.de/",
-		MicrosoftGraphEndpoint:       NotAvailable,
-		StorageEndpointSuffix:        "core.cloudapi.de",
-		CosmosDBDNSSuffix:            "documents.microsoftazure.de",
-		MariaDBDNSSuffix:             "mariadb.database.cloudapi.de",
-		MySQLDatabaseDNSSuffix:       "mysql.database.cloudapi.de",
-		PostgresqlDatabaseDNSSuffix:  "postgres.database.cloudapi.de",
-		SQLDatabaseDNSSuffix:         "database.cloudapi.de",
-		TrafficManagerDNSSuffix:      "azuretrafficmanager.de",
-		KeyVaultDNSSuffix:            "vault.microsoftazure.de",
-		ManagedHSMDNSSuffix:          NotAvailable,
-		ServiceBusEndpointSuffix:     "servicebus.cloudapi.de",
-		ServiceManagementVMDNSSuffix: "azurecloudapp.de",
-		ResourceManagerVMDNSSuffix:   "cloudapp.microsoftazure.de",
-		ContainerRegistryDNSSuffix:   NotAvailable,
-		TokenAudience:                "https://management.microsoftazure.de/",
-		APIManagementHostNameSuffix:  NotAvailable,
-		SynapseEndpointSuffix:        NotAvailable,
-		DatalakeSuffix:               NotAvailable,
-		ResourceIdentifiers: ResourceIdentifier{
-			Graph:               "https://graph.cloudapi.de/",
-			KeyVault:            "https://vault.microsoftazure.de",
-			Datalake:            NotAvailable,
-			Batch:               "https://batch.cloudapi.de/",
-			OperationalInsights: NotAvailable,
-			OSSRDBMS:            "https://ossrdbms-aad.database.cloudapi.de",
-			Storage:             "https://storage.azure.com/",
-			Synapse:             NotAvailable,
-			ServiceBus:          "https://servicebus.azure.net/",
-			SQLDatabase:         "https://database.cloudapi.de/",
-			CosmosDB:            "https://cosmos.azure.com",
-			ManagedHSM:          NotAvailable,
-			MicrosoftGraph:      NotAvailable,
-		},
-	}
 )
 
 // EnvironmentFromName returns an Environment based on the common name specified.
 func EnvironmentFromName(name string) (Environment, error) {
-	// IMPORTANT
-	// As per @radhikagupta5:
-	// This is technical debt, fundamentally here because Kubernetes is not currently accepting
-	// contributions to the providers. Once that is an option, the provider should be updated to
-	// directly call `EnvironmentFromFile`. Until then, we rely on dispatching Azure Stack environment creation
-	// from this method based on the name that is provided to us.
 	if strings.EqualFold(name, "AZURESTACKCLOUD") {
 		return EnvironmentFromFile(os.Getenv(EnvironmentFilepathName))
 	}
@@ -302,8 +142,6 @@ func EnvironmentFromName(name string) (Environment, error) {
 }
 
 // EnvironmentFromFile loads an Environment from a configuration file available on disk.
-// This function is particularly useful in the Hybrid Cloud model, where one must define their own
-// endpoints.
 func EnvironmentFromFile(location string) (unmarshaled Environment, err error) {
 	fileContents, err := ioutil.ReadFile(location)
 	if err != nil {
@@ -313,9 +151,4 @@ func EnvironmentFromFile(location string) (unmarshaled Environment, err error) {
 	err = json.Unmarshal(fileContents, &unmarshaled)
 
 	return
-}
-
-// SetEnvironment updates the environment map with the specified values.
-func SetEnvironment(name string, env Environment) {
-	environments[strings.ToUpper(name)] = env
 }
