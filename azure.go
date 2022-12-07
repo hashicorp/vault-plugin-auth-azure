@@ -135,7 +135,6 @@ func (p *azureProvider) ComputeClient(subscriptionID string) (computeClient, err
 }
 
 func (p *azureProvider) VMSSClient(subscriptionID string) (vmssClient, error) {
-
 	cred, err := az.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, nil)
 	if err != nil {
 		return nil, err
@@ -153,7 +152,6 @@ func (p *azureProvider) VMSSClient(subscriptionID string) (vmssClient, error) {
 }
 
 func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
-
 	cred, err := az.NewManagedIdentityCredential(nil)
 	if err != nil {
 		return nil, err

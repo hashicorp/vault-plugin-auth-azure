@@ -562,7 +562,8 @@ func getTestBackendFunctions() (
 		return armcompute.VirtualMachinesClientGetResponse{
 			armcompute.VirtualMachine{
 				Identity: &id,
-			}}, nil
+			},
+		}, nil
 	}
 	v := func(_ string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error) {
 		id := armcompute.VirtualMachineScaleSetIdentity{
