@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	az "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
@@ -118,7 +119,7 @@ func (p *azureProvider) Verifier() tokenVerifier {
 }
 
 func (p *azureProvider) ComputeClient(subscriptionID string) (computeClient, error) {
-	cred, err := az.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, nil)
+	cred, err := p.getTokenCredential()
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +136,7 @@ func (p *azureProvider) ComputeClient(subscriptionID string) (computeClient, err
 }
 
 func (p *azureProvider) VMSSClient(subscriptionID string) (vmssClient, error) {
-	cred, err := az.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, nil)
+	cred, err := p.getTokenCredential()
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +153,7 @@ func (p *azureProvider) VMSSClient(subscriptionID string) (vmssClient, error) {
 }
 
 func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
-	cred, err := az.NewManagedIdentityCredential(nil)
+	cred, err := p.getTokenCredential()
 	if err != nil {
 		return nil, err
 	}
@@ -165,6 +166,24 @@ func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
 	// client.Sender = p.httpClient
 	// client.AddToUserAgent(userAgent(p.settings.PluginEnv))
 	return client, nil
+}
+
+func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
+	if p.settings.ClientSecret != "" {
+		cred, err := az.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		return cred, nil
+	} else {
+		cred, err := az.NewManagedIdentityCredential(nil)
+		if err != nil {
+			return nil, err
+		}
+
+		return cred, nil
+	}
 }
 
 type azureSettings struct {
