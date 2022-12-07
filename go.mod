@@ -3,6 +3,7 @@ module github.com/hashicorp/vault-plugin-auth-azure
 go 1.19
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.0.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/hashicorp/errwrap v1.1.0
 	github.com/hashicorp/go-cleanhttp v0.5.2

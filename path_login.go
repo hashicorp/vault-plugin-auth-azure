@@ -42,6 +42,10 @@ func pathLogin(b *azureAuthBackend) *framework.Path {
 				Type:        framework.TypeString,
 				Description: `The name of the virtual machine scale set the instance is in.`,
 			},
+			"resource_id": {
+				Type:        framework.TypeString,
+				Description: `The ID of the Azure resource. This value is ignored if vm_name or vmss_name is specified.`,
+			},
 		},
 
 		Operations: map[logical.Operation]framework.OperationHandler{
@@ -342,14 +346,29 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		if len(role.BoundServicePrincipalIDs) == 0 {
 			return errors.New("expected bound_service_principal_ids to be set")
 		}
-		if !strListContains(role.BoundServicePrincipalIDs, claims.ObjectID) {
-			return fmt.Errorf("service principal not authorized: %s", claims.ObjectID)
-		}
 		if len(role.BoundScaleSets) > 0 {
 			return errors.New("scale set requires the vmss_name field to be set")
 		}
-		for _, id := range role.BoundServicePrincipalIDs {
-			principalIDs[id] = struct{}{}
+
+		client, err := b.provider.ResourceClient(subscriptionID)
+		if err != nil {
+			return fmt.Errorf("unable to create resource client: %w", err)
+		}
+		resourceID := ""
+		resp, err := client.GetByID(ctx, resourceID, "2022-03-01", nil)
+		if err != nil {
+			return fmt.Errorf("unable to retrieve user assigned identity metadata: %w", err)
+		}
+		if resp.Identity == nil {
+			return errors.New("client did not return identity information")
+		}
+		// if system-assigned identity's principal id is available
+		if resp.Identity.PrincipalID != nil {
+			principalIDs[to.String(resp.Identity.PrincipalID)] = struct{}{}
+		}
+		// if not, look for user-assigned identities
+		for _, userIdentity := range resp.Identity.UserAssignedIdentities {
+			principalIDs[to.String(userIdentity.PrincipalID)] = struct{}{}
 		}
 	}
 
@@ -408,6 +427,7 @@ type additionalClaims struct {
 	NotBefore jsonTime `json:"nbf"`
 	ObjectID  string   `json:"oid"`
 	GroupIDs  []string `json:"groups"`
+	AppID     string   `json:"appid"`
 }
 
 const (

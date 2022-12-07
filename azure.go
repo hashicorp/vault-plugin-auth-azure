@@ -14,9 +14,11 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	az "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-cleanhttp"
@@ -36,6 +38,10 @@ type msiClient interface {
 	Get(ctx context.Context, resourceGroupName string, resourceName string, options *armmsi.UserAssignedIdentitiesClientGetOptions) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 }
 
+type resourceClient interface {
+	GetByID(ctx context.Context, resourceID, apiVersion string, options *armresources.ClientGetByIDOptions) (armresources.ClientGetByIDResponse, error)
+}
+
 type tokenVerifier interface {
 	Verify(ctx context.Context, token string) (*oidc.IDToken, error)
 }
@@ -45,6 +51,7 @@ type provider interface {
 	ComputeClient(subscriptionID string) (computeClient, error)
 	VMSSClient(subscriptionID string) (vmssClient, error)
 	MSIClient(subscriptionID string) (msiClient, error)
+	ResourceClient(subscriptionID string) (resourceClient, error)
 }
 
 type azureProvider struct {
@@ -200,6 +207,27 @@ func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
 		},
 	}
 	client, err := armmsi.NewUserAssignedIdentitiesClient(subscriptionID, cred, clientOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (p *azureProvider) ResourceClient(subscriptionID string) (resourceClient, error) {
+	options := &azidentity.DefaultAzureCredentialOptions{
+		TenantID: p.settings.TenantID,
+	}
+	cred, err := azidentity.NewDefaultAzureCredential(options)
+	if err != nil {
+		return nil, err
+	}
+	clientOptions := &arm.ClientOptions{
+		ClientOptions: policy.ClientOptions{
+			Transport: transporter{pluginEnv: p.settings.PluginEnv},
+		},
+	}
+	client, err := armresources.NewClient(subscriptionID, cred, clientOptions)
 	if err != nil {
 		return nil, err
 	}
