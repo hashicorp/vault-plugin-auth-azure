@@ -8,11 +8,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	az "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
@@ -20,7 +22,6 @@ import (
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-cleanhttp"
-	azure "github.com/hashicorp/vault-plugin-auth-azure/internal/azure"
 	"github.com/hashicorp/vault/sdk/logical"
 	"golang.org/x/oauth2"
 )
@@ -93,7 +94,7 @@ func (b *azureAuthBackend) newAzureProvider(ctx context.Context, config *azureCo
 	// endpoint is the AD endpoint which does not match the issuer defined in the discovery payload. This
 	// makes a request to the discovery URL to determine the issuer and key set information to configure
 	// the OIDC verifier
-	discoveryURL := fmt.Sprintf("%s%s/.well-known/openid-configuration", settings.Environment.ActiveDirectoryEndpoint, settings.TenantID)
+	discoveryURL := fmt.Sprintf("%s%s/.well-known/openid-configuration", settings.Configuration.ActiveDirectoryAuthorityHost, settings.TenantID)
 	req, err := http.NewRequestWithContext(ctx, "GET", discoveryURL, nil)
 	if err != nil {
 		return nil, err
@@ -224,12 +225,12 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 }
 
 type azureSettings struct {
-	TenantID     string
-	ClientID     string
-	ClientSecret string
-	Environment  azure.Environment
-	Resource     string
-	PluginEnv    *logical.PluginEnvironment
+	TenantID      string
+	ClientID      string
+	ClientSecret  string
+	Configuration cloud.Configuration
+	Resource      string
+	PluginEnv     *logical.PluginEnvironment
 }
 
 func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureConfig) (*azureSettings, error) {
@@ -272,10 +273,10 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 		envName = config.Environment
 	}
 	if envName == "" {
-		settings.Environment = azure.PublicCloud
+		settings.Configuration = cloud.AzurePublic
 	} else {
 		var err error
-		settings.Environment, err = azure.EnvironmentFromName(envName)
+		settings.Configuration, err = ConfigurationFromName(envName)
 		if err != nil {
 			return nil, err
 		}
@@ -288,4 +289,20 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 	settings.PluginEnv = pluginEnv
 
 	return settings, nil
+}
+
+func ConfigurationFromName(name string) (cloud.Configuration, error) {
+	configs := map[string]cloud.Configuration{
+		"AZURECHINACLOUD":      cloud.AzureChina,
+		"AZUREPUBLICCLOUD":     cloud.AzurePublic,
+		"AZUREGOVERNMENTCLOUD": cloud.AzureGovernment,
+	}
+
+	name = strings.ToUpper(name)
+	c, ok := configs[name]
+	if !ok {
+		return c, fmt.Errorf("err: no cloud configuration matching the name %q", name)
+	}
+
+	return c, nil
 }
