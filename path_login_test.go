@@ -259,26 +259,6 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 			clientFunc:  systemAssignedRespFunc,
 			expectError: true,
 		},
-		"login fails when missing bound_service_principal_ids": {
-			claims: map[string]interface{}{
-				"exp": time.Now().Add(60 * time.Second).Unix(),
-				"nbf": time.Now().Add(-60 * time.Second).Unix(),
-				"oid": principalID,
-			},
-			roleData: map[string]interface{}{
-				"name":                   roleName,
-				"policies":               []string{"dev", "prod"},
-				"bound_subscription_ids": []string{subscriptionID},
-			},
-			loginData: map[string]interface{}{
-				"role":                roleName,
-				"resource_group_name": "rg",
-				"subscription_id":     subscriptionID,
-				"resource_id":         resourceID,
-			},
-			clientFunc:  systemAssignedRespFunc,
-			expectError: true,
-		},
 		"login fails when missing resource_id": {
 			claims: map[string]interface{}{
 				"exp": time.Now().Add(60 * time.Second).Unix(),

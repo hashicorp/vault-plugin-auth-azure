@@ -353,9 +353,6 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		if resourceID == "" {
 			return errors.New("resource_id is required")
 		}
-		if len(role.BoundServicePrincipalIDs) == 0 {
-			return errors.New("expected bound_service_principal_ids to be set")
-		}
 		if len(role.BoundScaleSets) > 0 {
 			return errors.New("scale set requires the vmss_name field to be set")
 		}
