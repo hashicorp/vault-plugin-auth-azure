@@ -23,12 +23,12 @@ func TestConfig_Write(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	configData["environment"] = "AzureNotRealCloud"
+	configData["cloud_config"] = "AzureNotRealCloud"
 	if err := testConfigCreate(t, b, s, configData); err == nil {
 		t.Fatal("expected error")
 	}
 
-	configData["environment"] = "AzurePublicCloud"
+	configData["cloud_config"] = "AzurePublicCloud"
 	if err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatalf("err: %v", err)
 	}

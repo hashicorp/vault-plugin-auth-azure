@@ -94,7 +94,7 @@ func (b *azureAuthBackend) newAzureProvider(ctx context.Context, config *azureCo
 	// endpoint is the AD endpoint which does not match the issuer defined in the discovery payload. This
 	// makes a request to the discovery URL to determine the issuer and key set information to configure
 	// the OIDC verifier
-	discoveryURL := fmt.Sprintf("%s%s/.well-known/openid-configuration", settings.Configuration.ActiveDirectoryAuthorityHost, settings.TenantID)
+	discoveryURL := fmt.Sprintf("%s%s/.well-known/openid-configuration", settings.CloudConfig.ActiveDirectoryAuthorityHost, settings.TenantID)
 	req, err := http.NewRequestWithContext(ctx, "GET", discoveryURL, nil)
 	if err != nil {
 		return nil, err
@@ -225,12 +225,12 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 }
 
 type azureSettings struct {
-	TenantID      string
-	ClientID      string
-	ClientSecret  string
-	Configuration cloud.Configuration
-	Resource      string
-	PluginEnv     *logical.PluginEnvironment
+	TenantID     string
+	ClientID     string
+	ClientSecret string
+	CloudConfig  cloud.Configuration
+	Resource     string
+	PluginEnv    *logical.PluginEnvironment
 }
 
 func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureConfig) (*azureSettings, error) {
@@ -268,15 +268,15 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 	}
 	settings.ClientSecret = clientSecret
 
-	envName := os.Getenv("AZURE_ENVIRONMENT")
-	if envName == "" {
-		envName = config.Environment
+	configName := os.Getenv("AZURE_CONFIGURATION")
+	if configName == "" {
+		configName = config.CloudConfig
 	}
-	if envName == "" {
-		settings.Configuration = cloud.AzurePublic
+	if configName == "" {
+		settings.CloudConfig = cloud.AzurePublic
 	} else {
 		var err error
-		settings.Configuration, err = ConfigurationFromName(envName)
+		settings.CloudConfig, err = ConfigurationFromName(configName)
 		if err != nil {
 			return nil, err
 		}

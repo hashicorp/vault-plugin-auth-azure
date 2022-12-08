@@ -24,7 +24,13 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 			},
 			"environment": {
 				Type:        framework.TypeString,
+				Deprecated:  true,
 				Description: `The Azure environment name. If not provided, AzurePublicCloud is used. This value can also be provided with the AZURE_ENVIRONMENT environment variable.`,
+			},
+			"cloud_config": {
+				Type:        framework.TypeString,
+				Deprecated:  true,
+				Description: `The Azure cloud configuration name. If not provided, AzurePublicCloud is used. This value can also be provided with the AZURE_CONFIGURATION environment variable.`,
 			},
 			"client_id": {
 				Type:        framework.TypeString,
@@ -63,6 +69,7 @@ type azureConfig struct {
 	TenantID     string `json:"tenant_id"`
 	Resource     string `json:"resource"`
 	Environment  string `json:"environment"`
+	CloudConfig  string `json:"cloud_config`
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 }
@@ -110,9 +117,9 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		config.Resource = resource.(string)
 	}
 
-	environment, ok := data.GetOk("environment")
+	cloud_config, ok := data.GetOk("cloud_config")
 	if ok {
-		config.Environment = environment.(string)
+		config.CloudConfig = cloud_config.(string)
 	}
 
 	clientID, ok := data.GetOk("client_id")
@@ -156,10 +163,10 @@ func (b *azureAuthBackend) pathConfigRead(ctx context.Context, req *logical.Requ
 
 	resp := &logical.Response{
 		Data: map[string]interface{}{
-			"tenant_id":   config.TenantID,
-			"resource":    config.Resource,
-			"environment": config.Environment,
-			"client_id":   config.ClientID,
+			"tenant_id":    config.TenantID,
+			"resource":     config.Resource,
+			"cloud_config": config.CloudConfig,
+			"client_id":    config.ClientID,
 		},
 	}
 	return resp, nil
