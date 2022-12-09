@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
@@ -25,8 +23,6 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 	"golang.org/x/oauth2"
 )
-
-var authorizerLifetime = 30 * time.Minute
 
 type computeClient interface {
 	Get(ctx context.Context, resourceGroupName string, vmName string, options *armcompute.VirtualMachinesClientGetOptions) (armcompute.VirtualMachinesClientGetResponse, error)
@@ -52,11 +48,9 @@ type provider interface {
 }
 
 type azureProvider struct {
-	oidcVerifier         *oidc.IDTokenVerifier
-	settings             *azureSettings
-	httpClient           *http.Client
-	authorizerExpiration time.Time
-	lock                 sync.RWMutex
+	oidcVerifier *oidc.IDTokenVerifier
+	settings     *azureSettings
+	httpClient   *http.Client
 }
 
 type oidcDiscoveryInfo struct {
@@ -64,6 +58,8 @@ type oidcDiscoveryInfo struct {
 	JWKSURL string `json:"jwks_uri"`
 }
 
+// transporter implements the azure exported.Transporter interface to send HTTP
+// requests. This allows us to set our custom http client and user agent.
 type transporter struct {
 	pluginEnv *logical.PluginEnvironment
 	sender    *http.Client
@@ -73,6 +69,8 @@ func (tp transporter) Do(req *http.Request) (*http.Response, error) {
 	req.Header.Set("User-Agent", userAgent(tp.pluginEnv))
 
 	client := tp.sender
+
+	// don't attempt redirects so we aren't acting as an unintended network proxy
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
@@ -148,6 +146,7 @@ func (p *azureProvider) ComputeClient(subscriptionID string) (computeClient, err
 
 	clientOptions := &arm.ClientOptions{
 		ClientOptions: policy.ClientOptions{
+			Cloud: p.settings.CloudConfig,
 			Transport: transporter{
 				pluginEnv: p.settings.PluginEnv,
 				sender:    p.httpClient,
@@ -170,6 +169,7 @@ func (p *azureProvider) VMSSClient(subscriptionID string) (vmssClient, error) {
 
 	clientOptions := &arm.ClientOptions{
 		ClientOptions: policy.ClientOptions{
+			Cloud: p.settings.CloudConfig,
 			Transport: transporter{
 				pluginEnv: p.settings.PluginEnv,
 				sender:    p.httpClient,
@@ -192,6 +192,7 @@ func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
 
 	clientOptions := &arm.ClientOptions{
 		ClientOptions: policy.ClientOptions{
+			Cloud: p.settings.CloudConfig,
 			Transport: transporter{
 				pluginEnv: p.settings.PluginEnv,
 				sender:    p.httpClient,
@@ -268,9 +269,9 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 	}
 	settings.ClientSecret = clientSecret
 
-	configName := os.Getenv("AZURE_CONFIGURATION")
+	configName := os.Getenv("AZURE_ENVIRONMENT")
 	if configName == "" {
-		configName = config.CloudConfig
+		configName = config.Environment
 	}
 	if configName == "" {
 		settings.CloudConfig = cloud.AzurePublic
@@ -293,9 +294,9 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 
 func ConfigurationFromName(name string) (cloud.Configuration, error) {
 	configs := map[string]cloud.Configuration{
-		"AZURECHINACLOUD":      cloud.AzureChina,
-		"AZUREPUBLICCLOUD":     cloud.AzurePublic,
-		"AZUREGOVERNMENTCLOUD": cloud.AzureGovernment,
+		"AZURECHINACLOUD":        cloud.AzureChina,
+		"AZUREPUBLICCLOUD":       cloud.AzurePublic,
+		"AZUREUSGOVERNMENTCLOUD": cloud.AzureGovernment,
 	}
 
 	name = strings.ToUpper(name)
