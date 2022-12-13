@@ -299,8 +299,8 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 				return fmt.Errorf("unable to retrieve user assigned identity metadata: %w", err)
 			}
 
-			if userIdentityResponse.Properties.PrincipalID != nil {
-				principalIDs[*userIdentity.PrincipalID] = struct{}{}
+			if userIdentityResponse.Properties != nil && userIdentityResponse.Properties.PrincipalID != nil {
+				principalIDs[*userIdentityResponse.Properties.PrincipalID] = struct{}{}
 			}
 		}
 	case vmName != "":
