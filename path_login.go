@@ -433,7 +433,6 @@ type additionalClaims struct {
 	NotBefore jsonTime `json:"nbf"`
 	ObjectID  string   `json:"oid"`
 	GroupIDs  []string `json:"groups"`
-	AppID     string   `json:"appid"`
 }
 
 const (
