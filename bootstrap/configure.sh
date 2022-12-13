@@ -33,11 +33,19 @@ vault write auth/"${PLUGIN_PATH}"/config \
 vault write auth/"${PLUGIN_PATH}"/role/dev-role \
     bound_subscription_ids="${SUBSCRIPTION_ID}" \
     bound_resource_groups="${RESOURCE_GROUP_NAME}"
-    
-# Login using the access token
+
+# Login using the access token and vm name
 vault write auth/"${PLUGIN_PATH}"/login \
     role="dev-role" \
     jwt="${ACCESS_TOKEN_JWT}" \
     subscription_id="${SUBSCRIPTION_ID}" \
     resource_group_name="${RESOURCE_GROUP_NAME}" \
     vm_name="${VM_NAME}"
+
+# Login using the access token and resource ID
+# vault write auth/"${PLUGIN_PATH}"/login \
+#     role="dev-role" \
+#     jwt="${ACCESS_TOKEN_JWT}" \
+#     subscription_id="${SUBSCRIPTION_ID}" \
+#     resource_group_name="${RESOURCE_GROUP_NAME}" \
+#     resource_id="${RESOURCE_ID}"
