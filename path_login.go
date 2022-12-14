@@ -14,7 +14,10 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
-var resourceClientAPIVersion = "2022-03-01"
+// resourceClientAPIVersion is the API version to use for the operation. This
+// is not well documented but we are setting it to the current value defined
+// here: https://learn.microsoft.com/en-us/rest/api/resources/resources/get-by-id#uri-parameters
+var resourceClientAPIVersion = "2021-04-01"
 
 func pathLogin(b *azureAuthBackend) *framework.Path {
 	return &framework.Path{
@@ -45,8 +48,11 @@ func pathLogin(b *azureAuthBackend) *framework.Path {
 				Description: `The name of the virtual machine scale set the instance is in.`,
 			},
 			"resource_id": {
-				Type:        framework.TypeString,
-				Description: `The ID of the Azure resource. This value is ignored if vm_name or vmss_name is specified.`,
+				Type: framework.TypeString,
+				Description: `The fully qualified ID of the resource, including` +
+					`the resource name and resource type. Use the format, ` +
+					`/subscriptions/{guid}/resourceGroups/{resource-group-name}/{resource-provider-namespace}/{resource-type}/{resource-name}. ` +
+					`This value is ignored if vm_name or vmss_name is specified.`,
 			},
 		},
 
