@@ -41,6 +41,10 @@ type resourceClient interface {
 	GetByID(ctx context.Context, resourceID, apiVersion string, options *armresources.ClientGetByIDOptions) (armresources.ClientGetByIDResponse, error)
 }
 
+type providersClient interface {
+	Get(ctx context.Context, resourceProviderNamespace string, options *armresources.ProvidersClientGetOptions) (armresources.ProvidersClientGetResponse, error)
+}
+
 type tokenVerifier interface {
 	Verify(ctx context.Context, token string) (*oidc.IDToken, error)
 }
@@ -51,6 +55,7 @@ type provider interface {
 	VMSSClient(subscriptionID string) (vmssClient, error)
 	MSIClient(subscriptionID string) (msiClient, error)
 	ResourceClient(subscriptionID string) (resourceClient, error)
+	ProvidersClient(subscriptionID string) (providersClient, error)
 }
 
 type azureProvider struct {
@@ -182,6 +187,21 @@ func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
 
 	clientOptions := p.getClientOptions()
 	client, err := armmsi.NewUserAssignedIdentitiesClient(subscriptionID, cred, clientOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (p *azureProvider) ProvidersClient(subscriptionID string) (providersClient, error) {
+	cred, err := p.getTokenCredential()
+	if err != nil {
+		return nil, err
+	}
+
+	clientOptions := p.getClientOptions()
+	client, err := armresources.NewProvidersClient(subscriptionID, cred, clientOptions)
 	if err != nil {
 		return nil, err
 	}

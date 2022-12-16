@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/helper/cidrutil"
@@ -15,9 +16,10 @@ import (
 )
 
 // resourceClientAPIVersion is the API version to use for the operation. This
-// is not well documented but we are setting it to the current value defined
-// here: https://learn.microsoft.com/en-us/rest/api/resources/resources/get-by-id#uri-parameters
-var resourceClientAPIVersion = "2021-04-01"
+// is not well documented but supported API version can be queried from the
+// GET Providers endpoint.
+// https://learn.microsoft.com/en-us/rest/api/resources/providers/get?tabs=HTTP
+var resourceClientAPIVersion = "2022-03-01"
 
 func pathLogin(b *azureAuthBackend) *framework.Path {
 	return &framework.Path{
@@ -363,11 +365,17 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			return errors.New("scale set requires the vmss_name field to be set")
 		}
 
+		apiVersion, err := b.getAPIVersionForResource(ctx, subscriptionID, resourceID)
+		if err != nil {
+			return err
+		}
+
 		client, err := b.provider.ResourceClient(subscriptionID)
 		if err != nil {
 			return fmt.Errorf("unable to create resource client: %w", err)
 		}
-		resp, err := client.GetByID(ctx, resourceID, resourceClientAPIVersion, nil)
+
+		resp, err := client.GetByID(ctx, resourceID, apiVersion, nil)
 		if err != nil {
 			return fmt.Errorf("unable to retrieve user assigned identity metadata: %w", err)
 		}
@@ -453,4 +461,48 @@ func convertPtrToString(s *string) string {
 		return *s
 	}
 	return ""
+}
+
+// getAPIVersionForResource attempts to query the supported API versions for a
+// given resource.
+func (b *azureAuthBackend) getAPIVersionForResource(ctx context.Context, subscriptionID, resourceID string) (string, error) {
+	client, err := b.provider.ProvidersClient(subscriptionID)
+	if err != nil {
+		return "", fmt.Errorf("unable to create providers client: %w", err)
+	}
+
+	elements := strings.Split(resourceID, "/")
+	if len(elements) < 9 {
+		return "", fmt.Errorf("unable to parse the resource ID: %s", resourceID)
+	}
+	providerNamespace := elements[6]
+	resourceType := elements[7]
+
+	response, err := client.Get(ctx, providerNamespace, nil)
+	if err != nil {
+		return "", fmt.Errorf("unable to get the provider for resource %s: %w", resourceID, err)
+	}
+
+	var resourceTypeResp *armresources.ProviderResourceType
+	for _, rt := range response.Provider.ResourceTypes {
+		// look through the list of ResourceTypes until we find the one
+		// corresponding to the resource that is being used on this login
+		if convertPtrToString(rt.ResourceType) == resourceType {
+			resourceTypeResp = rt
+		}
+	}
+
+	apiVersion := resourceClientAPIVersion
+	// APIVersions are dates in descending order
+	for _, v := range resourceTypeResp.APIVersions {
+		version := convertPtrToString(v)
+		// we will grab the most recent API version unless it is a preview
+		// which will have a "-preview" suffix
+		if strings.Contains(version, "preview") {
+			continue
+		}
+		apiVersion = version
+		break
+	}
+	return apiVersion, nil
 }
