@@ -472,6 +472,7 @@ func (b *azureAuthBackend) getAPIVersionForResource(ctx context.Context, subscri
 	if err != nil {
 		return "", fmt.Errorf("unable to parse the resource ID: %q", resourceID)
 	}
+
 	response, err := client.Get(ctx, resourceType.Namespace, nil)
 	if err != nil {
 		return "", fmt.Errorf("unable to get the provider for resource %q: %w", resourceID, err)
