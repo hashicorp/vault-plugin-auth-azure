@@ -60,7 +60,7 @@ func (b *azureAuthBackend) rollbackAppWAL(ctx context.Context, req *logical.Requ
 
 	b.Logger().Debug("rolling back SP", "appID", entry.AppID, "appObjID", entry.AppObjID)
 
-	client, err := provider.MSGraphClient(config.SubscriptionID)
+	client, err := provider.MSGraphClient()
 	if err != nil {
 		return err
 	}

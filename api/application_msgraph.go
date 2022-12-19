@@ -31,7 +31,6 @@ type ClientSettings struct {
 // NewMSGraphApplicationClient creates a new MS Graph Client
 // to allow interaction with the MS Graph v1.0 API.
 func NewMSGraphApplicationClient(settings ClientSettings) (*AppClient, error) {
-
 	var cred azcore.TokenCredential
 	var err error
 	if settings.ClientSecret != "" {
@@ -90,7 +89,6 @@ func (c *AppClient) ListApplications(ctx context.Context, filter string) ([]grap
 
 // AddApplicationPassword adds an Azure application password.
 func (c *AppClient) AddApplicationPassword(ctx context.Context, applicationObjectID string, displayName string, endDateTime time.Time) (graphmodels.PasswordCredentialable, error) {
-
 	passwordCredential := graphmodels.NewPasswordCredential()
 	passwordCredential.SetDisplayName(&displayName)
 	passwordCredential.SetEndDateTime(&endDateTime)

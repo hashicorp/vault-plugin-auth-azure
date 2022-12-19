@@ -25,7 +25,7 @@ func TestRotateRootSuccess(t *testing.T) {
 		"resource":        "https://management.azure.com/",
 		"client_id":       clientID,
 		"client_secret":   clientSecret,
-		"environment":    "AZUREPUBLICCLOUD",
+		"environment":     "AZUREPUBLICCLOUD",
 	}
 	if err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatalf("err: %v", err)

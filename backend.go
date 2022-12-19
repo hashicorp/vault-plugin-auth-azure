@@ -92,7 +92,7 @@ func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Reques
 		return err
 	}
 
-	client, err := provider.MSGraphClient(config.SubscriptionID)
+	client, err := provider.MSGraphClient()
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,6 @@ func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Reques
 
 	credsToDelete := []*uuid.UUID{}
 	for _, cred := range app.GetPasswordCredentials() {
-
 		if cred.GetKeyId().String() != config.NewClientSecretKeyID {
 			credsToDelete = append(credsToDelete, cred.GetKeyId())
 		}

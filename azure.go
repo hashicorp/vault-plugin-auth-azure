@@ -47,7 +47,7 @@ type provider interface {
 	ComputeClient(subscriptionID string) (computeClient, error)
 	VMSSClient(subscriptionID string) (vmssClient, error)
 	MSIClient(subscriptionID string) (msiClient, error)
-	MSGraphClient(subscriptionID string) (api.MSGraphClient, error)
+	MSGraphClient() (api.MSGraphClient, error)
 }
 
 type azureProvider struct {
@@ -210,7 +210,7 @@ func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
 	return client, nil
 }
 
-func (p *azureProvider) MSGraphClient(subsriptionID string) (api.MSGraphClient, error) {
+func (p *azureProvider) MSGraphClient() (api.MSGraphClient, error) {
 	clientSettings := api.ClientSettings{
 		ClientID:     p.settings.ClientID,
 		ClientSecret: p.settings.ClientSecret,
@@ -255,16 +255,6 @@ type azureSettings struct {
 
 func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureConfig) (*azureSettings, error) {
 	settings := new(azureSettings)
-
-	envSubscriptionID := os.Getenv("AZURE_SUBSCRIPTION_ID")
-	switch {
-	case envSubscriptionID != "":
-		settings.SubscriptionID = envSubscriptionID
-	case config.SubscriptionID != "":
-		settings.SubscriptionID = config.SubscriptionID
-	default:
-		return nil, errors.New("subscription_id is required")
-	}
 
 	envTenantID := os.Getenv("AZURE_TENANT_ID")
 	switch {
