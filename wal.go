@@ -60,7 +60,10 @@ func (b *azureAuthBackend) rollbackAppWAL(ctx context.Context, req *logical.Requ
 
 	b.Logger().Debug("rolling back SP", "appID", entry.AppID, "appObjID", entry.AppObjID)
 
-	client := provider.ApplicationsClient()
+	client, err := provider.MSGraphClient(config.SubscriptionID)
+	if err != nil {
+		return err
+	}
 	// Attempt to delete the App. deleteApp doesn't return an error if the app isn't
 	// found, so no special handling is needed for that case. If we don't succeed within
 	// maxWALAge (e.g. client creds have changed and the delete will never succeed),

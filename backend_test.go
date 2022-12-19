@@ -13,7 +13,7 @@ func getTestBackend(t *testing.T) (*azureAuthBackend, logical.Storage) {
 	return getTestBackendWithComputeClient(t, nil, nil, nil, nil)
 }
 
-func getTestBackendWithComputeClient(t *testing.T, c computeClientFunc, v vmssClientFunc, m msiClientFunc, g applicationsClient) (*azureAuthBackend, logical.Storage) {
+func getTestBackendWithComputeClient(t *testing.T, c computeClientFunc, v vmssClientFunc, m msiClientFunc, g msGraphClientFunc) (*azureAuthBackend, logical.Storage) {
 	t.Helper()
 	defaultLeaseTTLVal := time.Hour * 12
 	maxLeaseTTLVal := time.Hour * 24

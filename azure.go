@@ -17,7 +17,6 @@ import (
 	az "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-cleanhttp"
@@ -48,15 +47,13 @@ type provider interface {
 	ComputeClient(subscriptionID string) (computeClient, error)
 	VMSSClient(subscriptionID string) (vmssClient, error)
 	MSIClient(subscriptionID string) (msiClient, error)
-	ApplicationsClient(subscriptionID string) api.ApplicationsClient
+	MSGraphClient(subscriptionID string) (api.MSGraphClient, error)
 }
 
 type azureProvider struct {
 	oidcVerifier *oidc.IDTokenVerifier
 	settings     *azureSettings
 	httpClient   *http.Client
-
-	appClient api.ApplicationsClient
 }
 
 type oidcDiscoveryInfo struct {
@@ -133,28 +130,10 @@ func (b *azureAuthBackend) newAzureProvider(ctx context.Context, config *azureCo
 	}
 	oidcVerifier := oidc.NewVerifier(discoveryInfo.Issuer, remoteKeySet, verifierConfig)
 
-	graphURI, err := api.GetGraphURI(settings.Environment.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	c := auth.NewMSIConfig()
-	config.Resource = settings.Environment.ResourceManagerEndpoint
-	authorizer, err := c.Authorizer()
-	if err != nil {
-		return nil, err
-	}
-
-	msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
-	if err != nil {
-		return nil, err
-	}
-
 	return &azureProvider{
 		settings:     settings,
 		oidcVerifier: oidcVerifier,
 		httpClient:   httpClient,
-		appClient:    msGraphAppClient,
 	}, nil
 }
 
@@ -231,6 +210,20 @@ func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
 	return client, nil
 }
 
+func (p *azureProvider) MSGraphClient(subsriptionID string) (api.MSGraphClient, error) {
+	clientSettings := api.ClientSettings{
+		ClientID:     p.settings.ClientID,
+		ClientSecret: p.settings.ClientSecret,
+		TenantID:     p.settings.TenantID,
+	}
+
+	msGraphClient, err := api.NewMSGraphApplicationClient(clientSettings)
+	if err != nil {
+		return nil, err
+	}
+	return msGraphClient, nil
+}
+
 func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 	if p.settings.ClientSecret != "" {
 		cred, err := az.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, nil)
@@ -255,12 +248,23 @@ type azureSettings struct {
 	ClientID       string
 	ClientSecret   string
 	CloudConfig    cloud.Configuration
-	Resource       string
-	PluginEnv      *logical.PluginEnvironment
+
+	Resource  string
+	PluginEnv *logical.PluginEnvironment
 }
 
 func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureConfig) (*azureSettings, error) {
 	settings := new(azureSettings)
+
+	envSubscriptionID := os.Getenv("AZURE_SUBSCRIPTION_ID")
+	switch {
+	case envSubscriptionID != "":
+		settings.SubscriptionID = envSubscriptionID
+	case config.SubscriptionID != "":
+		settings.SubscriptionID = config.SubscriptionID
+	default:
+		return nil, errors.New("subscription_id is required")
+	}
 
 	envTenantID := os.Getenv("AZURE_TENANT_ID")
 	switch {

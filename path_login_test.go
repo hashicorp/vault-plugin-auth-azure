@@ -11,7 +11,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/vault/sdk/helper/policyutil"
 	"github.com/hashicorp/vault/sdk/logical"
@@ -176,29 +175,7 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	c, v, m := getTestBackendFunctions(false)
 
-	g := func() (api.ApplicationsClient, error) {
-		settings := new(azureSettings)
-
-		graphURI, err := api.GetGraphURI(settings.Environment.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		c := auth.NewMSIConfig()
-		config := new(azureConfig)
-		config.Resource = settings.Environment.ResourceManagerEndpoint
-		authorizer, err := c.Authorizer()
-		if err != nil {
-			return nil, err
-		}
-
-		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
-		if err != nil {
-			return nil, err
-		}
-
-		return msGraphAppClient, nil
-	}
+	g := getTestMSGraphClient()
 
 	b, s := getTestBackendWithComputeClient(t, c, v, m, g)
 
@@ -243,29 +220,7 @@ func TestLogin_BoundResourceGroup(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	c, v, m := getTestBackendFunctions(false)
 
-	g := func() (api.ApplicationsClient, error) {
-		settings := new(azureSettings)
-
-		graphURI, err := api.GetGraphURI(settings.Environment.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		c := auth.NewMSIConfig()
-		config := new(azureConfig)
-		config.Resource = settings.Environment.ResourceManagerEndpoint
-		authorizer, err := c.Authorizer()
-		if err != nil {
-			return nil, err
-		}
-
-		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
-		if err != nil {
-			return nil, err
-		}
-
-		return msGraphAppClient, nil
-	}
+	g := getTestMSGraphClient()
 
 	b, s := getTestBackendWithComputeClient(t, c, v, m, g)
 
@@ -311,29 +266,7 @@ func TestLogin_BoundResourceGroupWithUserAssignedID(t *testing.T) {
 	badPrincipalID := "badID"
 	c, v, m := getTestBackendFunctions(false)
 
-	g := func() (api.ApplicationsClient, error) {
-		settings := new(azureSettings)
-
-		graphURI, err := api.GetGraphURI(settings.Environment.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		c := auth.NewMSIConfig()
-		config := new(azureConfig)
-		config.Resource = settings.Environment.ResourceManagerEndpoint
-		authorizer, err := c.Authorizer()
-		if err != nil {
-			return nil, err
-		}
-
-		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
-		if err != nil {
-			return nil, err
-		}
-
-		return msGraphAppClient, nil
-	}
+	g := getTestMSGraphClient()
 
 	b, s := getTestBackendWithComputeClient(t, c, v, m, g)
 
@@ -385,29 +318,7 @@ func TestLogin_BoundLocation(t *testing.T) {
 	location := "loc"
 	c, v, m := getTestBackendFunctions(true)
 
-	g := func() (api.ApplicationsClient, error) {
-		settings := new(azureSettings)
-
-		graphURI, err := api.GetGraphURI(settings.Environment.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		c := auth.NewMSIConfig()
-		config := new(azureConfig)
-		config.Resource = settings.Environment.ResourceManagerEndpoint
-		authorizer, err := c.Authorizer()
-		if err != nil {
-			return nil, err
-		}
-
-		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
-		if err != nil {
-			return nil, err
-		}
-
-		return msGraphAppClient, nil
-	}
+	g := getTestMSGraphClient()
 
 	b, s := getTestBackendWithComputeClient(t, c, v, m, g)
 
@@ -452,29 +363,7 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	c, v, m := getTestBackendFunctions(false)
 
-	g := func() (api.ApplicationsClient, error) {
-		settings := new(azureSettings)
-
-		graphURI, err := api.GetGraphURI(settings.Environment.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		c := auth.NewMSIConfig()
-		config := new(azureConfig)
-		config.Resource = settings.Environment.ResourceManagerEndpoint
-		authorizer, err := c.Authorizer()
-		if err != nil {
-			return nil, err
-		}
-
-		msGraphAppClient, err := api.NewMSGraphApplicationClient(settings.SubscriptionID, userAgent(settings.PluginEnv), graphURI, authorizer)
-		if err != nil {
-			return nil, err
-		}
-
-		return msGraphAppClient, nil
-	}
+	g := getTestMSGraphClient()
 
 	b, s := getTestBackendWithComputeClient(t, c, v, m, g)
 
@@ -761,5 +650,23 @@ func getTestBackendFunctions(withLocation bool) (
 		}
 
 		return c, v, m
+	}
+}
+
+func getTestMSGraphClient() func(string) (api.MSGraphClient, error) {
+	return func(string) (api.MSGraphClient, error) {
+		settings := new(azureSettings)
+		clientSettings := api.ClientSettings{
+			ClientID:     settings.ClientID,
+			ClientSecret: settings.ClientSecret,
+			TenantID:     settings.TenantID,
+		}
+
+		msGraphAppClient, err := api.NewMSGraphApplicationClient(clientSettings)
+		if err != nil {
+			return nil, err
+		}
+
+		return msGraphAppClient, nil
 	}
 }

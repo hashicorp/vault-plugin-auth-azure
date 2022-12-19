@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -91,7 +92,10 @@ func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Reques
 		return err
 	}
 
-	client := provider.ApplicationsClient()
+	client, err := provider.MSGraphClient(config.SubscriptionID)
+	if err != nil {
+		return err
+	}
 
 	apps, err := client.ListApplications(ctx, fmt.Sprintf("appId eq '%s'", config.ClientID))
 	if err != nil {
@@ -107,16 +111,17 @@ func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Reques
 
 	app := apps[0]
 
-	credsToDelete := []string{}
-	for _, cred := range app.PasswordCredentials {
-		if *cred.KeyID != config.NewClientSecretKeyID {
-			credsToDelete = append(credsToDelete, *cred.KeyID)
+	credsToDelete := []*uuid.UUID{}
+	for _, cred := range app.GetPasswordCredentials() {
+
+		if cred.GetKeyId().String() != config.NewClientSecretKeyID {
+			credsToDelete = append(credsToDelete, cred.GetKeyId())
 		}
 	}
 
 	if len(credsToDelete) != 0 {
 		b.Logger().Debug("periodic func", "rotate-root", "removing old passwords from Azure")
-		err = removeApplicationPasswords(ctx, client, *app.ID, credsToDelete...)
+		err = removeApplicationPasswords(ctx, client, *app.GetId(), credsToDelete...)
 		if err != nil {
 			return err
 		}

@@ -51,6 +51,10 @@ type mockMSIClient struct {
 	msiClientFunc func(resourceName string) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 }
 
+type mockMSGraphClient struct {
+	msGraphClientFunc func(subscriptionID string) (api.MSGraphClient, error)
+}
+
 func (c *mockComputeClient) Get(_ context.Context, _, vmName string, _ *armcompute.VirtualMachinesClientGetOptions) (armcompute.VirtualMachinesClientGetResponse, error) {
 	if c.computeClientFunc != nil {
 		return c.computeClientFunc(vmName)
@@ -78,21 +82,21 @@ type vmssClientFunc func(vmssName string) (armcompute.VirtualMachineScaleSetsCli
 
 type msiClientFunc func(resourceName string) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 
-type applicationsClient func() (api.ApplicationsClient, error)
+type msGraphClientFunc func(subscriptionID string) (api.MSGraphClient, error)
 
 type mockProvider struct {
 	computeClientFunc
 	vmssClientFunc
 	msiClientFunc
-	applicationsClient
+	msGraphClientFunc
 }
 
-func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, g applicationsClient) *mockProvider {
+func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, g msGraphClientFunc) *mockProvider {
 	return &mockProvider{
-		computeClientFunc:  c,
-		vmssClientFunc:     v,
-		msiClientFunc:      m,
-		applicationsClient: g,
+		computeClientFunc: c,
+		vmssClientFunc:    v,
+		msiClientFunc:     m,
+		msGraphClientFunc: g,
 	}
 }
 
@@ -118,6 +122,6 @@ func (p *mockProvider) MSIClient(string) (msiClient, error) {
 	}, nil
 }
 
-func (p *mockProvider) ApplicationsClient() api.ApplicationsClient {
-	return p.ApplicationsClient()
+func (p *mockProvider) MSGraphClient(string) (api.MSGraphClient, error) {
+	return nil, nil
 }

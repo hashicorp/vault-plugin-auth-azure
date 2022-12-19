@@ -16,7 +16,7 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 				Type:        framework.TypeString,
 				Description: `The subscription id for the Azure Active Directory. This value can also be provided with the AZURE_SUBSCRIPTION_ID environment variable.`,
 				DisplayAttrs: &framework.DisplayAttributes{
-					Name: "Tenant ID",
+					Name: "Subscription ID",
 				},
 			},
 			"tenant_id": {
@@ -157,6 +157,8 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 	if ok {
 		config.RootPasswordTTL = time.Second * time.Duration(rootExpirationRaw.(int))
 	}
+
+	// b.Logger().Info("Test Dev Build Working\n")
 
 	// Create a settings object to validate all required settings
 	// are available

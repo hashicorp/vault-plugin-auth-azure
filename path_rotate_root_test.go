@@ -3,6 +3,7 @@ package azureauth
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -11,10 +12,24 @@ import (
 )
 
 func TestRotateRootSuccess(t *testing.T) {
-	// Remove once test has been refactored
-	t.Skip()
+	// // Remove once test has been refactored
+	// t.Skip()
 
 	b, s := getTestBackend(t)
+
+	subscriptionID, tenantID, clientID, clientSecret := getAzureEnvironmentSettings()
+
+	configData := map[string]interface{}{
+		"subscription_id": subscriptionID,
+		"tenant_id":       tenantID,
+		"resource":        "https://management.azure.com/",
+		"client_id":       clientID,
+		"client_secret":   clientSecret,
+		"environment":    "AZUREPUBLICCLOUD",
+	}
+	if err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.UpdateOperation,
@@ -254,4 +269,18 @@ func assertStrSliceIsEmpty(t *testing.T, strs []string) {
 
 func strPtr(str string) *string {
 	return &str
+}
+
+func getAzureEnvironmentSettings() (
+	string,
+	string,
+	string,
+	string,
+) {
+	subscriptionID := os.Getenv("SUBSCRIPTION_ID")
+	tenantID := os.Getenv("TENANT_ID")
+	clientID := os.Getenv("CLIENT_ID")
+	clientSecret := os.Getenv("CLIENT_SECRET")
+
+	return subscriptionID, tenantID, clientID, clientSecret
 }
