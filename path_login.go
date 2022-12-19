@@ -10,7 +10,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
-	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/helper/cidrutil"
 	"github.com/hashicorp/vault/sdk/logical"
@@ -129,7 +128,7 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 
 	config, err := b.config(ctx, req.Storage)
 	if err != nil {
-		return nil, errwrap.Wrapf("unable to retrieve backend configuration: {{err}}", err)
+		return nil, fmt.Errorf("unable to retrieve backend configuration: %w", err)
 	}
 	if config == nil {
 		config = new(azureConfig)
@@ -269,13 +268,13 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	case vmssName != "":
 		client, err := b.provider.VMSSClient(subscriptionID)
 		if err != nil {
-			return errwrap.Wrapf("unable to create vmss client: {{err}}", err)
+			return fmt.Errorf("unable to create vmss client: %w", err)
 		}
 
 		// Omit armcompute.ExpandTypesForGetVMScaleSetsUserData since we do not need that information for purpose of authenticating an instance
 		vmss, err := client.Get(ctx, resourceGroupName, vmssName, nil)
 		if err != nil {
-			return errwrap.Wrapf("unable to retrieve virtual machine scale set metadata: {{err}}", err)
+			return fmt.Errorf("unable to retrieve virtual machine scale set metadata: %w", err)
 		}
 
 		// Check bound scale sets
@@ -326,7 +325,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	case vmName != "":
 		client, err := b.provider.ComputeClient(subscriptionID)
 		if err != nil {
-			return errwrap.Wrapf("unable to create compute client: {{err}}", err)
+			return fmt.Errorf("unable to create compute client: %w", err)
 		}
 
 		instanceView := armcompute.InstanceViewTypesInstanceView
@@ -336,7 +335,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 
 		vm, err := client.Get(ctx, resourceGroupName, vmName, &options)
 		if err != nil {
-			return errwrap.Wrapf("unable to retrieve virtual machine metadata: {{err}}", err)
+			return fmt.Errorf("unable to retrieve virtual machine metadata: %w", err)
 		}
 
 		location = vm.Location
@@ -431,7 +430,7 @@ func (b *azureAuthBackend) pathLoginRenew(ctx context.Context, req *logical.Requ
 	// Ensure that the Role still exists.
 	role, err := b.role(ctx, req.Storage, roleName)
 	if err != nil {
-		return nil, errwrap.Wrapf(fmt.Sprintf("failed to validate role %s during renewal: {{err}}", roleName), err)
+		return nil, fmt.Errorf("failed to validate role %s during renewal: %w", roleName, err)
 	}
 	if role == nil {
 		return nil, fmt.Errorf("role %s does not exist during renewal", roleName)
