@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/hashicorp/errwrap"
@@ -15,11 +16,11 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
-// resourceClientAPIVersion is the API version to use for the operation. This
-// is not well documented but supported API version can be queried from the
-// GET Providers endpoint.
+// defaultResourceClientAPIVersion is the API version to use for the operation.
+// This is not well documented but supported API version can be queried from
+// the GET Providers endpoint.
 // https://learn.microsoft.com/en-us/rest/api/resources/providers/get?tabs=HTTP
-var resourceClientAPIVersion = "2022-03-01"
+var defaultResourceClientAPIVersion = "2022-03-01"
 
 func pathLogin(b *azureAuthBackend) *framework.Path {
 	return &framework.Path{
@@ -471,28 +472,25 @@ func (b *azureAuthBackend) getAPIVersionForResource(ctx context.Context, subscri
 		return "", fmt.Errorf("unable to create providers client: %w", err)
 	}
 
-	elements := strings.Split(resourceID, "/")
-	if len(elements) < 9 {
-		return "", fmt.Errorf("unable to parse the resource ID: %s", resourceID)
-	}
-	providerNamespace := elements[6]
-	resourceType := elements[7]
-
-	response, err := client.Get(ctx, providerNamespace, nil)
+	resourceType, err := arm.ParseResourceType(resourceID)
 	if err != nil {
-		return "", fmt.Errorf("unable to get the provider for resource %s: %w", resourceID, err)
+		return "", fmt.Errorf("unable to parse the resource ID: %q", resourceID)
+	}
+	response, err := client.Get(ctx, resourceType.Namespace, nil)
+	if err != nil {
+		return "", fmt.Errorf("unable to get the provider for resource %q: %w", resourceID, err)
 	}
 
 	var resourceTypeResp *armresources.ProviderResourceType
 	for _, rt := range response.Provider.ResourceTypes {
 		// look through the list of ResourceTypes until we find the one
 		// corresponding to the resource that is being used on this login
-		if convertPtrToString(rt.ResourceType) == resourceType {
+		if convertPtrToString(rt.ResourceType) == resourceType.Type {
 			resourceTypeResp = rt
 		}
 	}
 
-	apiVersion := resourceClientAPIVersion
+	apiVersion := defaultResourceClientAPIVersion
 	// APIVersions are dates in descending order
 	for _, v := range resourceTypeResp.APIVersions {
 		version := convertPtrToString(v)
