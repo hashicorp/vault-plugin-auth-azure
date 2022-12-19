@@ -299,21 +299,18 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 				continue
 			}
 
-			elements := strings.Split(userIdentityID, "/")
-			if len(elements) < 9 {
-				return fmt.Errorf("unable to parse the user-assigned identity resource ID: %s", userIdentityID)
+			msiID, err := arm.ParseResourceID(userIdentityID)
+			if err != nil {
+				return fmt.Errorf("unable to parse the user-assigned identity resource ID %q: %w", userIdentityID, err)
 			}
-			msiSubscriptionID := elements[2]
-			msiResourceGroupName := elements[4]
-			msiResourceName := elements[8]
 
 			// Principal ID is nil for VMSS flex orchestration mode, so we
 			// must look up the user-assigned identity using the MSI client
-			msiClient, err := b.provider.MSIClient(msiSubscriptionID)
+			msiClient, err := b.provider.MSIClient(msiID.SubscriptionID)
 			if err != nil {
 				return fmt.Errorf("unable to create msi client: %w", err)
 			}
-			userIdentityResponse, err := msiClient.Get(ctx, msiResourceGroupName, msiResourceName, nil)
+			userIdentityResponse, err := msiClient.Get(ctx, msiID.ResourceGroupName, msiID.Name, nil)
 			if err != nil {
 				return fmt.Errorf("unable to retrieve user assigned identity metadata: %w", err)
 			}
