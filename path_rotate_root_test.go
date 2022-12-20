@@ -13,7 +13,7 @@ import (
 
 func TestRotateRootSuccess(t *testing.T) {
 	// // Remove once test has been refactored
-	// t.Skip()
+	t.Skip()
 
 	b, s := getTestBackend(t)
 

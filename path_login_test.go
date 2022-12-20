@@ -653,8 +653,8 @@ func getTestBackendFunctions(withLocation bool) (
 	}
 }
 
-func getTestMSGraphClient() func(string) (api.MSGraphClient, error) {
-	return func(string) (api.MSGraphClient, error) {
+func getTestMSGraphClient() func() (api.MSGraphClient, error) {
+	return func() (api.MSGraphClient, error) {
 		settings := new(azureSettings)
 		clientSettings := api.ClientSettings{
 			ClientID:     settings.ClientID,

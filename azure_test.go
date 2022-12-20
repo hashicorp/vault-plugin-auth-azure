@@ -82,7 +82,7 @@ type vmssClientFunc func(vmssName string) (armcompute.VirtualMachineScaleSetsCli
 
 type msiClientFunc func(resourceName string) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 
-type msGraphClientFunc func(subscriptionID string) (api.MSGraphClient, error)
+type msGraphClientFunc func() (api.MSGraphClient, error)
 
 type mockProvider struct {
 	computeClientFunc
@@ -122,6 +122,6 @@ func (p *mockProvider) MSIClient(string) (msiClient, error) {
 	}, nil
 }
 
-func (p *mockProvider) MSGraphClient(string) (api.MSGraphClient, error) {
+func (p *mockProvider) MSGraphClient() (api.MSGraphClient, error) {
 	return nil, nil
 }

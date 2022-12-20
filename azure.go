@@ -243,14 +243,12 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 }
 
 type azureSettings struct {
-	SubscriptionID string
-	TenantID       string
-	ClientID       string
-	ClientSecret   string
-	CloudConfig    cloud.Configuration
-
-	Resource  string
-	PluginEnv *logical.PluginEnvironment
+	TenantID     string
+	ClientID     string
+	ClientSecret string
+	CloudConfig  cloud.Configuration
+	Resource     string
+	PluginEnv    *logical.PluginEnvironment
 }
 
 func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureConfig) (*azureSettings, error) {
