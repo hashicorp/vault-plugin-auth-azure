@@ -494,6 +494,10 @@ func (b *azureAuthBackend) getAPIVersionForResource(ctx context.Context, subscri
 	}
 
 	apiVersion := defaultResourceClientAPIVersion
+	if resourceTypeResp == nil {
+		return apiVersion, nil
+	}
+
 	// APIVersions are dates in descending order
 	for _, v := range resourceTypeResp.APIVersions {
 		version := convertPtrToString(v)
