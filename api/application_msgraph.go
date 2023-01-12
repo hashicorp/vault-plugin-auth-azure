@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	az "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/google/uuid"
 	abstractions "github.com/microsoft/kiota-abstractions-go"
@@ -19,7 +20,8 @@ import (
 var _ MSGraphClient = (*AppClient)(nil)
 
 type AppClient struct {
-	client *msgraphsdk.GraphServiceClient
+	client   *msgraphsdk.GraphServiceClient
+	settings ClientSettings
 }
 
 type ClientSettings struct {
@@ -58,20 +60,56 @@ func NewMSGraphApplicationClient(settings ClientSettings) (*AppClient, error) {
 	client := msgraphsdk.NewGraphServiceClient(requestAdapter)
 
 	ac := &AppClient{
-		client: client,
+		client:   client,
+		settings: settings,
 	}
 
 	return ac, nil
 }
 
+func GetAzureTokenCredential(c *AppClient) (azcore.TokenCredential, error) {
+	var cred azcore.TokenCredential
+	var err error
+	if c.settings.ClientSecret != "" {
+		cred, err = az.NewClientSecretCredential(c.settings.TenantID, c.settings.ClientID, c.settings.ClientSecret, nil)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cred, err = az.NewManagedIdentityCredential(nil)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	return cred, nil
+}
+
 // ListApplications lists all Azure application in organization based on a filter.
 func (c *AppClient) ListApplications(ctx context.Context, filter string) ([]graphmodels.Applicationable, error) {
+	cred, err := GetAzureTokenCredential(c)
+	if err != nil {
+		return nil, fmt.Errorf("error getting token credential: err=%s", err)
+	}
+
+	scope := fmt.Sprintf("%s/.default", c.settings.ClientID)
+	opts := policy.TokenRequestOptions{
+		Scopes: []string{scope},
+	}
+	token, err := cred.GetToken(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
 	headers := abstractions.NewRequestHeaders()
+	headers.Add("Content-type", "application/json")
+	headers.Add("Authorization", fmt.Sprintf("Bearer %s", token.Token))
 	headers.Add("ConsistencyLevel", "eventual")
 
 	requestParameters := &graphconfig.ApplicationsRequestBuilderGetQueryParameters{
-		Filter:  &filter,
-		Orderby: []string{"displayName"},
+		Filter: &filter,
+		//Orderby: []string{"displayName"},
 	}
 
 	configuration := &graphconfig.ApplicationsRequestBuilderGetRequestConfiguration{
