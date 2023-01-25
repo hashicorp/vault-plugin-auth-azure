@@ -10,8 +10,6 @@ import (
 	az "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/google/uuid"
 	abstractions "github.com/microsoft/kiota-abstractions-go"
-	kiota "github.com/microsoft/kiota-authentication-azure-go"
-
 	msgraphsdk "github.com/microsoftgraph/msgraph-sdk-go"
 	graphconfig "github.com/microsoftgraph/msgraph-sdk-go/applications"
 	graphmodels "github.com/microsoftgraph/msgraph-sdk-go/models"
@@ -48,16 +46,21 @@ func NewMSGraphApplicationClient(settings ClientSettings) (*AppClient, error) {
 
 	}
 
-	provider, err := kiota.NewAzureIdentityAuthenticationProvider(cred)
+	//provider, err := kiota.NewAzureIdentityAuthenticationProvider(cred)
+	//if err != nil {
+	//	fmt.Printf("Error authentication provider: %v\n", err)
+	//	return nil, err
+	//}
+	//requestAdapter, err := msgraphsdk.NewGraphRequestAdapter(provider)
+	//if err != nil {
+	//	return nil, err
+	//}
+	scope := fmt.Sprintf("%s/.default", settings.ClientID)
+
+	client, err := msgraphsdk.NewGraphServiceClientWithCredentials(cred, []string{scope})
 	if err != nil {
-		fmt.Printf("Error authentication provider: %v\n", err)
 		return nil, err
 	}
-	requestAdapter, err := msgraphsdk.NewGraphRequestAdapter(provider)
-	if err != nil {
-		return nil, err
-	}
-	client := msgraphsdk.NewGraphServiceClient(requestAdapter)
 
 	ac := &AppClient{
 		client:   client,
@@ -87,7 +90,7 @@ func GetAzureTokenCredential(c *AppClient) (azcore.TokenCredential, error) {
 }
 
 // ListApplications lists all Azure application in organization based on a filter.
-func (c *AppClient) ListApplications(ctx context.Context, filter string) ([]graphmodels.Applicationable, error) {
+func (c *AppClient) ListApplications(ctx context.Context, id string) ([]graphmodels.Applicationable, error) {
 	cred, err := GetAzureTokenCredential(c)
 	if err != nil {
 		return nil, fmt.Errorf("error getting token credential: err=%s", err)
@@ -103,26 +106,35 @@ func (c *AppClient) ListApplications(ctx context.Context, filter string) ([]grap
 	}
 
 	headers := abstractions.NewRequestHeaders()
-	headers.Add("Content-type", "application/json")
-	headers.Add("Authorization", fmt.Sprintf("Bearer %s", token.Token))
-	headers.Add("ConsistencyLevel", "eventual")
+	//headers.Add("Content-type", "application/json")
+	headers.Add("authorization  ", fmt.Sprintf("%s", token.Token))
+	//headers.Add("ConsistencyLevel", "eventual")
+	//headers.Add("random", "foobar")
 
-	requestParameters := &graphconfig.ApplicationsRequestBuilderGetQueryParameters{
-		Filter: &filter,
+	//requestParameters := &graphconfig.ApplicationRequestBuilderGetQueryParameters{
+	//	Select: []string{"id", "appId", "displayName", "requiredResourceAccess"},
+	//}
+	//configuration := &graphconfig.ApplicationRequestBuilderGetRequestConfiguration{
+	//	QueryParameters: requestParameters,
+	//}
+
+	requestParameters := &graphconfig.ApplicationItemRequestBuilderGetQueryParameters{
+		//Select: []string{"id", "appId", "displayName", "requiredResourceAccess"},
+		//Filter: &filter,
 		//Orderby: []string{"displayName"},
 	}
 
-	configuration := &graphconfig.ApplicationsRequestBuilderGetRequestConfiguration{
+	configuration := &graphconfig.ApplicationItemRequestBuilderGetRequestConfiguration{
 		Headers:         headers,
 		QueryParameters: requestParameters,
 	}
 
-	result, err := c.client.Applications().Get(ctx, configuration)
+	result, err := c.client.ApplicationsById(id).Get(ctx, configuration)
 	if err != nil {
 		return nil, err
 	}
 
-	return result.GetValue(), nil
+	return []graphmodels.Applicationable{result}, nil
 }
 
 // AddApplicationPassword adds an Azure application password.
