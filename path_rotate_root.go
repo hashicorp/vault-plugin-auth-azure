@@ -79,7 +79,7 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 
 	// This could have the same username customization logic put on it if we really wanted it here
 	passwordDisplayName := fmt.Sprintf("vault-%s", uniqueID)
-	newPasswordResp, err := client.AddApplicationPassword(ctx, *app.GetId(), passwordDisplayName, expiration)
+	newPasswordResp, err := client.AddApplicationPassword(ctx, *app.ID, passwordDisplayName, expiration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add new password: %w", err)
 	}
@@ -87,15 +87,15 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 	var wal walRotateRoot
 	walID, walErr := framework.PutWAL(ctx, req.Storage, walRotateRootCreds, wal)
 	if walErr != nil {
-		err = client.RemoveApplicationPassword(ctx, *app.GetId(), newPasswordResp.GetKeyId())
+		err = client.RemoveApplicationPassword(ctx, *app.ID, *newPasswordResp.PasswordCredential.KeyID)
 		merr := multierror.Append(err, err)
 		return &logical.Response{}, merr
 	}
 
-	config.NewClientSecret = *newPasswordResp.GetSecretText()
+	config.NewClientSecret = *newPasswordResp.SecretText
 	config.NewClientSecretCreated = time.Now()
-	config.NewClientSecretExpirationDate = *newPasswordResp.GetEndDateTime()
-	config.NewClientSecretKeyID = newPasswordResp.GetKeyId().String()
+	config.NewClientSecretExpirationDate = newPasswordResp.EndDate.Time
+	config.NewClientSecretKeyID = *newPasswordResp.KeyID
 
 	err = b.saveConfig(ctx, config, req.Storage)
 	if err != nil {
@@ -113,10 +113,10 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 }
 
 type passwordRemover interface {
-	RemoveApplicationPassword(ctx context.Context, applicationObjectID string, keyID *uuid.UUID) error
+	RemoveApplicationPassword(ctx context.Context, applicationObjectID string, keyID string) error
 }
 
-func removeApplicationPasswords(ctx context.Context, passRemover passwordRemover, appID string, passwordKeyIDs ...*uuid.UUID) (err error) {
+func removeApplicationPasswords(ctx context.Context, passRemover passwordRemover, appID string, passwordKeyIDs ...string) (err error) {
 	merr := new(multierror.Error)
 	for _, keyID := range passwordKeyIDs {
 		// Attempt to remove all of them, don't fail early

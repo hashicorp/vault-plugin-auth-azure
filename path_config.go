@@ -27,6 +27,13 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 				Type:        framework.TypeString,
 				Description: `The Azure environment name. If not provided, AzurePublicCloud is used. This value can also be provided with the AZURE_ENVIRONMENT environment variable.`,
 			},
+			"subscription_id": {
+				Type:        framework.TypeString,
+				Description: `The subscription id for the Azure Active Directory. This value can also be provided with the AZURE_SUBSCRIPTION_ID environment variable.`,
+				DisplayAttrs: &framework.DisplayAttributes{
+					Name: "Client ID",
+				},
+			},
 			"client_id": {
 				Type:        framework.TypeString,
 				Description: `The OAuth2 client id to connection to Azure. This value can also be provided with the AZURE_CLIENT_ID environment variable.`,
@@ -67,6 +74,7 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 }
 
 type azureConfig struct {
+	SubscriptionID                string        `json:"subscription_id"`
 	TenantID                      string        `json:"tenant_id"`
 	Resource                      string        `json:"resource"`
 	Environment                   string        `json:"environment"`
@@ -112,6 +120,10 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 	}
 	if config == nil {
 		config = new(azureConfig)
+	}
+
+	if subscriptionID, ok := data.GetOk("subscription_id"); ok {
+		config.SubscriptionID = subscriptionID.(string)
 	}
 
 	tenantID, ok := data.GetOk("tenant_id")
@@ -178,6 +190,7 @@ func (b *azureAuthBackend) pathConfigRead(ctx context.Context, req *logical.Requ
 
 	resp := &logical.Response{
 		Data: map[string]interface{}{
+			"subscription_id":   config.SubscriptionID,
 			"tenant_id":         config.TenantID,
 			"resource":          config.Resource,
 			"environment":       config.Environment,

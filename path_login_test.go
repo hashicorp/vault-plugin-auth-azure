@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/authorization/mgmt/authorization"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
 	"github.com/coreos/go-oidc"
@@ -656,17 +657,15 @@ func getTestBackendFunctions(withLocation bool) (
 func getTestMSGraphClient() func() (api.MSGraphClient, error) {
 	return func() (api.MSGraphClient, error) {
 		settings := new(azureSettings)
-		clientSettings := api.ClientSettings{
-			ClientID:     settings.ClientID,
-			ClientSecret: settings.ClientSecret,
-			TenantID:     settings.TenantID,
+		graphURI := "test-graph-uri"
+
+		// set up dummy test client
+		client := authorization.NewWithBaseURI(graphURI, settings.SubscriptionID)
+		ac := &api.AppClient{
+			Client:   client,
+			GraphURI: graphURI,
 		}
 
-		msGraphAppClient, err := api.NewMSGraphApplicationClient(clientSettings)
-		if err != nil {
-			return nil, err
-		}
-
-		return msGraphAppClient, nil
+		return ac, nil
 	}
 }

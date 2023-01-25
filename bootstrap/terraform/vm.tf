@@ -6,6 +6,7 @@ provider "azurerm" {
 
 resource "azuread_application" "vault_azure_app" {
   display_name = "vault_azure_tests"
+  owners = [data.azurerm_client_config.current.object_id]
 }
 
 resource "azuread_service_principal" "vault_azure_sp" {

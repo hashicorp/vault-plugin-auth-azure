@@ -6,10 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
+
+const userAgentPluginName = "auth-azure"
 
 // Factory is used by framework
 func Factory(ctx context.Context, c *logical.BackendConfig) (logical.Backend, error) {
@@ -111,16 +112,16 @@ func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Reques
 
 	app := apps[0]
 
-	credsToDelete := []*uuid.UUID{}
-	for _, cred := range app.GetPasswordCredentials() {
-		if cred.GetKeyId().String() != config.NewClientSecretKeyID {
-			credsToDelete = append(credsToDelete, cred.GetKeyId())
+	credsToDelete := []string{}
+	for _, cred := range app.PasswordCredentials {
+		if *cred.KeyID != config.NewClientSecretKeyID {
+			credsToDelete = append(credsToDelete, *cred.KeyID)
 		}
 	}
 
 	if len(credsToDelete) != 0 {
 		b.Logger().Debug("periodic func", "rotate-root", "removing old passwords from Azure")
-		err = removeApplicationPasswords(ctx, client, *app.GetId(), credsToDelete...)
+		err = removeApplicationPasswords(ctx, client, *app.ID, credsToDelete...)
 		if err != nil {
 			return err
 		}
