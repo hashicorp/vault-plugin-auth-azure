@@ -29,6 +29,11 @@ type azureAuthBackend struct {
 	provider provider
 
 	updatePassword bool
+	// resourceAPIVersionCache is a mapping of ResourceType to APIVersion
+	// so that we don't query supported API versions on each call to login for
+	// a given resource type
+	resourceAPIVersionCache map[string]string
+	cacheLock               sync.RWMutex
 }
 
 func backend() *azureAuthBackend {
@@ -60,6 +65,8 @@ func backend() *azureAuthBackend {
 		WALRollback:  b.walRollback,
 		PeriodicFunc: b.periodicFunc,
 	}
+
+	b.resourceAPIVersionCache = make(map[string]string)
 
 	return &b
 }

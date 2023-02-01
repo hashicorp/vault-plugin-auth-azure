@@ -9,6 +9,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/coreos/go-oidc"
 
 	"github.com/hashicorp/vault-plugin-auth-azure/api"
@@ -55,6 +56,14 @@ type mockMSGraphClient struct {
 	msGraphClientFunc func(subscriptionID string) (api.MSGraphClient, error)
 }
 
+type mockResourceClient struct {
+	resourceClientFunc func(resourceID string) (armresources.ClientGetByIDResponse, error)
+}
+
+type mockProvidersClient struct {
+	providersClientFunc func(string) (armresources.ProvidersClientGetResponse, error)
+}
+
 func (c *mockComputeClient) Get(_ context.Context, _, vmName string, _ *armcompute.VirtualMachinesClientGetOptions) (armcompute.VirtualMachinesClientGetResponse, error) {
 	if c.computeClientFunc != nil {
 		return c.computeClientFunc(vmName)
@@ -76,6 +85,20 @@ func (c *mockMSIClient) Get(_ context.Context, _, resourceName string, _ *armmsi
 	return armmsi.UserAssignedIdentitiesClientGetResponse{}, nil
 }
 
+func (c *mockResourceClient) GetByID(_ context.Context, resourceID, _ string, _ *armresources.ClientGetByIDOptions) (armresources.ClientGetByIDResponse, error) {
+	if c.resourceClientFunc != nil {
+		return c.resourceClientFunc(resourceID)
+	}
+	return armresources.ClientGetByIDResponse{}, nil
+}
+
+func (c *mockProvidersClient) Get(_ context.Context, resourceID string, _ *armresources.ProvidersClientGetOptions) (armresources.ProvidersClientGetResponse, error) {
+	if c.providersClientFunc != nil {
+		return c.providersClientFunc(resourceID)
+	}
+	return armresources.ProvidersClientGetResponse{}, nil
+}
+
 type computeClientFunc func(vmName string) (armcompute.VirtualMachinesClientGetResponse, error)
 
 type vmssClientFunc func(vmssName string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error)
@@ -84,11 +107,17 @@ type msiClientFunc func(resourceName string) (armmsi.UserAssignedIdentitiesClien
 
 type msGraphClientFunc func() (api.MSGraphClient, error)
 
+type resourceClientFunc func(resourceID string) (armresources.ClientGetByIDResponse, error)
+
+type providersClientFunc func(string) (armresources.ProvidersClientGetResponse, error)
+
 type mockProvider struct {
 	computeClientFunc
 	vmssClientFunc
 	msiClientFunc
 	msGraphClientFunc
+	resourceClientFunc
+	providersClientFunc
 }
 
 func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, g msGraphClientFunc) *mockProvider {
@@ -124,4 +153,16 @@ func (p *mockProvider) MSIClient(string) (msiClient, error) {
 
 func (p *mockProvider) MSGraphClient() (api.MSGraphClient, error) {
 	return nil, nil
+}
+
+func (p *mockProvider) ResourceClient(string) (resourceClient, error) {
+	return &mockResourceClient{
+		resourceClientFunc: p.resourceClientFunc,
+	}, nil
+}
+
+func (p *mockProvider) ProvidersClient(string) (providersClient, error) {
+	return &mockProvidersClient{
+		providersClientFunc: p.providersClientFunc,
+	}, nil
 }
