@@ -3,11 +3,10 @@ module github.com/hashicorp/vault-plugin-auth-azure
 go 1.19
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.0.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.2.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.0.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
-	github.com/hashicorp/errwrap v1.1.0
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hashicorp/go-hclog v1.3.1
 	github.com/hashicorp/vault/api v1.8.2
@@ -15,8 +14,10 @@ require (
 	golang.org/x/oauth2 v0.1.0
 )
 
+require github.com/hashicorp/errwrap v1.1.0 // indirect
+
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/internal v1.0.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.1.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4 v4.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi v0.7.0
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.7.0 // indirect
