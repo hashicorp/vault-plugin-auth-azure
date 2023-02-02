@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
+const userAgentPluginName = "auth-azure"
+
 // Factory is used by framework
 func Factory(ctx context.Context, c *logical.BackendConfig) (logical.Backend, error) {
 	b := backend()
@@ -28,6 +30,7 @@ type azureAuthBackend struct {
 	// so that we don't query supported API versions on each call to login for
 	// a given resource type
 	resourceAPIVersionCache map[string]string
+	cacheLock               sync.RWMutex
 }
 
 func backend() *azureAuthBackend {
