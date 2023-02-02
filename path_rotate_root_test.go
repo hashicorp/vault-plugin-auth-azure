@@ -17,7 +17,6 @@ func TestRotateRootSuccess(t *testing.T) {
 	if subscriptionID == "" || tenantID == "" ||
 		clientID == "" || clientSecret == "" {
 		t.Skip("environment variables not set, skipping test in CI")
-
 	}
 
 	configData := map[string]interface{}{
