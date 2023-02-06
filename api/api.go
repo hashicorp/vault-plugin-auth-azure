@@ -17,7 +17,6 @@ type AzureProvider interface {
 
 type MSGraphClient interface {
 	ListApplications(ctx context.Context, filter string) ([]ApplicationResult, error)
-	DeleteApplication(ctx context.Context, applicationObjectID string, permanentlyDelete bool) error
 	AddApplicationPassword(ctx context.Context, applicationObjectID string, displayName string, endDateTime time.Time) (PasswordCredentialResult, error)
 	RemoveApplicationPassword(ctx context.Context, applicationObjectID string, keyID string) error
 }
