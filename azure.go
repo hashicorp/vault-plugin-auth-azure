@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
@@ -395,7 +394,6 @@ func ConfigurationFromName(name string) (cloud.Configuration, error) {
 		"AzureUSGovernmentCloud": cloud.AzureGovernment,
 	}
 
-	name = strings.ToUpper(name)
 	c, ok := configs[name]
 	if !ok {
 		return c, fmt.Errorf("err: no cloud configuration matching the name %q", name)
