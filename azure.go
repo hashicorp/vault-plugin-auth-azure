@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -17,9 +17,10 @@ import (
 	az "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/coreos/go-oidc"
-	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-cleanhttp"
+	"github.com/hashicorp/vault/sdk/helper/useragent"
 	"github.com/hashicorp/vault/sdk/logical"
 	"golang.org/x/oauth2"
 
@@ -38,6 +39,14 @@ type msiClient interface {
 	Get(ctx context.Context, resourceGroupName string, resourceName string, options *armmsi.UserAssignedIdentitiesClientGetOptions) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 }
 
+type resourceClient interface {
+	GetByID(ctx context.Context, resourceID, apiVersion string, options *armresources.ClientGetByIDOptions) (armresources.ClientGetByIDResponse, error)
+}
+
+type providersClient interface {
+	Get(ctx context.Context, resourceProviderNamespace string, options *armresources.ProvidersClientGetOptions) (armresources.ProvidersClientGetResponse, error)
+}
+
 type tokenVerifier interface {
 	Verify(ctx context.Context, token string) (*oidc.IDToken, error)
 }
@@ -47,7 +56,12 @@ type provider interface {
 	ComputeClient(subscriptionID string) (computeClient, error)
 	VMSSClient(subscriptionID string) (vmssClient, error)
 	MSIClient(subscriptionID string) (msiClient, error)
+<<<<<<< HEAD
 	MSGraphClient() (api.MSGraphClient, error)
+=======
+	ResourceClient(subscriptionID string) (resourceClient, error)
+	ProvidersClient(subscriptionID string) (providersClient, error)
+>>>>>>> main
 }
 
 type azureProvider struct {
@@ -69,7 +83,8 @@ type transporter struct {
 }
 
 func (tp transporter) Do(req *http.Request) (*http.Response, error) {
-	req.Header.Set("User-Agent", userAgent(tp.pluginEnv))
+	req.Header.Set("User-Agent", useragent.PluginString(tp.pluginEnv,
+		userAgentPluginName))
 
 	client := tp.sender
 
@@ -100,7 +115,8 @@ func (b *azureAuthBackend) newAzureProvider(ctx context.Context, config *azureCo
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", userAgent(settings.PluginEnv))
+	req.Header.Set("User-Agent", useragent.PluginString(settings.PluginEnv,
+		userAgentPluginName))
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -108,16 +124,16 @@ func (b *azureAuthBackend) newAzureProvider(ctx context.Context, config *azureCo
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errwrap.Wrapf("unable to read response body: {{err}}", err)
+		return nil, fmt.Errorf("unable to read response body: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s: %s", resp.Status, body)
 	}
 	var discoveryInfo oidcDiscoveryInfo
 	if err := json.Unmarshal(body, &discoveryInfo); err != nil {
-		return nil, errwrap.Wrapf("unable to unmarshal discovery url: {{err}}", err)
+		return nil, fmt.Errorf("unable to unmarshal discovery url: %w", err)
 	}
 
 	// Create a remote key set from the discovery endpoint
@@ -147,15 +163,7 @@ func (p *azureProvider) ComputeClient(subscriptionID string) (computeClient, err
 		return nil, err
 	}
 
-	clientOptions := &arm.ClientOptions{
-		ClientOptions: policy.ClientOptions{
-			Cloud: p.settings.CloudConfig,
-			Transport: transporter{
-				pluginEnv: p.settings.PluginEnv,
-				sender:    p.httpClient,
-			},
-		},
-	}
+	clientOptions := p.getClientOptions()
 	client, err := armcompute.NewVirtualMachinesClient(subscriptionID, cred, clientOptions)
 	if err != nil {
 		return nil, err
@@ -170,15 +178,7 @@ func (p *azureProvider) VMSSClient(subscriptionID string) (vmssClient, error) {
 		return nil, err
 	}
 
-	clientOptions := &arm.ClientOptions{
-		ClientOptions: policy.ClientOptions{
-			Cloud: p.settings.CloudConfig,
-			Transport: transporter{
-				pluginEnv: p.settings.PluginEnv,
-				sender:    p.httpClient,
-			},
-		},
-	}
+	clientOptions := p.getClientOptions()
 	client, err := armcompute.NewVirtualMachineScaleSetsClient(subscriptionID, cred, clientOptions)
 	if err != nil {
 		return nil, err
@@ -193,7 +193,47 @@ func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
 		return nil, err
 	}
 
-	clientOptions := &arm.ClientOptions{
+	clientOptions := p.getClientOptions()
+	client, err := armmsi.NewUserAssignedIdentitiesClient(subscriptionID, cred, clientOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (p *azureProvider) ProvidersClient(subscriptionID string) (providersClient, error) {
+	cred, err := p.getTokenCredential()
+	if err != nil {
+		return nil, err
+	}
+
+	clientOptions := p.getClientOptions()
+	client, err := armresources.NewProvidersClient(subscriptionID, cred, clientOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (p *azureProvider) ResourceClient(subscriptionID string) (resourceClient, error) {
+	cred, err := p.getTokenCredential()
+	if err != nil {
+		return nil, err
+	}
+
+	clientOptions := p.getClientOptions()
+	client, err := armresources.NewClient(subscriptionID, cred, clientOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (p *azureProvider) getClientOptions() *arm.ClientOptions {
+	return &arm.ClientOptions{
 		ClientOptions: policy.ClientOptions{
 			Cloud: p.settings.CloudConfig,
 			Transport: transporter{
@@ -202,12 +242,6 @@ func (p *azureProvider) MSIClient(subscriptionID string) (msiClient, error) {
 			},
 		},
 	}
-	client, err := armmsi.NewUserAssignedIdentitiesClient(subscriptionID, cred, clientOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
 }
 
 func (p *azureProvider) MSGraphClient() (api.MSGraphClient, error) {
@@ -302,7 +336,8 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 
 	pluginEnv, err := b.System().PluginEnv(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("error loading plugin environment: %w", err)
+		b.Logger().Warn("failed to read plugin environment, user-agent will not be set",
+			"error", err)
 	}
 	settings.PluginEnv = pluginEnv
 
