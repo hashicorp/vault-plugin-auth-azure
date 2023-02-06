@@ -12,7 +12,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/coreos/go-oidc"
 
-	"github.com/hashicorp/vault-plugin-auth-azure/api"
+	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 
 // mockKeySet is used in tests to bypass signature validation and return only
@@ -53,7 +53,7 @@ type mockMSIClient struct {
 }
 
 type mockMSGraphClient struct {
-	msGraphClientFunc func(subscriptionID string) (api.MSGraphClient, error)
+	msGraphClientFunc func(subscriptionID string) (client.MSGraphClient, error)
 }
 
 type mockResourceClient struct {
@@ -105,7 +105,7 @@ type vmssClientFunc func(vmssName string) (armcompute.VirtualMachineScaleSetsCli
 
 type msiClientFunc func(resourceName string) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 
-type msGraphClientFunc func() (api.MSGraphClient, error)
+type msGraphClientFunc func() (client.MSGraphClient, error)
 
 type resourceClientFunc func(resourceID string) (armresources.ClientGetByIDResponse, error)
 
@@ -151,7 +151,7 @@ func (p *mockProvider) MSIClient(string) (msiClient, error) {
 	}, nil
 }
 
-func (p *mockProvider) MSGraphClient() (api.MSGraphClient, error) {
+func (p *mockProvider) MSGraphClient() (client.MSGraphClient, error) {
 	return nil, nil
 }
 

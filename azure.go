@@ -26,7 +26,7 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 	"golang.org/x/oauth2"
 
-	"github.com/hashicorp/vault-plugin-auth-azure/api"
+	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 
 type computeClient interface {
@@ -58,7 +58,7 @@ type provider interface {
 	ComputeClient(subscriptionID string) (computeClient, error)
 	VMSSClient(subscriptionID string) (vmssClient, error)
 	MSIClient(subscriptionID string) (msiClient, error)
-	MSGraphClient() (api.MSGraphClient, error)
+	MSGraphClient() (client.MSGraphClient, error)
 	ResourceClient(subscriptionID string) (resourceClient, error)
 	ProvidersClient(subscriptionID string) (providersClient, error)
 }
@@ -258,10 +258,10 @@ func getAuthorizer(settings *azureSettings, resource string) (autorest.Authorize
 	return config.Authorizer()
 }
 
-func (p *azureProvider) MSGraphClient() (api.MSGraphClient, error) {
+func (p *azureProvider) MSGraphClient() (client.MSGraphClient, error) {
 	userAgent := useragent.PluginString(p.settings.PluginEnv, userAgentPluginName)
 
-	graphURI, err := api.GetGraphURI(p.settings.Environment.Name)
+	graphURI, err := client.GetGraphURI(p.settings.Environment.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +271,7 @@ func (p *azureProvider) MSGraphClient() (api.MSGraphClient, error) {
 		return nil, err
 	}
 
-	msGraphAppClient, err := api.NewMSGraphApplicationClient(p.settings.SubscriptionID, userAgent, graphURI, graphApiAuthorizer)
+	msGraphAppClient, err := client.NewMSGraphApplicationClient(p.settings.SubscriptionID, userAgent, graphURI, graphApiAuthorizer)
 	if err != nil {
 		return nil, err
 	}

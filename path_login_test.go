@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/vault/sdk/helper/policyutil"
 	"github.com/hashicorp/vault/sdk/logical"
 
-	"github.com/hashicorp/vault-plugin-auth-azure/api"
+	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 
 func TestResolveRole(t *testing.T) {
@@ -998,14 +998,14 @@ func getTestBackendFunctions(withLocation bool) (
 	}
 }
 
-func getTestMSGraphClient() func() (api.MSGraphClient, error) {
-	return func() (api.MSGraphClient, error) {
+func getTestMSGraphClient() func() (client.MSGraphClient, error) {
+	return func() (client.MSGraphClient, error) {
 		settings := new(azureSettings)
 		graphURI := "test-graph-uri"
 
 		// set up dummy test client
 		client := authorization.NewWithBaseURI(graphURI, settings.SubscriptionID)
-		ac := &api.AppClient{
+		ac := &client.AppClient{
 			Client:   client,
 			GraphURI: graphURI,
 		}
