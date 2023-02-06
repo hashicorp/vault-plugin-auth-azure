@@ -1004,9 +1004,9 @@ func getTestMSGraphClient() func() (client.MSGraphClient, error) {
 		graphURI := "test-graph-uri"
 
 		// set up dummy test client
-		client := authorization.NewWithBaseURI(graphURI, settings.SubscriptionID)
+		c := authorization.NewWithBaseURI(graphURI, settings.SubscriptionID)
 		ac := &client.AppClient{
-			Client:   client,
+			Client:   c,
 			GraphURI: graphURI,
 		}
 
