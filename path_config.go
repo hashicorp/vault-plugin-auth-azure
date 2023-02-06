@@ -157,8 +157,6 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		config.RootPasswordTTL = time.Second * time.Duration(rootExpirationRaw.(int))
 	}
 
-	// b.Logger().Info("Test Dev Build Working\n")
-
 	// Create a settings object to validate all required settings
 	// are available
 	if _, err := b.getAzureSettings(ctx, config); err != nil {

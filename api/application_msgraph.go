@@ -12,7 +12,6 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
-	"github.com/hashicorp/vault/sdk/logical"
 )
 
 var _ MSGraphClient = (*AppClient)(nil)
@@ -24,15 +23,6 @@ type AppClient struct {
 
 type listApplicationsResponse struct {
 	Value []ApplicationResult `json:"value"`
-}
-
-type ClientSettings struct {
-	SubscriptionID string
-	TenantID       string
-	ClientID       string
-	ClientSecret   string
-	Environment    azure.Environment
-	PluginEnv      *logical.PluginEnvironment
 }
 
 func GetGraphURI(env string) (string, error) {

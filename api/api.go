@@ -8,13 +8,6 @@ import (
 	"github.com/Azure/go-autorest/autorest/date"
 )
 
-// AzureProvider is an interface to access underlying Azure Client objects and supporting services.
-// Where practical the original function signature is preserved. Client provides higher
-// level operations atop AzureProvider.
-type AzureProvider interface {
-	MSGraphClient
-}
-
 type MSGraphClient interface {
 	ListApplications(ctx context.Context, filter string) ([]ApplicationResult, error)
 	AddApplicationPassword(ctx context.Context, applicationObjectID string, displayName string, endDateTime time.Time) (PasswordCredentialResult, error)
