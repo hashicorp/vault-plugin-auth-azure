@@ -25,7 +25,6 @@ func TestRotateRootSuccess(t *testing.T) {
 		"resource":        "https://management.azure.com/",
 		"client_id":       clientID,
 		"client_secret":   clientSecret,
-		"environment":     "AZUREPUBLICCLOUD",
 	}
 	if err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatalf("err: %v", err)
@@ -95,10 +94,24 @@ func TestRotateRootSuccess(t *testing.T) {
 }
 
 func TestRotateRootPeriodicFunctionBeforeMinute(t *testing.T) {
-	// Remove once test has been refactored
-	t.Skip()
-
 	b, s := getTestBackend(t)
+
+	subscriptionID, tenantID, clientID, clientSecret := getAzureEnvironmentSettings()
+	if subscriptionID == "" || tenantID == "" ||
+		clientID == "" || clientSecret == "" {
+		t.Skip("environment variables not set, skipping test in CI")
+	}
+
+	configData := map[string]interface{}{
+		"subscription_id": subscriptionID,
+		"tenant_id":       tenantID,
+		"resource":        "https://management.azure.com/",
+		"client_id":       clientID,
+		"client_secret":   clientSecret,
+	}
+	if err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.UpdateOperation,

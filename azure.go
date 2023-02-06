@@ -390,9 +390,9 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 
 func ConfigurationFromName(name string) (cloud.Configuration, error) {
 	configs := map[string]cloud.Configuration{
-		"AZURECHINACLOUD":        cloud.AzureChina,
-		"AZUREPUBLICCLOUD":       cloud.AzurePublic,
-		"AZUREUSGOVERNMENTCLOUD": cloud.AzureGovernment,
+		"AzureChinaCloud":        cloud.AzureChina,
+		"AzurePublicCloud":       cloud.AzurePublic,
+		"AzureUSGovernmentCloud": cloud.AzureGovernment,
 	}
 
 	name = strings.ToUpper(name)
