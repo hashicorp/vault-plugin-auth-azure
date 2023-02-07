@@ -236,6 +236,9 @@ func (b *azureAuthBackend) saveConfig(ctx context.Context, config *azureConfig, 
 }
 
 const (
+	// The default password expiration duration is 6 months in
+	// the Azure UI, so we're setting it to 6 months (in hours)
+	// as the default.
 	defaultRootPasswordTTL = 4380 * time.Hour
 	configStoragePath      = "config"
 	confHelpSyn            = `Configures the Azure authentication backend.`

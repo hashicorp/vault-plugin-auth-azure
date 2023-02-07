@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
+// This test performs a rotate root operation and
+// swaps the root credentials for the application
 func TestRotateRootSuccess(t *testing.T) {
 	b, s := getTestBackend(t)
 
@@ -94,6 +96,9 @@ func TestRotateRootSuccess(t *testing.T) {
 	}
 }
 
+// This test verifies that the periodicFunc does not remove
+// stale credentials until the value for NewClientSecretCreated
+// is greater than 1 minute
 func TestRotateRootPeriodicFunctionBeforeMinute(t *testing.T) {
 	b, s := getTestBackend(t)
 
