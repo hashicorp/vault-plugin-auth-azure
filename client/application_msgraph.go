@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/authorization/mgmt/2018-01-01-preview/authorization"
@@ -26,14 +27,14 @@ type listApplicationsResponse struct {
 }
 
 func GetGraphURI(env string) (string, error) {
-	switch env {
-	case "AzurePublicCloud", "":
+	switch strings.ToUpper(env) {
+	case "AZUREPUBLICCLOUD", "":
 		return "https://graph.microsoft.com", nil
-	case "AzureUSGovernmentCloud":
+	case "AZUREUSGOVERNMENTCLOUD":
 		return "https://graph.microsoft.us", nil
-	case "AzureGermanCloud":
+	case "AZUREGERMANCLOUD":
 		return "https://graph.microsoft.de", nil
-	case "AzureChinaCloud":
+	case "AZURECHINACLOUD":
 		return "https://microsoftgraph.chinacloudapi.cn", nil
 	default:
 		return "", fmt.Errorf("environment '%s' unknown", env)

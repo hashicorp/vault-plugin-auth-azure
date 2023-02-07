@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
@@ -28,7 +29,6 @@ import (
 	"github.com/hashicorp/vault/sdk/helper/useragent"
 	"github.com/hashicorp/vault/sdk/logical"
 	"golang.org/x/oauth2"
-
 	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 
@@ -353,27 +353,23 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 	settings.ClientSecret = clientSecret
 
 	configName := os.Getenv("AZURE_ENVIRONMENT")
+	envName := configName
 	if configName == "" {
+		// set CloudConfig and Environment from config
 		configName = config.Environment
+		envName = config.Environment
 	}
 	if configName == "" {
+		// use default values if no environment is provided
 		settings.CloudConfig = cloud.AzurePublic
+		settings.Environment = azure.PublicCloud
 	} else {
 		var err error
 		settings.CloudConfig, err = ConfigurationFromName(configName)
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	envName := os.Getenv("AZURE_ENVIRONMENT")
-	if envName == "" {
-		envName = config.Environment
-	}
-	if envName == "" {
-		settings.Environment = azure.PublicCloud
-	} else {
-		var err error
 		settings.Environment, err = azure.EnvironmentFromName(envName)
 		if err != nil {
 			return nil, err
@@ -392,11 +388,12 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 
 func ConfigurationFromName(name string) (cloud.Configuration, error) {
 	configs := map[string]cloud.Configuration{
-		"AzureChinaCloud":        cloud.AzureChina,
-		"AzurePublicCloud":       cloud.AzurePublic,
-		"AzureUSGovernmentCloud": cloud.AzureGovernment,
+		"AZURECHINACLOUD":        cloud.AzureChina,
+		"AZUREPUBLICCLOUD":       cloud.AzurePublic,
+		"AZUREUSGOVERNMENTCLOUD": cloud.AzureGovernment,
 	}
 
+	name = strings.ToUpper(name)
 	c, ok := configs[name]
 	if !ok {
 		return c, fmt.Errorf("err: no cloud configuration matching the name %q", name)

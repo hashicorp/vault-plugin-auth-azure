@@ -20,7 +20,6 @@ import (
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/vault/sdk/helper/policyutil"
 	"github.com/hashicorp/vault/sdk/logical"
-
 	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 

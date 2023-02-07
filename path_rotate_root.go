@@ -7,9 +7,9 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-uuid"
-
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
+	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 
 func pathRotateRoot(b *azureAuthBackend) *framework.Path {
@@ -111,15 +111,11 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 	return nil, err
 }
 
-type passwordRemover interface {
-	RemoveApplicationPassword(ctx context.Context, applicationObjectID string, keyID string) error
-}
-
-func removeApplicationPasswords(ctx context.Context, passRemover passwordRemover, appID string, passwordKeyIDs ...string) (err error) {
+func removeApplicationPasswords(ctx context.Context, c client.MSGraphClient, appID string, passwordKeyIDs ...string) (err error) {
 	merr := new(multierror.Error)
 	for _, keyID := range passwordKeyIDs {
 		// Attempt to remove all of them, don't fail early
-		err := passRemover.RemoveApplicationPassword(ctx, appID, keyID)
+		err := c.RemoveApplicationPassword(ctx, appID, keyID)
 		if err != nil {
 			merr = multierror.Append(merr, err)
 		}

@@ -24,6 +24,7 @@ func TestRotateRootSuccess(t *testing.T) {
 		"tenant_id":       tenantID,
 		"resource":        "https://management.azure.com/",
 		"client_id":       clientID,
+		"environment":     "AzurePublicCloud",
 		"client_secret":   clientSecret,
 	}
 	if err := testConfigCreate(t, b, s, configData); err != nil {
