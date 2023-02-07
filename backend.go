@@ -65,7 +65,7 @@ func backend() *azureAuthBackend {
 			},
 			pathsRole(&b),
 		),
-		WALRollback:  b.walRollback,
+		WALRollback: b.walRollback,
 		// periodicFunc to clean up old credentials
 		PeriodicFunc: b.periodicFunc,
 	}

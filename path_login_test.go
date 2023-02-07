@@ -18,9 +18,9 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/services/preview/authorization/mgmt/2018-01-01-preview/authorization"
 	"github.com/coreos/go-oidc"
+	"github.com/hashicorp/vault-plugin-auth-azure/client"
 	"github.com/hashicorp/vault/sdk/helper/policyutil"
 	"github.com/hashicorp/vault/sdk/logical"
-	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 
 func TestResolveRole(t *testing.T) {

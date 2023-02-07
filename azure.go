@@ -26,10 +26,10 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/go-cleanhttp"
+	"github.com/hashicorp/vault-plugin-auth-azure/client"
 	"github.com/hashicorp/vault/sdk/helper/useragent"
 	"github.com/hashicorp/vault/sdk/logical"
 	"golang.org/x/oauth2"
-	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 
 type computeClient interface {
