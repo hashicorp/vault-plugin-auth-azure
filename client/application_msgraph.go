@@ -32,8 +32,6 @@ func GetGraphURI(env string) (string, error) {
 		return "https://graph.microsoft.com", nil
 	case "AZUREUSGOVERNMENTCLOUD":
 		return "https://graph.microsoft.us", nil
-	case "AZUREGERMANCLOUD":
-		return "https://graph.microsoft.de", nil
 	case "AZURECHINACLOUD":
 		return "https://microsoftgraph.chinacloudapi.cn", nil
 	default:
