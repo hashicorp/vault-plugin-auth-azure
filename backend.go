@@ -68,7 +68,7 @@ func backend() *azureAuthBackend {
 		// Root rotation can take up to a few minutes, so ensure we do not
 		// roll back a root credential rotation that is currently in flight
 		WALRollbackMinAge: 3 * time.Minute,
-		WALRollback: b.walRollback,
+		WALRollback:       b.walRollback,
 		// periodicFunc to clean up old credentials
 		PeriodicFunc: b.periodicFunc,
 	}
