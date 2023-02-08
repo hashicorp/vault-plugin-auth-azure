@@ -352,25 +352,22 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 	}
 	settings.ClientSecret = clientSecret
 
-	configName := os.Getenv("AZURE_ENVIRONMENT")
-	envName := configName
-	if configName == "" {
-		// set CloudConfig and Environment from config
-		configName = config.Environment
-		envName = config.Environment
+	environment := os.Getenv("AZURE_ENVIRONMENT")
+	if environment == "" {
+		// set environment from config
+		environment = config.Environment
 	}
-	if configName == "" {
+	if environment == "" {
 		// use default values if no environment is provided
 		settings.CloudConfig = cloud.AzurePublic
 		settings.Environment = azure.PublicCloud
 	} else {
 		var err error
-		settings.CloudConfig, err = ConfigurationFromName(configName)
+		settings.CloudConfig, err = ConfigurationFromName(environment)
 		if err != nil {
 			return nil, err
 		}
-
-		settings.Environment, err = azure.EnvironmentFromName(envName)
+		settings.Environment, err = azure.EnvironmentFromName(environment)
 		if err != nil {
 			return nil, err
 		}

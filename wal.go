@@ -12,9 +12,6 @@ const (
 	walRotateRootCreds = "rotateRootCreds"
 )
 
-// Eventually expire the WAL if for some reason the rollback operation consistently fails
-var maxWALAge = 24 * time.Hour
-
 func (b *azureAuthBackend) walRollback(ctx context.Context, req *logical.Request, kind string, data interface{}) error {
 	switch kind {
 	case walRotateRootCreds:
