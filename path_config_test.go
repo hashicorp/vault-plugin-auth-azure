@@ -19,9 +19,8 @@ func TestConfig_Write(t *testing.T) {
 	}
 
 	configData = map[string]interface{}{
-		"subscription_id": "subid",
-		"tenant_id":       "tid",
-		"resource":        "resource",
+		"tenant_id": "tid",
+		"resource":  "resource",
 	}
 	if err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatalf("err: %v", err)
@@ -42,9 +41,8 @@ func TestConfigDelete(t *testing.T) {
 	b, s := getTestBackend(t)
 
 	configData := map[string]interface{}{
-		"subscription_id": "subid",
-		"tenant_id":       "tid",
-		"resource":        "resource",
+		"tenant_id": "tid",
+		"resource":  "resource",
 	}
 	if err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatalf("err: %v", err)

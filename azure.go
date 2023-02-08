@@ -274,7 +274,7 @@ func (p *azureProvider) MSGraphClient() (client.MSGraphClient, error) {
 		return nil, err
 	}
 
-	msGraphAppClient, err := client.NewMSGraphApplicationClient(p.settings.SubscriptionID, userAgent, graphURI, graphApiAuthorizer)
+	msGraphAppClient, err := client.NewMSGraphApplicationClient(userAgent, graphURI, graphApiAuthorizer)
 	if err != nil {
 		return nil, err
 	}
@@ -301,14 +301,13 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 }
 
 type azureSettings struct {
-	SubscriptionID string
-	TenantID       string
-	ClientID       string
-	ClientSecret   string
-	CloudConfig    cloud.Configuration
-	Resource       string
-	Environment    azure.Environment
-	PluginEnv      *logical.PluginEnvironment
+	TenantID     string
+	ClientID     string
+	ClientSecret string
+	CloudConfig  cloud.Configuration
+	Resource     string
+	Environment  azure.Environment
+	PluginEnv    *logical.PluginEnvironment
 }
 
 func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureConfig) (*azureSettings, error) {
@@ -333,12 +332,6 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 	default:
 		return nil, errors.New("resource is required")
 	}
-
-	subscriptionID := os.Getenv("AZURE_SUBSCRIPTION_ID")
-	if subscriptionID == "" {
-		subscriptionID = config.SubscriptionID
-	}
-	settings.SubscriptionID = subscriptionID
 
 	clientID := os.Getenv("AZURE_CLIENT_ID")
 	if clientID == "" {

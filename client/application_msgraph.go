@@ -43,8 +43,8 @@ func GetGraphURI(env string) (string, error) {
 
 // NewMSGraphApplicationClient creates a new MS Graph Client
 // to allow interaction with the MS Graph v1.0 API.
-func NewMSGraphApplicationClient(subscriptionId string, userAgentExtension string, graphURI string, auth autorest.Authorizer) (*AppClient, error) {
-	client := authorization.NewWithBaseURI(graphURI, subscriptionId)
+func NewMSGraphApplicationClient(userAgentExtension string, graphURI string, auth autorest.Authorizer) (*AppClient, error) {
+	client := authorization.NewWithBaseURI(graphURI, "")
 	client.Authorizer = auth
 
 	if userAgentExtension != "" {

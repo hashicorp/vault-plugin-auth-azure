@@ -15,19 +15,18 @@ import (
 func TestRotateRootSuccess(t *testing.T) {
 	b, s := getTestBackend(t)
 
-	subscriptionID, tenantID, clientID, clientSecret := getAzureEnvironmentSettings()
-	if subscriptionID == "" || tenantID == "" ||
+	tenantID, clientID, clientSecret := getAzureEnvironmentSettings()
+	if tenantID == "" ||
 		clientID == "" || clientSecret == "" {
-		t.Skip("environment variables not set, skipping test in CI")
+		t.Skip("environment variables not set, skipping test")
 	}
 
 	configData := map[string]interface{}{
-		"subscription_id": subscriptionID,
-		"tenant_id":       tenantID,
-		"resource":        "https://management.azure.com/",
-		"client_id":       clientID,
-		"environment":     "azurepublicCloud",
-		"client_secret":   clientSecret,
+		"tenant_id":     tenantID,
+		"resource":      "https://management.azure.com/",
+		"client_id":     clientID,
+		"environment":   "azurepublicCloud",
+		"client_secret": clientSecret,
 	}
 	if err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatalf("err: %v", err)
@@ -102,18 +101,17 @@ func TestRotateRootSuccess(t *testing.T) {
 func TestRotateRootPeriodicFunctionBeforeMinute(t *testing.T) {
 	b, s := getTestBackend(t)
 
-	subscriptionID, tenantID, clientID, clientSecret := getAzureEnvironmentSettings()
-	if subscriptionID == "" || tenantID == "" ||
+	tenantID, clientID, clientSecret := getAzureEnvironmentSettings()
+	if tenantID == "" ||
 		clientID == "" || clientSecret == "" {
-		t.Skip("environment variables not set, skipping test in CI")
+		t.Skip("environment variables not set, skipping test")
 	}
 
 	configData := map[string]interface{}{
-		"subscription_id": subscriptionID,
-		"tenant_id":       tenantID,
-		"resource":        "https://management.azure.com/",
-		"client_id":       clientID,
-		"client_secret":   clientSecret,
+		"tenant_id":     tenantID,
+		"resource":      "https://management.azure.com/",
+		"client_id":     clientID,
+		"client_secret": clientSecret,
 	}
 	if err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatalf("err: %v", err)
@@ -191,12 +189,10 @@ func getAzureEnvironmentSettings() (
 	string,
 	string,
 	string,
-	string,
 ) {
-	subscriptionID := os.Getenv("SUBSCRIPTION_ID")
 	tenantID := os.Getenv("TENANT_ID")
 	clientID := os.Getenv("CLIENT_ID")
 	clientSecret := os.Getenv("CLIENT_SECRET")
 
-	return subscriptionID, tenantID, clientID, clientSecret
+	return tenantID, clientID, clientSecret
 }

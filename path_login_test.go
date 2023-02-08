@@ -1002,11 +1002,10 @@ func getTestBackendFunctions(withLocation bool) (
 
 func getTestMSGraphClient() func() (client.MSGraphClient, error) {
 	return func() (client.MSGraphClient, error) {
-		settings := new(azureSettings)
 		graphURI := "test-graph-uri"
 
 		// set up dummy test client
-		c := authorization.NewWithBaseURI(graphURI, settings.SubscriptionID)
+		c := authorization.NewWithBaseURI(graphURI, "")
 		ac := &client.AppClient{
 			Client:   c,
 			GraphURI: graphURI,

@@ -54,10 +54,6 @@ type mockMSIClient struct {
 	msiClientFunc func(resourceName string) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 }
 
-type mockMSGraphClient struct {
-	msGraphClientFunc func(subscriptionID string) (client.MSGraphClient, error)
-}
-
 type mockResourceClient struct {
 	resourceClientFunc func(resourceID string) (armresources.ClientGetByIDResponse, error)
 }
