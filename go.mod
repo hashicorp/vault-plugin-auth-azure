@@ -15,10 +15,12 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hashicorp/go-hclog v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/vault/api v1.8.3
-	github.com/hashicorp/vault/sdk v0.7.0
+	github.com/hashicorp/vault/api v1.9.0
+	github.com/hashicorp/vault/sdk v0.8.1
 	golang.org/x/oauth2 v0.4.0
 )
+
+require github.com/hashicorp/go-kms-wrapping/v2 v2.0.7 // indirect
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.1.2 // indirect
@@ -73,7 +75,7 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
+	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
