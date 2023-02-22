@@ -2,11 +2,12 @@
 
 CHANGES:
 
-ADD YOUR CHANGE HERE [GH-XXX]
+* ADD YOUR CHANGE HERE [GH-XXX]
 
 IMPROVEMENTS:
 
-Enable multiplexing [GH-172]
+* Enable multiplexing [[GH-96](https://github.com/hashicorp/vault-plugin-auth-azure/pull/96)]
+
 ## v0.13.0
 
 FEATURES:
