@@ -1,6 +1,6 @@
 ## Unreleased
 
-## v0.13.1
+## v0.14.0
 
 IMPROVEMENTS:
 
