@@ -15,7 +15,7 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 	return &framework.Path{
 		Pattern: "config",
 		DisplayAttrs: &framework.DisplayAttributes{
-			OperationPrefix: "azure-auth",
+			OperationPrefix: operationPrefixAzureAuth,
 		},
 		Fields: map[string]*framework.FieldSchema{
 			"tenant_id": {

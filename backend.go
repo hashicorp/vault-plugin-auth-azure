@@ -13,7 +13,10 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
-const userAgentPluginName = "auth-azure"
+const (
+	userAgentPluginName      = "auth-azure"
+	operationPrefixAzureAuth = "azure-auth"
+)
 
 // Factory is used by framework
 func Factory(ctx context.Context, c *logical.BackendConfig) (logical.Backend, error) {

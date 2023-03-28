@@ -29,7 +29,7 @@ func pathLogin(b *azureAuthBackend) *framework.Path {
 		Pattern: "login$",
 
 		DisplayAttrs: &framework.DisplayAttributes{
-			OperationPrefix: "azure-auth",
+			OperationPrefix: operationPrefixAzureAuth,
 			OperationVerb:   "log-in",
 		},
 

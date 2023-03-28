@@ -22,7 +22,7 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 		{
 			Pattern: "role/?",
 			DisplayAttrs: &framework.DisplayAttributes{
-				OperationPrefix: "azure-auth",
+				OperationPrefix: operationPrefixAzureAuth,
 				OperationSuffix: "roles",
 			},
 			Operations: map[logical.Operation]framework.OperationHandler{
@@ -36,7 +36,7 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 		{
 			Pattern: "role/" + framework.GenericNameRegex("name"),
 			DisplayAttrs: &framework.DisplayAttributes{
-				OperationPrefix: "azure-auth",
+				OperationPrefix: operationPrefixAzureAuth,
 				OperationSuffix: "role",
 			},
 			Fields: map[string]*framework.FieldSchema{
