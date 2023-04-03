@@ -15,7 +15,7 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 	return &framework.Path{
 		Pattern: "config",
 		DisplayAttrs: &framework.DisplayAttributes{
-			OperationPrefix: operationPrefixAzureAuth,
+			OperationPrefix: operationPrefixAzure,
 		},
 		Fields: map[string]*framework.FieldSchema{
 			"tenant_id": {
@@ -55,25 +55,29 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 			logical.ReadOperation: &framework.PathOperation{
 				Callback: b.pathConfigRead,
 				DisplayAttrs: &framework.DisplayAttributes{
-					OperationSuffix: "configuration",
+					OperationVerb:   "read",
+					OperationSuffix: "auth-configuration",
 				},
 			},
 			logical.CreateOperation: &framework.PathOperation{
 				Callback: b.pathConfigWrite,
 				DisplayAttrs: &framework.DisplayAttributes{
-					OperationVerb: "configure",
+					OperationVerb:   "configure",
+					OperationSuffix: "auth",
 				},
 			},
 			logical.UpdateOperation: &framework.PathOperation{
 				Callback: b.pathConfigWrite,
 				DisplayAttrs: &framework.DisplayAttributes{
-					OperationVerb: "configure",
+					OperationVerb:   "configure",
+					OperationSuffix: "auth",
 				},
 			},
 			logical.DeleteOperation: &framework.PathOperation{
 				Callback: b.pathConfigDelete,
 				DisplayAttrs: &framework.DisplayAttributes{
-					OperationSuffix: "configuration",
+					OperationVerb:   "delete",
+					OperationSuffix: "auth-configuration",
 				},
 			},
 		},

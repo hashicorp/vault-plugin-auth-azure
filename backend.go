@@ -16,8 +16,8 @@ import (
 const (
 	userAgentPluginName = "auth-azure"
 
-	// operationPrefixAzureAuth is used as a prefix for OpenAPI operation id's.
-	operationPrefixAzureAuth = "azure-auth"
+	// operationPrefixAzure is used as a prefix for OpenAPI operation id's.
+	operationPrefixAzure = "azure"
 )
 
 // Factory is used by framework
