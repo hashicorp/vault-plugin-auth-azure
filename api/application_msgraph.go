@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	az "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/google/uuid"
 	abstractions "github.com/microsoft/kiota-abstractions-go"
@@ -90,51 +89,50 @@ func GetAzureTokenCredential(c *AppClient) (azcore.TokenCredential, error) {
 }
 
 // ListApplications lists all Azure application in organization based on a filter.
-func (c *AppClient) ListApplications(ctx context.Context, id string) ([]graphmodels.Applicationable, error) {
-	cred, err := GetAzureTokenCredential(c)
-	if err != nil {
-		return nil, fmt.Errorf("error getting token credential: err=%s", err)
-	}
+func (c *AppClient) ListApplications(ctx context.Context, filter string) ([]graphmodels.Applicationable, error) {
+	//cred, err := GetAzureTokenCredential(c)
+	//if err != nil {
+	//	return nil, fmt.Errorf("error getting token credential: err=%s", err)
+	//}
 
-	scope := fmt.Sprintf("%s/.default", c.settings.ClientID)
-	opts := policy.TokenRequestOptions{
-		Scopes: []string{scope},
-	}
-	token, err := cred.GetToken(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
+	//scope := fmt.Sprintf("%s/.default", c.settings.ClientID)
+	//opts := policy.TokenRequestOptions{
+	//	Scopes: []string{scope},
+	//}
+	//token, err := cred.GetToken(ctx, opts)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	headers := abstractions.NewRequestHeaders()
 	//headers.Add("Content-type", "application/json")
-	headers.Add("authorization  ", fmt.Sprintf("%s", token.Token))
-	//headers.Add("ConsistencyLevel", "eventual")
-	//headers.Add("random", "foobar")
+	//headers.Add("authorization  ", fmt.Sprintf("%s", token.Token))
+	headers.Add("ConsistencyLevel", "eventual")
 
-	//requestParameters := &graphconfig.ApplicationRequestBuilderGetQueryParameters{
+	//requestParameters := &graphconfig.ApplicationsRequestBuilderGetQueryParameters{
 	//	Select: []string{"id", "appId", "displayName", "requiredResourceAccess"},
 	//}
-	//configuration := &graphconfig.ApplicationRequestBuilderGetRequestConfiguration{
+	//configuration := &graphconfig.ApplicationsRequestBuilderGetRequestConfiguration{
 	//	QueryParameters: requestParameters,
 	//}
 
-	requestParameters := &graphconfig.ApplicationItemRequestBuilderGetQueryParameters{
-		//Select: []string{"id", "appId", "displayName", "requiredResourceAccess"},
-		//Filter: &filter,
-		//Orderby: []string{"displayName"},
+	requestParameters := &graphconfig.ApplicationsRequestBuilderGetQueryParameters{
+		Select:  []string{"id", "appId", "displayName", "requiredResourceAccess"},
+		Filter:  &filter,
+		Orderby: []string{"displayName"},
 	}
 
-	configuration := &graphconfig.ApplicationItemRequestBuilderGetRequestConfiguration{
+	configuration := &graphconfig.ApplicationsRequestBuilderGetRequestConfiguration{
 		Headers:         headers,
 		QueryParameters: requestParameters,
 	}
 
-	result, err := c.client.ApplicationsById(id).Get(ctx, configuration)
+	result, err := c.client.Applications().Get(ctx, configuration)
 	if err != nil {
 		return nil, err
 	}
 
-	return []graphmodels.Applicationable{result}, nil
+	return result.GetValue(), nil
 }
 
 // AddApplicationPassword adds an Azure application password.

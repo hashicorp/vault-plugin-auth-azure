@@ -56,12 +56,9 @@ type provider interface {
 	ComputeClient(subscriptionID string) (computeClient, error)
 	VMSSClient(subscriptionID string) (vmssClient, error)
 	MSIClient(subscriptionID string) (msiClient, error)
-<<<<<<< HEAD
 	MSGraphClient() (api.MSGraphClient, error)
-=======
 	ResourceClient(subscriptionID string) (resourceClient, error)
 	ProvidersClient(subscriptionID string) (providersClient, error)
->>>>>>> main
 }
 
 type azureProvider struct {

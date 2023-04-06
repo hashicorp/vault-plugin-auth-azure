@@ -59,7 +59,7 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 	// We need to use List instead of Get here because we don't have the Object ID
 	// (which is different from the Application/Client ID)
 	//fmt.Sprintf("appId eq '%s'", config.ClientID)
-	apps, err := client.ListApplications(ctx, config.ClientID)
+	apps, err := client.ListApplications(ctx, fmt.Sprintf("appId eq '%s'", config.ClientID))
 	if err != nil {
 		return nil, err
 	}

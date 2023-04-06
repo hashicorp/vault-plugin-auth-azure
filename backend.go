@@ -29,15 +29,12 @@ type azureAuthBackend struct {
 
 	provider provider
 
-<<<<<<< HEAD
 	updatePassword bool
-=======
 	// resourceAPIVersionCache is a mapping of ResourceType to APIVersion
 	// so that we don't query supported API versions on each call to login for
 	// a given resource type
 	resourceAPIVersionCache map[string]string
 	cacheLock               sync.RWMutex
->>>>>>> main
 }
 
 func backend() *azureAuthBackend {
@@ -66,11 +63,16 @@ func backend() *azureAuthBackend {
 			},
 			pathsRole(&b),
 		),
-		WALRollback:  b.walRollback,
+		// Root rotation can take up to a few minutes, so ensure we do not
+		// roll back a root credential rotation that is currently in flight
+		WALRollbackMinAge: 3 * time.Minute,
+		WALRollback:       b.walRollback,
+		// periodicFunc to clean up old credentials
 		PeriodicFunc: b.periodicFunc,
 	}
 
-<<<<<<< HEAD
+	b.resourceAPIVersionCache = make(map[string]string)
+
 	return &b
 }
 
@@ -153,11 +155,6 @@ func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Reques
 	b.updatePassword = false
 
 	return nil
-=======
-	b.resourceAPIVersionCache = make(map[string]string)
-
-	return b
->>>>>>> main
 }
 
 func (b *azureAuthBackend) invalidate(ctx context.Context, key string) {
