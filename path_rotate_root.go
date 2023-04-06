@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package azureauth
 
 import (
@@ -5,12 +8,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	//"github.com/hashicorp/go-uuid"
-
+	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
+
+	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 
 func pathRotateRoot(b *azureAuthBackend) *framework.Path {
@@ -58,7 +61,6 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 
 	// We need to use List instead of Get here because we don't have the Object ID
 	// (which is different from the Application/Client ID)
-	//fmt.Sprintf("appId eq '%s'", config.ClientID)
 	apps, err := client.ListApplications(ctx, fmt.Sprintf("appId eq '%s'", config.ClientID))
 	if err != nil {
 		return nil, err
@@ -73,7 +75,7 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 
 	app := apps[0]
 
-	uniqueID := uuid.New()
+	uniqueID, err := uuid.GenerateUUID()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate UUID: %w", err)
 	}
@@ -113,38 +115,15 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 	return nil, err
 }
 
-type passwordRemover interface {
-	RemoveApplicationPassword(ctx context.Context, applicationObjectID string, keyID *uuid.UUID) error
-}
-
-func removeApplicationPasswords(ctx context.Context, passRemover passwordRemover, appID string, passwordKeyIDs ...*uuid.UUID) (err error) {
+func removeApplicationPasswords(ctx context.Context, c client.MSGraphClient, appID string, passwordKeyIDs ...*uuid.UUID) (err error) {
 	merr := new(multierror.Error)
 	for _, keyID := range passwordKeyIDs {
 		// Attempt to remove all of them, don't fail early
-		err := passRemover.RemoveApplicationPassword(ctx, appID, keyID)
+		err := c.RemoveApplicationPassword(ctx, appID, keyID)
 		if err != nil {
 			merr = multierror.Append(merr, err)
 		}
 	}
 
 	return merr.ErrorOrNil()
-}
-
-func intersectStrings(a []string, b []string) []string {
-	if len(a) == 0 || len(b) == 0 {
-		return []string{}
-	}
-
-	aMap := map[string]struct{}{}
-	for _, aStr := range a {
-		aMap[aStr] = struct{}{}
-	}
-
-	result := []string{}
-	for _, bStr := range b {
-		if _, exists := aMap[bStr]; exists {
-			result = append(result, bStr)
-		}
-	}
-	return result
 }

@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package azureauth
 
 import (
@@ -145,8 +148,6 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		config.RootPasswordTTL = time.Second * time.Duration(rootExpirationRaw.(int))
 	}
 
-	// b.Logger().Info("Test Dev Build Working\n")
-
 	// Create a settings object to validate all required settings
 	// are available
 	if _, err := b.getAzureSettings(ctx, config); err != nil {
@@ -222,6 +223,9 @@ func (b *azureAuthBackend) saveConfig(ctx context.Context, config *azureConfig, 
 }
 
 const (
+	// The default password expiration duration is 6 months in
+	// the Azure UI, so we're setting it to 6 months (in hours)
+	// as the default.
 	defaultRootPasswordTTL = 4380 * time.Hour
 	configStoragePath      = "config"
 	confHelpSyn            = `Configures the Azure authentication backend.`

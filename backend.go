@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package azureauth
 
 import (
@@ -76,6 +79,10 @@ func backend() *azureAuthBackend {
 	return &b
 }
 
+// The periodicFunc is responsible for eventually swapping out the root credential for rotation
+// operations. Due to Azure's eventual consistency model, the new credential will not be
+// available immediately, and hence we check periodically and delete the old credential
+// only once the new credential is at least a minute old
 func (b *azureAuthBackend) periodicFunc(ctx context.Context, sys *logical.Request) error {
 	b.Logger().Debug("starting periodic func")
 	if !b.updatePassword {

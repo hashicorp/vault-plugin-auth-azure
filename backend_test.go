@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package azureauth
 
 import (
@@ -13,9 +16,6 @@ func getTestBackend(t *testing.T) (*azureAuthBackend, logical.Storage) {
 	return getTestBackendWithComputeClient(t, nil, nil, nil, nil)
 }
 
-<<<<<<< HEAD
-func getTestBackendWithComputeClient(t *testing.T, c computeClientFunc, v vmssClientFunc, m msiClientFunc, g msGraphClientFunc) (*azureAuthBackend, logical.Storage) {
-=======
 func getTestBackendWithResourceClient(t *testing.T, r resourceClientFunc, p providersClientFunc) (*azureAuthBackend, logical.Storage) {
 	t.Helper()
 	defaultLeaseTTLVal := time.Hour * 12
@@ -41,8 +41,7 @@ func getTestBackendWithResourceClient(t *testing.T, r resourceClientFunc, p prov
 	return b, config.StorageView
 }
 
-func getTestBackendWithComputeClient(t *testing.T, c computeClientFunc, v vmssClientFunc, m msiClientFunc) (*azureAuthBackend, logical.Storage) {
->>>>>>> main
+func getTestBackendWithComputeClient(t *testing.T, c computeClientFunc, v vmssClientFunc, m msiClientFunc, g msGraphClientFunc) (*azureAuthBackend, logical.Storage) {
 	t.Helper()
 	defaultLeaseTTLVal := time.Hour * 12
 	maxLeaseTTLVal := time.Hour * 24

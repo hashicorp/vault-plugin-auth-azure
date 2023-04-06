@@ -1,30 +1,35 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package azureauth
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
+// This test performs a rotate root operation and
+// swaps the root credentials for the application
 func TestRotateRootSuccess(t *testing.T) {
-	//t.Skip()
-
 	b, s := getTestBackend(t)
 
-	subscriptionID, tenantID, clientID, clientSecret := getAzureEnvironmentSettings()
+	tenantID, clientID, clientSecret := getAzureEnvironmentSettings()
+	if tenantID == "" ||
+		clientID == "" || clientSecret == "" {
+		t.Skip("environment variables not set, skipping test")
+	}
 
 	configData := map[string]interface{}{
-		"subscription_id": subscriptionID,
-		"tenant_id":       tenantID,
-		"resource":        "https://management.azure.com/",
-		"client_id":       clientID,
-		"client_secret":   clientSecret,
-		"environment":     "AZUREPUBLICCLOUD",
+		"tenant_id":     tenantID,
+		"resource":      "https://management.azure.com/",
+		"client_id":     clientID,
+		"environment":   "azurepublicCloud",
+		"client_secret": clientSecret,
 	}
 	if err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatalf("err: %v", err)
@@ -93,11 +98,27 @@ func TestRotateRootSuccess(t *testing.T) {
 	}
 }
 
+// This test verifies that the periodicFunc does not remove
+// stale credentials until the value for NewClientSecretCreated
+// is greater than 1 minute
 func TestRotateRootPeriodicFunctionBeforeMinute(t *testing.T) {
-	// Remove once test has been refactored
-	t.Skip()
-
 	b, s := getTestBackend(t)
+
+	tenantID, clientID, clientSecret := getAzureEnvironmentSettings()
+	if tenantID == "" ||
+		clientID == "" || clientSecret == "" {
+		t.Skip("environment variables not set, skipping test")
+	}
+
+	configData := map[string]interface{}{
+		"tenant_id":     tenantID,
+		"resource":      "https://management.azure.com/",
+		"client_id":     clientID,
+		"client_secret": clientSecret,
+	}
+	if err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
 	resp, err := b.HandleRequest(context.Background(), &logical.Request{
 		Operation: logical.UpdateOperation,
@@ -167,119 +188,14 @@ func TestRotateRootPeriodicFunctionBeforeMinute(t *testing.T) {
 	}
 }
 
-func TestIntersectStrings(t *testing.T) {
-	type testCase struct {
-		a      []string
-		b      []string
-		expect []string
-	}
-
-	tests := map[string]testCase{
-		"nil slices": {
-			a:      nil,
-			b:      nil,
-			expect: []string{},
-		},
-		"a is nil": {
-			a:      nil,
-			b:      []string{"foo"},
-			expect: []string{},
-		},
-		"b is nil": {
-			a:      []string{"foo"},
-			b:      nil,
-			expect: []string{},
-		},
-		"a is empty": {
-			a:      []string{},
-			b:      []string{"foo"},
-			expect: []string{},
-		},
-		"b is empty": {
-			a:      []string{"foo"},
-			b:      []string{},
-			expect: []string{},
-		},
-		"a equals b": {
-			a:      []string{"foo"},
-			b:      []string{"foo"},
-			expect: []string{"foo"},
-		},
-		"a equals b (many)": {
-			a:      []string{"foo", "bar", "baz", "qux", "quux", "quuz"},
-			b:      []string{"foo", "bar", "baz", "qux", "quux", "quuz"},
-			expect: []string{"foo", "bar", "baz", "qux", "quux", "quuz"},
-		},
-		"a equals b but out of order": {
-			a:      []string{"foo", "bar", "baz", "qux", "quux", "quuz"},
-			b:      []string{"quuz", "bar", "qux", "foo", "quux", "baz"},
-			expect: []string{"quuz", "bar", "qux", "foo", "quux", "baz"},
-		},
-		"a is superset": {
-			a:      []string{"foo", "bar", "baz"},
-			b:      []string{"foo"},
-			expect: []string{"foo"},
-		},
-		"a is superset out of order": {
-			a:      []string{"bar", "foo", "baz"},
-			b:      []string{"foo"},
-			expect: []string{"foo"},
-		},
-		"b is superset": {
-			a:      []string{"foo"},
-			b:      []string{"foo", "bar", "baz"},
-			expect: []string{"foo"},
-		},
-		"b is superset out of order": {
-			a:      []string{"foo"},
-			b:      []string{"bar", "foo", "baz"},
-			expect: []string{"foo"},
-		},
-		"a not equal to b": {
-			a:      []string{"foo", "bar", "baz"},
-			b:      []string{"qux", "quux", "quuz"},
-			expect: []string{},
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			actual := intersectStrings(test.a, test.b)
-			if !reflect.DeepEqual(actual, test.expect) {
-				t.Fatalf("Actual: %#v\nExpected: %#v\n", actual, test.expect)
-			}
-		})
-	}
-}
-
-func assertNotNil(t *testing.T, val interface{}) {
-	t.Helper()
-	if val == nil {
-		t.Fatalf("expected not nil, but was nil")
-	}
-}
-
-func assertStrSliceIsEmpty(t *testing.T, strs []string) {
-	t.Helper()
-	if strs != nil && len(strs) > 0 {
-		t.Fatalf("string slice is not empty")
-	}
-}
-
-func strPtr(str string) *string {
-	return &str
-}
-
 func getAzureEnvironmentSettings() (
 	string,
 	string,
 	string,
-	string,
 ) {
-	subscriptionID := os.Getenv("SUBSCRIPTION_ID")
 	tenantID := os.Getenv("TENANT_ID")
 	clientID := os.Getenv("CLIENT_ID")
 	clientSecret := os.Getenv("CLIENT_SECRET")
 
-	return subscriptionID, tenantID, clientID, clientSecret
+	return tenantID, clientID, clientSecret
 }

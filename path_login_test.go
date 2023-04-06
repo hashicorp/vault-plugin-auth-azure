@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package azureauth
 
 import (
@@ -17,7 +20,7 @@ import (
 	"github.com/hashicorp/vault/sdk/helper/policyutil"
 	"github.com/hashicorp/vault/sdk/logical"
 
-	"github.com/hashicorp/vault-plugin-auth-azure/api"
+	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 
 func TestResolveRole(t *testing.T) {
@@ -997,20 +1000,8 @@ func getTestBackendFunctions(withLocation bool) (
 	}
 }
 
-func getTestMSGraphClient() func() (api.MSGraphClient, error) {
-	return func() (api.MSGraphClient, error) {
-		settings := new(azureSettings)
-		clientSettings := api.ClientSettings{
-			ClientID:     settings.ClientID,
-			ClientSecret: settings.ClientSecret,
-			TenantID:     settings.TenantID,
-		}
-
-		msGraphAppClient, err := api.NewMSGraphApplicationClient(clientSettings)
-		if err != nil {
-			return nil, err
-		}
-
-		return msGraphAppClient, nil
+func getTestMSGraphClient() func() (client.MSGraphClient, error) {
+	return func() (client.MSGraphClient, error) {
+		return nil, nil
 	}
 }

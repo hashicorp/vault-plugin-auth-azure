@@ -1,4 +1,7 @@
-package api
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+package client
 
 import (
 	"context"
@@ -7,13 +10,6 @@ import (
 	"github.com/google/uuid"
 	graphmodels "github.com/microsoftgraph/msgraph-sdk-go/models"
 )
-
-// AzureProvider is an interface to access underlying Azure Client objects and supporting services.
-// Where practical the original function signature is preserved. Client provides higher
-// level operations atop AzureProvider.
-type AzureProvider interface {
-	MSGraphClient
-}
 
 type MSGraphClient interface {
 	ListApplications(ctx context.Context, filter string) ([]graphmodels.Applicationable, error)

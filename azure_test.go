@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package azureauth
 
 import (
@@ -12,7 +15,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/coreos/go-oidc"
 
-	"github.com/hashicorp/vault-plugin-auth-azure/api"
+	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 
 // mockKeySet is used in tests to bypass signature validation and return only
@@ -52,17 +55,12 @@ type mockMSIClient struct {
 	msiClientFunc func(resourceName string) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 }
 
-<<<<<<< HEAD
-type mockMSGraphClient struct {
-	msGraphClientFunc func(subscriptionID string) (api.MSGraphClient, error)
-=======
 type mockResourceClient struct {
 	resourceClientFunc func(resourceID string) (armresources.ClientGetByIDResponse, error)
 }
 
 type mockProvidersClient struct {
 	providersClientFunc func(string) (armresources.ProvidersClientGetResponse, error)
->>>>>>> main
 }
 
 func (c *mockComputeClient) Get(_ context.Context, _, vmName string, _ *armcompute.VirtualMachinesClientGetOptions) (armcompute.VirtualMachinesClientGetResponse, error) {
@@ -106,24 +104,19 @@ type vmssClientFunc func(vmssName string) (armcompute.VirtualMachineScaleSetsCli
 
 type msiClientFunc func(resourceName string) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 
-<<<<<<< HEAD
-type msGraphClientFunc func() (api.MSGraphClient, error)
-=======
+type msGraphClientFunc func() (client.MSGraphClient, error)
+
 type resourceClientFunc func(resourceID string) (armresources.ClientGetByIDResponse, error)
 
 type providersClientFunc func(string) (armresources.ProvidersClientGetResponse, error)
->>>>>>> main
 
 type mockProvider struct {
 	computeClientFunc
 	vmssClientFunc
 	msiClientFunc
-<<<<<<< HEAD
 	msGraphClientFunc
-=======
 	resourceClientFunc
 	providersClientFunc
->>>>>>> main
 }
 
 func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, g msGraphClientFunc) *mockProvider {
@@ -157,10 +150,10 @@ func (p *mockProvider) MSIClient(string) (msiClient, error) {
 	}, nil
 }
 
-<<<<<<< HEAD
-func (p *mockProvider) MSGraphClient() (api.MSGraphClient, error) {
+func (p *mockProvider) MSGraphClient() (client.MSGraphClient, error) {
 	return nil, nil
-=======
+}
+
 func (p *mockProvider) ResourceClient(string) (resourceClient, error) {
 	return &mockResourceClient{
 		resourceClientFunc: p.resourceClientFunc,
@@ -171,5 +164,4 @@ func (p *mockProvider) ProvidersClient(string) (providersClient, error) {
 	return &mockProvidersClient{
 		providersClientFunc: p.providersClientFunc,
 	}, nil
->>>>>>> main
 }
