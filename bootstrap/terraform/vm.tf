@@ -141,7 +141,7 @@ resource "azurerm_linux_virtual_machine" "vault_azure_vm" {
   name                = "vault-azure-tests-vm"
   resource_group_name = azurerm_resource_group.vault_azure_rg.name
   location            = azurerm_resource_group.vault_azure_rg.location
-  size                = "Standard_F1"
+  size                = "Standard_B1s"
   admin_username      = "adminuser"
   network_interface_ids = [
     azurerm_network_interface.vault_azure_nic.id,

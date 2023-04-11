@@ -4,7 +4,7 @@
 variable "region" {
   type        = string
   description = "The region to create Azure resources in"
-  default     = "westus2"
+  default     = "westus3"
 }
 
 variable "ssh_public_key_path" {
