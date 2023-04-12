@@ -30,7 +30,7 @@ func pathLogin(b *azureAuthBackend) *framework.Path {
 
 		DisplayAttrs: &framework.DisplayAttributes{
 			OperationPrefix: operationPrefixAzure,
-			OperationVerb:   "log-in",
+			OperationVerb:   "login",
 		},
 
 		Fields: map[string]*framework.FieldSchema{
