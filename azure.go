@@ -21,7 +21,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
-	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/vault/sdk/helper/useragent"
@@ -259,27 +258,6 @@ func (p *azureProvider) MSGraphClient() (client.MSGraphClient, error) {
 	return msGraphClient, nil
 }
 
-//func (p *azureProvider) MSGraphClient() (client.MSGraphClient, error) {
-//	userAgent := useragent.PluginString(p.settings.PluginEnv, userAgentPluginName)
-//
-//	graphURI, err := client.GetGraphURI(p.settings.Environment.Name)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	graphApiAuthorizer, err := getAuthorizer(p.settings, graphURI)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	msGraphAppClient, err := client.NewMSGraphApplicationClient(userAgent, graphURI, graphApiAuthorizer)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return msGraphAppClient, nil
-//}
-
 func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 	if p.settings.ClientSecret != "" {
 		cred, err := az.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, nil)
@@ -304,7 +282,6 @@ type azureSettings struct {
 	ClientSecret string
 	CloudConfig  cloud.Configuration
 	Resource     string
-	Environment  azure.Environment
 	PluginEnv    *logical.PluginEnvironment
 }
 
@@ -351,14 +328,9 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 	if environment == "" {
 		// use default values if no environment is provided
 		settings.CloudConfig = cloud.AzurePublic
-		settings.Environment = azure.PublicCloud
 	} else {
 		var err error
 		settings.CloudConfig, err = ConfigurationFromName(environment)
-		if err != nil {
-			return nil, err
-		}
-		settings.Environment, err = azure.EnvironmentFromName(environment)
 		if err != nil {
 			return nil, err
 		}
