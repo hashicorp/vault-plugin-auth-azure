@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/go-hclog v1.5.0
 	github.com/hashicorp/go-uuid v1.0.3
 	github.com/hashicorp/vault/api v1.9.0
-	github.com/hashicorp/vault/sdk v0.8.1
+	github.com/hashicorp/vault/sdk v0.9.0
 	github.com/microsoft/kiota-abstractions-go v0.19.0
 	github.com/microsoftgraph/msgraph-sdk-go v0.61.0
 	golang.org/x/oauth2 v0.6.0
@@ -48,7 +48,7 @@ require (
 )
 
 require (
-	github.com/hashicorp/go-kms-wrapping/v2 v2.0.7 // indirect
+	github.com/hashicorp/go-kms-wrapping/v2 v2.0.8 // indirect
 	github.com/hashicorp/go-plugin v1.4.5 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
