@@ -736,6 +736,7 @@ func TestVerifyClaims(t *testing.T) {
 			claims: additionalClaims{
 				claims.NotBefore,
 				claims.ObjectID,
+				claims.AppID,
 				[]string{"test-group-2"},
 			},
 			error: "groups not authorized",
@@ -746,6 +747,7 @@ func TestVerifyClaims(t *testing.T) {
 			claims: additionalClaims{
 				claims.NotBefore,
 				claims.ObjectID,
+				claims.AppID,
 				[]string{"test-group-2"},
 			},
 			error: "",
@@ -756,6 +758,7 @@ func TestVerifyClaims(t *testing.T) {
 			claims: additionalClaims{
 				claims.NotBefore,
 				"test-oid",
+				claims.AppID,
 				claims.GroupIDs,
 			},
 			error: "service principal not authorized",
@@ -766,6 +769,7 @@ func TestVerifyClaims(t *testing.T) {
 			claims: additionalClaims{
 				claims.NotBefore,
 				"test-oid",
+				claims.AppID,
 				claims.GroupIDs,
 			},
 			error: "",

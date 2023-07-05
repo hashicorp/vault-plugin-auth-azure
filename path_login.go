@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
 	"strings"
 	"time"
 
@@ -160,12 +162,15 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 		return nil, err
 	}
 
+	// Get the app_id from the JWT’s claims
+	appID := claims.AppID
+
 	// Check additional claims in token
 	if err := b.verifyClaims(claims, role); err != nil {
 		return nil, err
 	}
 
-	if err := b.verifyResource(ctx, subscriptionID, resourceGroupName, vmName, vmssName, resourceID, claims, role); err != nil {
+	if err := b.verifyResource(ctx, subscriptionID, resourceGroupName, vmName, vmssName, resourceID, appID, claims, role); err != nil {
 		return nil, err
 	}
 
@@ -176,6 +181,7 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 			Metadata: map[string]string{
 				"resource_group_name": resourceGroupName,
 				"subscription_id":     subscriptionID,
+				"app_id":              appID,
 			},
 		},
 		InternalData: map[string]interface{}{
@@ -185,6 +191,7 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 			"role":                roleName,
 			"resource_group_name": resourceGroupName,
 			"subscription_id":     subscriptionID,
+			"app_id":              appID,
 		},
 	}
 
@@ -258,7 +265,7 @@ func (b *azureAuthBackend) verifyClaims(claims *additionalClaims, role *azureRol
 	return nil
 }
 
-func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, resourceGroupName, vmName, vmssName, resourceID string, claims *additionalClaims, role *azureRole) error {
+func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, resourceGroupName, vmName, vmssName, resourceID, appID string, claims *additionalClaims, role *azureRole) error {
 	// If not checking anything with the resource id, exit early
 	if len(role.BoundResourceGroups) == 0 && len(role.BoundSubscriptionsIDs) == 0 && len(role.BoundLocations) == 0 && len(role.BoundScaleSets) == 0 {
 		return nil
@@ -402,6 +409,30 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	// or one of the user-assigned identities
 	if _, ok := principalIDs[claims.ObjectID]; !ok {
 		return errors.New("token object id does not match expected identities")
+	} else {
+		cred, err := azidentity.NewManagedIdentityCredential(nil)
+		if err != nil {
+			return fmt.Errorf("unable to create a new credential: %w", err)
+		}
+
+		client, err := armmsi.NewUserAssignedIdentitiesClient(subscriptionID, cred, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create a new user assigned identities client: %w", err)
+		}
+
+		pager := client.NewListByResourceGroupPager(resourceGroupName, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
+		for pager.More() {
+			page, err := pager.NextPage(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to advance page: %w", err)
+			}
+			for _, identity := range page.Value {
+				principalIDs[convertPtrToString(identity.ID)] = struct{}{}
+			}
+			if _, ok := principalIDs[claims.AppID]; !ok {
+				return errors.New("token app id does not match expected identities")
+			}
+		}
 	}
 
 	// Check bound subscriptions
@@ -452,6 +483,7 @@ func (b *azureAuthBackend) pathLoginRenew(ctx context.Context, req *logical.Requ
 type additionalClaims struct {
 	NotBefore jsonTime `json:"nbf"`
 	ObjectID  string   `json:"oid"`
+	AppID     string   `json:"appid"`
 	GroupIDs  []string `json:"groups"`
 }
 
