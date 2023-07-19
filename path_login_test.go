@@ -16,7 +16,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
-	"github.com/Azure/azure-sdk-for-go/services/preview/authorization/mgmt/2020-04-01-preview/authorization"
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/vault-plugin-auth-azure/client"
 	"github.com/hashicorp/vault/sdk/helper/policyutil"
@@ -692,7 +691,7 @@ func TestVerifyClaims(t *testing.T) {
 		"nbf": time.Now().Add(-10 * time.Second).Unix(),
 		"exp": time.Now().Add(10 * time.Second).Unix(),
 	}
-	idToken, err := b.provider.Verifier().Verify(context.Background(), testJWT(t, payload))
+	idToken, err := b.provider.TokenVerifier().Verify(context.Background(), testJWT(t, payload))
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1002,15 +1001,6 @@ func getTestBackendFunctions(withLocation bool) (
 
 func getTestMSGraphClient() func() (client.MSGraphClient, error) {
 	return func() (client.MSGraphClient, error) {
-		graphURI := "test-graph-uri"
-
-		// set up dummy test client
-		c := authorization.NewWithBaseURI(graphURI, "")
-		ac := &client.AppClient{
-			Client:   c,
-			GraphURI: graphURI,
-		}
-
-		return ac, nil
+		return nil, nil
 	}
 }

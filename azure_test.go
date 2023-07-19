@@ -33,7 +33,7 @@ func (s *mockKeySet) VerifySignature(_ context.Context, idToken string) ([]byte,
 	return payload, nil
 }
 
-func newMockVerifier() tokenVerifier {
+func newMockVerifier() client.TokenVerifier {
 	config := &oidc.Config{
 		SkipClientIDCheck: true,
 		SkipExpiryCheck:   false,
@@ -127,23 +127,23 @@ func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, g m
 	}
 }
 
-func (*mockProvider) Verifier() tokenVerifier {
+func (*mockProvider) TokenVerifier() client.TokenVerifier {
 	return newMockVerifier()
 }
 
-func (p *mockProvider) ComputeClient(string) (computeClient, error) {
+func (p *mockProvider) ComputeClient(string) (client.ComputeClient, error) {
 	return &mockComputeClient{
 		computeClientFunc: p.computeClientFunc,
 	}, nil
 }
 
-func (p *mockProvider) VMSSClient(string) (vmssClient, error) {
+func (p *mockProvider) VMSSClient(string) (client.VMSSClient, error) {
 	return &mockVMSSClient{
 		vmssClientFunc: p.vmssClientFunc,
 	}, nil
 }
 
-func (p *mockProvider) MSIClient(string) (msiClient, error) {
+func (p *mockProvider) MSIClient(string) (client.MSIClient, error) {
 	return &mockMSIClient{
 		msiClientFunc: p.msiClientFunc,
 	}, nil
@@ -153,13 +153,13 @@ func (p *mockProvider) MSGraphClient() (client.MSGraphClient, error) {
 	return nil, nil
 }
 
-func (p *mockProvider) ResourceClient(string) (resourceClient, error) {
+func (p *mockProvider) ResourceClient(string) (client.ResourceClient, error) {
 	return &mockResourceClient{
 		resourceClientFunc: p.resourceClientFunc,
 	}, nil
 }
 
-func (p *mockProvider) ProvidersClient(string) (providersClient, error) {
+func (p *mockProvider) ProvidersClient(string) (client.ProvidersClient, error) {
 	return &mockProvidersClient{
 		providersClientFunc: p.providersClientFunc,
 	}, nil
