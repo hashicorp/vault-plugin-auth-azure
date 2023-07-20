@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
@@ -81,6 +83,10 @@ func (c *mockMSIClient) Get(_ context.Context, _, resourceName string, _ *armmsi
 		return c.msiClientFunc(resourceName)
 	}
 	return armmsi.UserAssignedIdentitiesClientGetResponse{}, nil
+}
+
+func (c *mockMSIClient) NewListByResourceGroupPager(_ string, _ *armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions) *runtime.Pager[armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse] {
+	return nil
 }
 
 func (c *mockResourceClient) GetByID(_ context.Context, resourceID, _ string, _ *armresources.ClientGetByIDOptions) (armresources.ClientGetByIDResponse, error) {
