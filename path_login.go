@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
 	"strings"
 	"time"
@@ -334,6 +333,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			if userIdentityResponse.Properties != nil && userIdentityResponse.Properties.PrincipalID != nil {
 				principalIDs[*userIdentityResponse.Properties.PrincipalID] = struct{}{}
 			}
+			b.Logger().Info("identity client", "client id", *userIdentityResponse.Properties.ClientID)
 		}
 	case vmName != "":
 		client, err := b.provider.ComputeClient(subscriptionID)
@@ -408,30 +408,35 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	// Ensure the token OID is the principal id of the system-assigned identity
 	// or one of the user-assigned identities
 	if _, ok := principalIDs[claims.ObjectID]; !ok {
-		return errors.New("token object id does not match expected identities")
-	} else {
-		cred, err := azidentity.NewManagedIdentityCredential(nil)
-		if err != nil {
-			return fmt.Errorf("unable to create a new credential: %w", err)
-		}
-
-		client, err := armmsi.NewUserAssignedIdentitiesClient(subscriptionID, cred, nil)
-		if err != nil {
-			return fmt.Errorf("failed to create a new user assigned identities client: %w", err)
-		}
-
-		pager := client.NewListByResourceGroupPager(resourceGroupName, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
-		for pager.More() {
-			page, err := pager.NextPage(ctx)
+		// if it isn't, check the appID and see if _that_ exists.
+		if claims.AppID != "" {
+			c, err := b.provider.MSIClient(subscriptionID) // this is the second time we're calling this, is there a way to reuse that?
 			if err != nil {
-				return fmt.Errorf("failed to advance page: %w", err)
+				return fmt.Errorf("failed to create client to retrieve app ids: %w", err)
 			}
-			for _, identity := range page.Value {
-				principalIDs[convertPtrToString(identity.ID)] = struct{}{}
+			if msi, ok := c.(*armmsi.UserAssignedIdentitiesClient); ok {
+				clientIDs := map[string]struct{}{}
+				pager := msi.NewListByResourceGroupPager(resourceGroupName, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
+				for pager.More() {
+					page, err := pager.NextPage(ctx)
+					if err != nil {
+						return fmt.Errorf("failed to advance page: %w", err)
+					}
+					for _, identity := range page.Value {
+						if identity.Properties != nil && identity.Properties.ClientID != nil {
+							clientIDs[*identity.Properties.ClientID] = struct{}{}
+						}
+					}
+					if _, ok := clientIDs[claims.AppID]; !ok {
+						return errors.New("neither token object id nor token app id match expected identities")
+					}
+				}
+			} else {
+				return fmt.Errorf("failed to create client to retrieve app ids: %w", err)
 			}
-			if _, ok := principalIDs[claims.AppID]; !ok {
-				return errors.New("token app id does not match expected identities")
-			}
+		} else {
+			// normal exit due to no matching principal
+			return errors.New("token object id does not match expected identities")
 		}
 	}
 

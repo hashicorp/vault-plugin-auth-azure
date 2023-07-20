@@ -1,5 +1,8 @@
 ## Unreleased
 
+FEATURES:
+* Allow WIF based Azure resources to authenticate with Vault
+
 ## v0.15.0
 
 IMPROVEMENTS:
