@@ -54,6 +54,7 @@ type mockVMSSClient struct {
 
 type mockMSIClient struct {
 	msiClientFunc func(resourceName string) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
+	msiListFunc   func(resourceGroup string) armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse
 }
 
 type mockResourceClient struct {
@@ -85,7 +86,17 @@ func (c *mockMSIClient) Get(_ context.Context, _, resourceName string, _ *armmsi
 	return armmsi.UserAssignedIdentitiesClientGetResponse{}, nil
 }
 
-func (c *mockMSIClient) NewListByResourceGroupPager(_ string, _ *armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions) *runtime.Pager[armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse] {
+func (c *mockMSIClient) NewListByResourceGroupPager(resourceGroup string, _ *armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions) *runtime.Pager[armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse] {
+	if c.msiListFunc != nil {
+		resp := c.msiListFunc(resourceGroup)
+		// the listfunc returns the response, here we wrap it in a pager, hopefully.
+		return runtime.NewPager[armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse](runtime.PagingHandler[armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse]{
+			More: func(response armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse) bool { return false },
+			Fetcher: func(ctx context.Context, data *armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse) (armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse, error) {
+				return resp, nil
+			},
+		})
+	}
 	return nil
 }
 
@@ -109,6 +120,8 @@ type vmssClientFunc func(vmssName string) (armcompute.VirtualMachineScaleSetsCli
 
 type msiClientFunc func(resourceName string) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 
+type msiListFunc func(resoucename string) armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse
+
 type msGraphClientFunc func() (client.MSGraphClient, error)
 
 type resourceClientFunc func(resourceID string) (armresources.ClientGetByIDResponse, error)
@@ -119,6 +132,7 @@ type mockProvider struct {
 	computeClientFunc
 	vmssClientFunc
 	msiClientFunc
+	msiListFunc
 	msGraphClientFunc
 	resourceClientFunc
 	providersClientFunc
@@ -152,6 +166,7 @@ func (p *mockProvider) VMSSClient(string) (vmssClient, error) {
 func (p *mockProvider) MSIClient(string) (msiClient, error) {
 	return &mockMSIClient{
 		msiClientFunc: p.msiClientFunc,
+		msiListFunc:   p.msiListFunc,
 	}, nil
 }
 
