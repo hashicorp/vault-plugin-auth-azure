@@ -421,7 +421,6 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 					return fmt.Errorf("failed to advance page: %w", err)
 				}
 				for _, identity := range page.Value {
-
 					if identity.Properties != nil && identity.Properties.ClientID != nil {
 						clientIDs[*identity.Properties.ClientID] = struct{}{}
 					}
