@@ -89,8 +89,9 @@ func (c *mockMSIClient) Get(_ context.Context, _, resourceName string, _ *armmsi
 func (c *mockMSIClient) NewListByResourceGroupPager(resourceGroup string, _ *armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions) *runtime.Pager[armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse] {
 	if c.msiListFunc != nil {
 		resp := c.msiListFunc(resourceGroup)
-		// the listfunc returns the response, here we wrap it in a pager, hopefully.
+		// the listfunc returns the response, here we wrap it in a pager, so that the mock-er only has to worry about the response we want.
 		return runtime.NewPager[armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse](runtime.PagingHandler[armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse]{
+			// since we only have one response, there are no more responses.
 			More: func(response armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse) bool { return false },
 			Fetcher: func(ctx context.Context, data *armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse) (armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse, error) {
 				return resp, nil
@@ -138,11 +139,12 @@ type mockProvider struct {
 	providersClientFunc
 }
 
-func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, g msGraphClientFunc) *mockProvider {
+func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, ml msiListFunc, g msGraphClientFunc) *mockProvider {
 	return &mockProvider{
 		computeClientFunc: c,
 		vmssClientFunc:    v,
 		msiClientFunc:     m,
+		msiListFunc:       ml,
 		msGraphClientFunc: g,
 	}
 }
