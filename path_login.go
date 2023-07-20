@@ -333,7 +333,6 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			if userIdentityResponse.Properties != nil && userIdentityResponse.Properties.PrincipalID != nil {
 				principalIDs[*userIdentityResponse.Properties.PrincipalID] = struct{}{}
 			}
-			b.Logger().Info("identity client", "client id", *userIdentityResponse.Properties.ClientID)
 		}
 	case vmName != "":
 		client, err := b.provider.ComputeClient(subscriptionID)
@@ -410,29 +409,27 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	if _, ok := principalIDs[claims.ObjectID]; !ok {
 		// if it isn't, check the appID and see if _that_ exists.
 		if claims.AppID != "" {
+			clientIDs := map[string]struct{}{}
 			c, err := b.provider.MSIClient(subscriptionID) // this is the second time we're calling this, is there a way to reuse that?
 			if err != nil {
 				return fmt.Errorf("failed to create client to retrieve app ids: %w", err)
 			}
-			if msi, ok := c.(*armmsi.UserAssignedIdentitiesClient); ok {
-				clientIDs := map[string]struct{}{}
-				pager := msi.NewListByResourceGroupPager(resourceGroupName, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
-				for pager.More() {
-					page, err := pager.NextPage(ctx)
-					if err != nil {
-						return fmt.Errorf("failed to advance page: %w", err)
-					}
-					for _, identity := range page.Value {
-						if identity.Properties != nil && identity.Properties.ClientID != nil {
-							clientIDs[*identity.Properties.ClientID] = struct{}{}
-						}
-					}
-					if _, ok := clientIDs[claims.AppID]; !ok {
-						return errors.New("neither token object id nor token app id match expected identities")
+			pager := c.NewListByResourceGroupPager(resourceGroupName, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
+			for pager.More() {
+				page, err := pager.NextPage(ctx)
+				if err != nil {
+					return fmt.Errorf("failed to advance page: %w", err)
+				}
+				for _, identity := range page.Value {
+
+					if identity.Properties != nil && identity.Properties.ClientID != nil {
+						clientIDs[*identity.Properties.ClientID] = struct{}{}
 					}
 				}
-			} else {
-				return fmt.Errorf("failed to create client to retrieve app ids: %w", err)
+			}
+
+			if _, ok := clientIDs[claims.AppID]; !ok {
+				return errors.New("neither token object id nor token app id match expected identities")
 			}
 		} else {
 			// normal exit due to no matching principal
