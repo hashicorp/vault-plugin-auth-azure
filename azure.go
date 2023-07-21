@@ -150,7 +150,7 @@ func (p *azureProvider) MSGraphClient() (client.MSGraphClient, error) {
 
 	msGraphAppClient, err := client.NewMSGraphApplicationClient(p.settings.GraphURI, cred)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create MS graph client: %w", err)
 	}
 
 	return msGraphAppClient, nil
@@ -165,7 +165,7 @@ func (p *azureProvider) ComputeClient(subscriptionID string) (client.ComputeClie
 	clientOptions := p.getClientOptions()
 	client, err := armcompute.NewVirtualMachinesClient(subscriptionID, cred, clientOptions)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create virtual machines client: %w", err)
 	}
 
 	return client, nil
@@ -180,7 +180,7 @@ func (p *azureProvider) VMSSClient(subscriptionID string) (client.VMSSClient, er
 	clientOptions := p.getClientOptions()
 	client, err := armcompute.NewVirtualMachineScaleSetsClient(subscriptionID, cred, clientOptions)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create virtual machine scale sets client: %w", err)
 	}
 
 	return client, nil
@@ -195,7 +195,7 @@ func (p *azureProvider) MSIClient(subscriptionID string) (client.MSIClient, erro
 	clientOptions := p.getClientOptions()
 	client, err := armmsi.NewUserAssignedIdentitiesClient(subscriptionID, cred, clientOptions)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create user assigned identity client: %w", err)
 	}
 
 	return client, nil
@@ -210,7 +210,7 @@ func (p *azureProvider) ProvidersClient(subscriptionID string) (client.Providers
 	clientOptions := p.getClientOptions()
 	client, err := armresources.NewProvidersClient(subscriptionID, cred, clientOptions)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create providers client: %w", err)
 	}
 
 	return client, nil
@@ -225,7 +225,7 @@ func (p *azureProvider) ResourceClient(subscriptionID string) (client.ResourceCl
 	clientOptions := p.getClientOptions()
 	client, err := armresources.NewClient(subscriptionID, cred, clientOptions)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create resource client: %w", err)
 	}
 
 	return client, nil
@@ -254,7 +254,7 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 		cred, err := azidentity.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID,
 			p.settings.ClientSecret, options)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create client secret token credential: %w", err)
 		}
 
 		return cred, nil
@@ -266,7 +266,7 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 	}
 	cred, err := azidentity.NewManagedIdentityCredential(options)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create managed identity token credential: %w", err)
 	}
 
 	return cred, nil
