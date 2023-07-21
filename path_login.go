@@ -161,9 +161,6 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 		return nil, err
 	}
 
-	// Get the app_id from the JWT’s claims
-	appID := claims.AppID
-
 	// Check additional claims in token
 	if err := b.verifyClaims(claims, role); err != nil {
 		return nil, err
@@ -180,7 +177,6 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 			Metadata: map[string]string{
 				"resource_group_name": resourceGroupName,
 				"subscription_id":     subscriptionID,
-				"app_id":              appID,
 			},
 		},
 		InternalData: map[string]interface{}{
@@ -190,7 +186,6 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 			"role":                roleName,
 			"resource_group_name": resourceGroupName,
 			"subscription_id":     subscriptionID,
-			"app_id":              appID,
 		},
 	}
 
@@ -205,6 +200,10 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 	if resourceID != "" {
 		auth.Alias.Metadata["resource_id"] = resourceID
 		auth.Metadata["resource_id"] = resourceID
+	}
+	if claims.AppID != "" {
+		auth.Alias.Metadata["app_id"] = claims.AppID
+		auth.Metadata["app_id"] = claims.AppID
 	}
 
 	role.PopulateTokenAuth(auth)
