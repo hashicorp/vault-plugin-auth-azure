@@ -403,7 +403,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		// we'll try to authenticate by matching the claim's app_id to the list of managed identities
 		// (see the comment below on that)
 		if claims.AppID == "" {
-			return errors.New("one of vm_name, vmss_name, resource_id, or an app_id JWT claim must be provided")
+			return errors.New("one of vm_name, vmss_name, resource_id, or an appid JWT claim must be provided")
 		}
 	}
 
@@ -414,32 +414,34 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		// federation), there is no principal that matches the incoming ObjectID. In this case, we can still validate
 		// by checking the appID against the list of managed identities. (The appID is valid for use with authorizing
 		// claims, per https://learn.microsoft.com/en-us/azure/active-directory/develop/access-tokens#payload-claims)
-		if claims.AppID != "" {
-			clientIDs := map[string]struct{}{}
-			c, err := b.provider.MSIClient(subscriptionID) // this is the second time we're calling this, is there a way to reuse that?
-			if err != nil {
-				return fmt.Errorf("failed to create client to retrieve app ids: %w", err)
-			}
-			pager := c.NewListByResourceGroupPager(resourceGroupName, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
-			for pager.More() {
-				page, err := pager.NextPage(ctx)
-				if err != nil {
-					return fmt.Errorf("failed to advance page: %w", err)
-				}
-				for _, identity := range page.Value {
-					if identity.Properties != nil && identity.Properties.ClientID != nil {
-						clientIDs[*identity.Properties.ClientID] = struct{}{}
-					}
-				}
-			}
-
-			if _, ok := clientIDs[claims.AppID]; !ok {
-				return errors.New("neither token object id nor token app id match expected identities")
-			}
-		} else {
-			// normal exit due to no matching principal
-			return errors.New("token object id does not match expected identities")
+		if claims.AppID == "" {
+			return errors.New("token object id does not match expected identities, and no app id was found")
 		}
+
+		clientIDs := map[string]struct{}{}
+		c, err := b.provider.MSIClient(subscriptionID) // this is the second time we're calling this, is there a way to reuse that?
+		if err != nil {
+			return fmt.Errorf("failed to create client to retrieve app ids: %w", err)
+		}
+		pager := c.NewListByResourceGroupPager(resourceGroupName, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
+		for pager.More() {
+			page, err := pager.NextPage(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to advance page: %w", err)
+			}
+			for _, identity := range page.Value {
+				if identity.Properties != nil && identity.Properties.ClientID != nil {
+					clientIDs[*identity.Properties.ClientID] = struct{}{}
+				}
+			}
+		}
+
+		if _, ok := clientIDs[claims.AppID]; !ok {
+			return errors.New("neither token object id nor token app id match expected identities")
+		}
+	} else {
+		// normal exit due to no matching principal
+		return errors.New("token object id does not match expected identities")
 	}
 
 	// Check bound subscriptions
