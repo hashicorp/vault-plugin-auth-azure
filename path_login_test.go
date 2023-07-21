@@ -646,7 +646,6 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 func TestLogin_AppID(t *testing.T) {
 	appID := "123e4567-e89b-12d3-a456-426655440000"
 	badID := "aeoifkj"
-	//pID := "432e1234-e89b-11a1-a111-111111111111"
 	resourceGroup := "rg"
 	c, v, m := getTestBackendFunctions(false)
 	cl := func(rg string) armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse {
@@ -688,7 +687,6 @@ func TestLogin_AppID(t *testing.T) {
 
 	loginData["resource_group_name"] = resourceGroup
 	loginData["subscription_id"] = "sub"
-	//loginData["resource_id"] = "/subscriptions/eb936495-7356-4a35-af3e-ea68af201f0c/resourceGroups/azure-func-rg/providers/Microsoft.Web/sites/my-azure-func"
 	loginData["vmss_name"] = "vmss"
 	testLoginSuccess(t, b, s, loginData, claims, roleData)
 
