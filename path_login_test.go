@@ -423,7 +423,7 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 
 	g := getTestMSGraphClient()
 
-	b, s := getTestBackendWithComputeClient(t, c, v, m, g)
+	b, s := getTestBackendWithComputeClient(t, c, v, m, nil, g)
 
 	roleName := "testrole"
 	subID := "subID"
@@ -468,7 +468,7 @@ func TestLogin_BoundResourceGroup(t *testing.T) {
 
 	g := getTestMSGraphClient()
 
-	b, s := getTestBackendWithComputeClient(t, c, v, m, g)
+	b, s := getTestBackendWithComputeClient(t, c, v, m, nil, g)
 
 	roleName := "testrole"
 	rg := "rg"
@@ -514,7 +514,7 @@ func TestLogin_BoundResourceGroupWithUserAssignedID(t *testing.T) {
 
 	g := getTestMSGraphClient()
 
-	b, s := getTestBackendWithComputeClient(t, c, v, m, g)
+	b, s := getTestBackendWithComputeClient(t, c, v, m, nil, g)
 
 	roleName := "testrole"
 	rg := "rg"
@@ -566,7 +566,7 @@ func TestLogin_BoundLocation(t *testing.T) {
 
 	g := getTestMSGraphClient()
 
-	b, s := getTestBackendWithComputeClient(t, c, v, m, g)
+	b, s := getTestBackendWithComputeClient(t, c, v, m, nil, g)
 
 	roleName := "testrole"
 	roleData := map[string]interface{}{
@@ -611,7 +611,7 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 
 	g := getTestMSGraphClient()
 
-	b, s := getTestBackendWithComputeClient(t, c, v, m, g)
+	b, s := getTestBackendWithComputeClient(t, c, v, m, nil, g)
 
 	roleName := "testrole"
 	roleData := map[string]interface{}{
@@ -639,6 +639,57 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 	testLoginSuccess(t, b, s, loginData, claims, roleData)
 
 	loginData["vmss_name"] = "badvmss"
+	testLoginFailure(t, b, s, loginData, claims, roleData)
+}
+
+func TestLogin_AppID(t *testing.T) {
+	appID := "123e4567-e89b-12d3-a456-426655440000"
+	badID := "aeoifkj"
+	resourceGroup := "rg"
+	c, v, m := getTestBackendFunctions(false)
+	cl := func(rg string) armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse {
+		return armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse{
+			UserAssignedIdentitiesListResult: armmsi.UserAssignedIdentitiesListResult{
+				Value: []*armmsi.Identity{
+					{
+						Properties: &armmsi.UserAssignedIdentityProperties{
+							ClientID: &appID,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	g := getTestMSGraphClient()
+
+	b, s := getTestBackendWithComputeClient(t, c, v, m, cl, g)
+
+	roleName := "testrole"
+	roleData := map[string]interface{}{
+		"name":                  roleName,
+		"policies":              []string{"dev", "prod"},
+		"bound_resource_groups": []string{resourceGroup},
+	}
+	testRoleCreate(t, b, s, roleData)
+
+	claims := map[string]interface{}{
+		"exp":   time.Now().Add(60 * time.Second).Unix(),
+		"nbf":   time.Now().Add(-60 * time.Second).Unix(),
+		"appid": appID,
+	}
+
+	loginData := map[string]interface{}{
+		"role": roleName,
+	}
+	testLoginFailure(t, b, s, loginData, claims, roleData)
+
+	loginData["resource_group_name"] = resourceGroup
+	loginData["subscription_id"] = "sub"
+	loginData["vmss_name"] = "vmss"
+	testLoginSuccess(t, b, s, loginData, claims, roleData)
+
+	claims["appid"] = badID
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 }
 
@@ -735,6 +786,7 @@ func TestVerifyClaims(t *testing.T) {
 			claims: additionalClaims{
 				claims.NotBefore,
 				claims.ObjectID,
+				claims.AppID,
 				[]string{"test-group-2"},
 			},
 			error: "groups not authorized",
@@ -745,6 +797,7 @@ func TestVerifyClaims(t *testing.T) {
 			claims: additionalClaims{
 				claims.NotBefore,
 				claims.ObjectID,
+				claims.AppID,
 				[]string{"test-group-2"},
 			},
 			error: "",
@@ -755,6 +808,7 @@ func TestVerifyClaims(t *testing.T) {
 			claims: additionalClaims{
 				claims.NotBefore,
 				"test-oid",
+				claims.AppID,
 				claims.GroupIDs,
 			},
 			error: "service principal not authorized",
@@ -765,6 +819,7 @@ func TestVerifyClaims(t *testing.T) {
 			claims: additionalClaims{
 				claims.NotBefore,
 				"test-oid",
+				claims.AppID,
 				claims.GroupIDs,
 			},
 			error: "",
