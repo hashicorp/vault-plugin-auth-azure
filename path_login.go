@@ -407,7 +407,10 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	// Ensure the token OID is the principal id of the system-assigned identity
 	// or one of the user-assigned identities
 	if _, ok := principalIDs[claims.ObjectID]; !ok {
-		// if it isn't, check the appID and see if _that_ exists.
+		// if it isn't, check the appID and see if _that_ exists. In some cases, particularly WIF (workload identity
+		// federation), there is no principal that matches the incoming ObjectID. In this case, we can still validate
+		// by checking the appID against the list of managed identities. (The appID is valid for use with authorizing
+		// claims, per https://learn.microsoft.com/en-us/azure/active-directory/develop/access-tokens#payload-claims)
 		if claims.AppID != "" {
 			clientIDs := map[string]struct{}{}
 			c, err := b.provider.MSIClient(subscriptionID) // this is the second time we're calling this, is there a way to reuse that?
