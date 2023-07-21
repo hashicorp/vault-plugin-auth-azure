@@ -169,7 +169,7 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 		return nil, err
 	}
 
-	if err := b.verifyResource(ctx, subscriptionID, resourceGroupName, vmName, vmssName, resourceID, appID, claims, role); err != nil {
+	if err := b.verifyResource(ctx, subscriptionID, resourceGroupName, vmName, vmssName, resourceID, claims, role); err != nil {
 		return nil, err
 	}
 
@@ -264,7 +264,7 @@ func (b *azureAuthBackend) verifyClaims(claims *additionalClaims, role *azureRol
 	return nil
 }
 
-func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, resourceGroupName, vmName, vmssName, resourceID, appID string, claims *additionalClaims, role *azureRole) error {
+func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, resourceGroupName, vmName, vmssName, resourceID string, claims *additionalClaims, role *azureRole) error {
 	// If not checking anything with the resource id, exit early
 	if len(role.BoundResourceGroups) == 0 && len(role.BoundSubscriptionsIDs) == 0 && len(role.BoundLocations) == 0 && len(role.BoundScaleSets) == 0 {
 		return nil
@@ -367,12 +367,9 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		for _, userIdentity := range vm.Identity.UserAssignedIdentities {
 			principalIDs[convertPtrToString(userIdentity.PrincipalID)] = struct{}{}
 		}
-	default:
+	case resourceID != "":
 		// this is the generic case that should enable Azure services that
 		// support managed identities to authenticate to Vault
-		if resourceID == "" {
-			return errors.New("resource_id is required")
-		}
 		if len(role.BoundScaleSets) > 0 {
 			return errors.New("scale set requires the vmss_name field to be set")
 		}
@@ -401,6 +398,13 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		// if not, look for user-assigned identities
 		for _, userIdentity := range resp.Identity.UserAssignedIdentities {
 			principalIDs[convertPtrToString(userIdentity.PrincipalID)] = struct{}{}
+		}
+	default:
+		// in some cases (particularly WIF), a vm/vmss/resource_id might not be provided, in that case
+		// we'll try to authenticate by matching the claim's app_id to the list of managed identities
+		// (see the comment below on that)
+		if claims.AppID == "" {
+			return errors.New("one of vm_name, vmss_name, resource_id, or an app_id JWT claim must be provided")
 		}
 	}
 
