@@ -34,6 +34,9 @@ const (
 	azurePublicCloudBaseURI = "https://graph.microsoft.com"
 	azureChinaCloudBaseURI  = "https://microsoftgraph.chinacloudapi.cn"
 	azureUSGovCloudBaseURI  = "https://graph.microsoft.us"
+	azurePublicCloudEnvName = "AZUREPUBLICCLOUD"
+	azureChinaCloudEnvName  = "AZURECHINACLOUD"
+	azureUSGovCloudEnvName  = "AZUREUSGOVERNMENTCLOUD"
 )
 
 type provider interface {
@@ -348,9 +351,9 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 
 func cloudConfigFromName(name string) (cloud.Configuration, error) {
 	configs := map[string]cloud.Configuration{
-		"AZURECHINACLOUD":        cloud.AzureChina,
-		"AZUREPUBLICCLOUD":       cloud.AzurePublic,
-		"AZUREUSGOVERNMENTCLOUD": cloud.AzureGovernment,
+		azureChinaCloudEnvName:  cloud.AzureChina,
+		azurePublicCloudEnvName: cloud.AzurePublic,
+		azureUSGovCloudEnvName:  cloud.AzureGovernment,
 	}
 
 	name = strings.ToUpper(name)
@@ -364,9 +367,9 @@ func cloudConfigFromName(name string) (cloud.Configuration, error) {
 
 func graphURIFromName(name string) (string, error) {
 	configs := map[string]string{
-		"AZURECHINACLOUD":        azureChinaCloudBaseURI,
-		"AZUREPUBLICCLOUD":       azurePublicCloudBaseURI,
-		"AZUREUSGOVERNMENTCLOUD": azureUSGovCloudBaseURI,
+		azureChinaCloudEnvName:  azureChinaCloudBaseURI,
+		azurePublicCloudEnvName: azurePublicCloudBaseURI,
+		azureUSGovCloudEnvName:  azureUSGovCloudBaseURI,
 	}
 
 	name = strings.ToUpper(name)
