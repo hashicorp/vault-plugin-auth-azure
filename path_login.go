@@ -439,9 +439,6 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		if _, ok := clientIDs[claims.AppID]; !ok {
 			return errors.New("neither token object id nor token app id match expected identities")
 		}
-	} else {
-		// normal exit due to no matching principal
-		return errors.New("token object id does not match expected identities")
 	}
 
 	// Check bound subscriptions
