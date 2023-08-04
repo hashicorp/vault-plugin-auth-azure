@@ -407,6 +407,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		}
 	}
 
+	var wifMatch bool
 	// Ensure the token OID is the principal id of the system-assigned identity
 	// or one of the user-assigned identities
 	if _, ok := principalIDs[claims.ObjectID]; !ok {
@@ -423,6 +424,8 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		if err != nil {
 			return fmt.Errorf("failed to create client to retrieve app ids: %w", err)
 		}
+
+		// add the identities associated with this resource group
 		pager := c.NewListByResourceGroupPager(resourceGroupName, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
 		for pager.More() {
 			page, err := pager.NextPage(ctx)
@@ -436,9 +439,26 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			}
 		}
 
+		// add the identities associated with the bound resource groups, if any
+		for _, rg := range role.BoundResourceGroups {
+			pager := c.NewListByResourceGroupPager(rg, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
+			for pager.More() {
+				page, err := pager.NextPage(ctx)
+				if err != nil {
+					return fmt.Errorf("failed to advance page: %w", err)
+				}
+				for _, id := range page.Value {
+					if id.Properties != nil && id.Properties.ClientID != nil {
+						clientIDs[*id.Properties.ClientID] = struct{}{}
+					}
+				}
+			}
+		}
+
 		if _, ok := clientIDs[claims.AppID]; !ok {
 			return errors.New("neither token object id nor token app id match expected identities")
 		}
+		wifMatch = true
 	}
 
 	// Check bound subscriptions
@@ -446,8 +466,8 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		return errors.New("subscription not authorized")
 	}
 
-	// Check bound resource groups
-	if len(role.BoundResourceGroups) > 0 && !strListContains(role.BoundResourceGroups, resourceGroupName) {
+	// Check bound resource groups unless we matched due to WIF (TODO: explanation for why we do this)
+	if !wifMatch && len(role.BoundResourceGroups) > 0 && !strListContains(role.BoundResourceGroups, resourceGroupName) {
 		return errors.New("resource group not authorized")
 	}
 
