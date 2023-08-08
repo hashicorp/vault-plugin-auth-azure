@@ -425,22 +425,12 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			return fmt.Errorf("failed to create client to retrieve app ids: %w", err)
 		}
 
-		// add the identities associated with this resource group
-		pager := c.NewListByResourceGroupPager(resourceGroupName, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
-		for pager.More() {
-			page, err := pager.NextPage(ctx)
-			if err != nil {
-				return fmt.Errorf("failed to advance page: %w", err)
-			}
-			for _, identity := range page.Value {
-				if identity.Properties != nil && identity.Properties.ClientID != nil {
-					clientIDs[*identity.Properties.ClientID] = struct{}{}
-				}
-			}
-		}
+		// aggregate the list of valid resource groups to check (the resource group provided by the resource, plus
+		// the resouces specified as valid by the role entry)
+		rgChecks := []string{resourceGroupName}
+		rgChecks = append(rgChecks, role.BoundResourceGroups...)
 
-		// add the identities associated with the bound resource groups, if any
-		for _, rg := range role.BoundResourceGroups {
+		for _, rg := range rgChecks {
 			pager := c.NewListByResourceGroupPager(rg, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
 			for pager.More() {
 				page, err := pager.NextPage(ctx)
@@ -466,7 +456,8 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		return errors.New("subscription not authorized")
 	}
 
-	// Check bound resource groups unless we matched due to WIF (TODO: explanation for why we do this)
+	// Check bound resource groups unless we matched due to WIF (if we matched a valid clientID/appID by resource group, the
+	// group validity is implict)
 	if !wifMatch && len(role.BoundResourceGroups) > 0 && !strListContains(role.BoundResourceGroups, resourceGroupName) {
 		return errors.New("resource group not authorized")
 	}
