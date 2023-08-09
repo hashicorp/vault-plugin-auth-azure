@@ -429,16 +429,14 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		// the resouces specified as valid by the role entry)
 		rgChecks := []string{resourceGroupName}
 		rgChecks = append(rgChecks, role.BoundResourceGroups...)
-		b.Logger().Info("checking these groups", "groups", rgChecks)
 
 		for _, rg := range rgChecks {
-			b.Logger().Info("checking", "group", rg)
 			pager := c.NewListByResourceGroupPager(rg, &armmsi.UserAssignedIdentitiesClientListByResourceGroupOptions{})
 			for pager.More() {
 				page, err := pager.NextPage(ctx)
 				if err != nil {
 					// don't fail the whole auth, but note that a page failed to load:
-					b.Logger().Info("couldn't load next page for", "resource_group", rg, "error", err.Error())
+					b.Logger().Warn("couldn't load next page for", "resource_group", rg, "error", err.Error())
 				}
 				for _, id := range page.Value {
 					if id.Properties != nil && id.Properties.ClientID != nil {
