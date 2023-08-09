@@ -435,7 +435,8 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			for pager.More() {
 				page, err := pager.NextPage(ctx)
 				if err != nil {
-					return fmt.Errorf("failed to advance page: %w", err)
+					// don't fail the whole auth, but note that a page failed to load:
+					b.Logger().Info("couldn't load next page for", "resource_group", rg)
 				}
 				for _, id := range page.Value {
 					if id.Properties != nil && id.Properties.ClientID != nil {
