@@ -12,14 +12,11 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/vault/api v1.9.2
 	github.com/hashicorp/vault/sdk v0.9.2
-	github.com/microsoftgraph/msgraph-sdk-go v1.17.0
+	github.com/microsoftgraph/msgraph-sdk-go v1.13.0
 	golang.org/x/oauth2 v0.11.0
 )
 
-require (
-	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
-	github.com/microsoft/kiota-serialization-multipart-go v1.0.0 // indirect
-)
+require github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.3.0 // indirect
