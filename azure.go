@@ -233,7 +233,7 @@ func (p *azureProvider) ResourceClient(subscriptionID string) (client.ResourceCl
 }
 
 func (p *azureProvider) getClientOptions() *arm.ClientOptions {
-	opts := &arm.ClientOptions{
+	return &arm.ClientOptions{
 		ClientOptions: policy.ClientOptions{
 			Cloud: p.settings.CloudConfig,
 			Transport: transporter{
@@ -247,8 +247,6 @@ func (p *azureProvider) getClientOptions() *arm.ClientOptions {
 			},
 		},
 	}
-
-	return opts
 }
 
 func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
