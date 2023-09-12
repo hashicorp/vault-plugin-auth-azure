@@ -188,6 +188,24 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		config.RootPasswordTTL = time.Second * time.Duration(rootExpirationRaw.(int))
 	}
 
+	config.MaxRetries = defaultMaxRetries
+	maxRetriesRaw, ok := data.GetOk("max_retries")
+	if ok {
+		config.MaxRetries = int32(maxRetriesRaw.(int))
+	}
+
+	config.MaxRetryDelay = defaultMaxRetryDelay
+	maxRetryDelayRaw, ok := data.GetOk("max_retry_delay")
+	if ok {
+		config.MaxRetryDelay = time.Second * time.Duration(maxRetryDelayRaw.(int))
+	}
+
+	config.RetryDelay = defaultRetryDelay
+	retryDelayRaw, ok := data.GetOk("retry_delay")
+	if ok {
+		config.RetryDelay = time.Second * time.Duration(retryDelayRaw.(int))
+	}
+
 	// Create a settings object to validate all required settings
 	// are available
 	if _, err := b.getAzureSettings(ctx, config); err != nil {
@@ -271,7 +289,7 @@ const (
 	// as the default.
 	defaultRootPasswordTTL = 4380 * time.Hour
 	defaultRetryDelay      = 4 * time.Second
-	defaultMaxRetries      = 3
+	defaultMaxRetries      = int32(3)
 	defaultMaxRetryDelay   = 60 * time.Second
 	configStoragePath      = "config"
 	confHelpSyn            = `Configures the Azure authentication backend.`
