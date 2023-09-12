@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
@@ -232,15 +233,22 @@ func (p *azureProvider) ResourceClient(subscriptionID string) (client.ResourceCl
 }
 
 func (p *azureProvider) getClientOptions() *arm.ClientOptions {
-	return &arm.ClientOptions{
+	opts := &arm.ClientOptions{
 		ClientOptions: policy.ClientOptions{
 			Cloud: p.settings.CloudConfig,
 			Transport: transporter{
 				pluginEnv: p.settings.PluginEnv,
 				sender:    p.httpClient,
 			},
+			Retry: policy.RetryOptions{
+				MaxRetries:    p.settings.MaxRetries,
+				MaxRetryDelay: p.settings.MaxRetryDelay,
+				RetryDelay:    p.settings.RetryDelay,
+			},
 		},
 	}
+
+	return opts
 }
 
 func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
@@ -273,17 +281,24 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 }
 
 type azureSettings struct {
-	TenantID     string
-	ClientID     string
-	ClientSecret string
-	CloudConfig  cloud.Configuration
-	GraphURI     string
-	Resource     string
-	PluginEnv    *logical.PluginEnvironment
+	TenantID      string
+	ClientID      string
+	ClientSecret  string
+	CloudConfig   cloud.Configuration
+	GraphURI      string
+	Resource      string
+	PluginEnv     *logical.PluginEnvironment
+	MaxRetries    int32
+	MaxRetryDelay time.Duration
+	RetryDelay    time.Duration
 }
 
 func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureConfig) (*azureSettings, error) {
-	settings := new(azureSettings)
+	settings := &azureSettings{
+		MaxRetries:    config.MaxRetries,
+		MaxRetryDelay: config.MaxRetryDelay,
+		RetryDelay:    config.RetryDelay,
+	}
 
 	envTenantID := os.Getenv("AZURE_TENANT_ID")
 	switch {
