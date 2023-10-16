@@ -1,5 +1,6 @@
 ## v0.16.2
 IMPROVEMENTS:
+    * Made framework.WALPrefix a local path for Azure Auth [GH-137](https://github.com/hashicorp/vault-plugin-auth-azure/pull/137)
     * Added Azure API configurable retry options [GH-133](https://github.com/hashicorp/vault-plugin-auth-azure/pull/133)
 
 ## v0.16.1
