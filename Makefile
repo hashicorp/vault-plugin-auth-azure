@@ -27,7 +27,7 @@ bootstrap:
 	fi
 
 .PHONY: test
-test: fmtcheck
+test:
 	CGO_ENABLED=0 go test ./... $(TESTARGS) -timeout=20m
 
 .PHONY: fmtcheck
