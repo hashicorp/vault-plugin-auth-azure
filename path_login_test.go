@@ -49,7 +49,7 @@ func TestLogin_Acceptance(t *testing.T) {
 		"client_id":     clientID,
 		"client_secret": clientSecret,
 	}
-	if err := testConfigCreate(t, b, s, configData); err != nil {
+	if _, err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatal(err)
 	}
 

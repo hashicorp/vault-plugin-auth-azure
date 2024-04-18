@@ -25,6 +25,7 @@ import (
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/vault-plugin-auth-azure/client"
+	"github.com/hashicorp/vault/sdk/helper/pluginidentityutil"
 	"github.com/hashicorp/vault/sdk/helper/useragent"
 	"github.com/hashicorp/vault/sdk/logical"
 	"golang.org/x/oauth2"
@@ -279,6 +280,8 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 }
 
 type azureSettings struct {
+	pluginidentityutil.PluginIdentityTokenParams
+
 	TenantID      string
 	ClientID      string
 	ClientSecret  string
@@ -329,6 +332,8 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 		clientSecret = config.ClientSecret
 	}
 	settings.ClientSecret = clientSecret
+
+	settings.IdentityTokenAudience = config.IdentityTokenAudience
 
 	environment := os.Getenv("AZURE_ENVIRONMENT")
 	if environment == "" {
