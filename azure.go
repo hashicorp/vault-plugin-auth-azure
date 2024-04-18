@@ -24,8 +24,10 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/go-cleanhttp"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/vault-plugin-auth-azure/client"
 	"github.com/hashicorp/vault/sdk/helper/pluginidentityutil"
+	"github.com/hashicorp/vault/sdk/helper/pluginutil"
 	"github.com/hashicorp/vault/sdk/helper/useragent"
 	"github.com/hashicorp/vault/sdk/logical"
 	"golang.org/x/oauth2"
@@ -43,12 +45,12 @@ const (
 
 type provider interface {
 	TokenVerifier() client.TokenVerifier
-	ComputeClient(subscriptionID string) (client.ComputeClient, error)
-	VMSSClient(subscriptionID string) (client.VMSSClient, error)
-	MSIClient(subscriptionID string) (client.MSIClient, error)
-	MSGraphClient() (client.MSGraphClient, error)
-	ResourceClient(subscriptionID string) (client.ResourceClient, error)
-	ProvidersClient(subscriptionID string) (client.ProvidersClient, error)
+	ComputeClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ComputeClient, error)
+	VMSSClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.VMSSClient, error)
+	MSIClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.MSIClient, error)
+	MSGraphClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView) (client.MSGraphClient, error)
+	ResourceClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ResourceClient, error)
+	ProvidersClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ProvidersClient, error)
 }
 
 type azureProvider struct {
@@ -144,8 +146,8 @@ func (p *azureProvider) TokenVerifier() client.TokenVerifier {
 	return p.oidcVerifier
 }
 
-func (p *azureProvider) MSGraphClient() (client.MSGraphClient, error) {
-	cred, err := p.getTokenCredential()
+func (p *azureProvider) MSGraphClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView) (client.MSGraphClient, error) {
+	cred, err := p.getTokenCredential(ctx, logger, sys)
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +160,8 @@ func (p *azureProvider) MSGraphClient() (client.MSGraphClient, error) {
 	return msGraphAppClient, nil
 }
 
-func (p *azureProvider) ComputeClient(subscriptionID string) (client.ComputeClient, error) {
-	cred, err := p.getTokenCredential()
+func (p *azureProvider) ComputeClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ComputeClient, error) {
+	cred, err := p.getTokenCredential(ctx, logger, sys)
 	if err != nil {
 		return nil, err
 	}
@@ -173,8 +175,8 @@ func (p *azureProvider) ComputeClient(subscriptionID string) (client.ComputeClie
 	return client, nil
 }
 
-func (p *azureProvider) VMSSClient(subscriptionID string) (client.VMSSClient, error) {
-	cred, err := p.getTokenCredential()
+func (p *azureProvider) VMSSClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.VMSSClient, error) {
+	cred, err := p.getTokenCredential(ctx, logger, sys)
 	if err != nil {
 		return nil, err
 	}
@@ -188,8 +190,8 @@ func (p *azureProvider) VMSSClient(subscriptionID string) (client.VMSSClient, er
 	return client, nil
 }
 
-func (p *azureProvider) MSIClient(subscriptionID string) (client.MSIClient, error) {
-	cred, err := p.getTokenCredential()
+func (p *azureProvider) MSIClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.MSIClient, error) {
+	cred, err := p.getTokenCredential(ctx, logger, sys)
 	if err != nil {
 		return nil, err
 	}
@@ -203,8 +205,8 @@ func (p *azureProvider) MSIClient(subscriptionID string) (client.MSIClient, erro
 	return client, nil
 }
 
-func (p *azureProvider) ProvidersClient(subscriptionID string) (client.ProvidersClient, error) {
-	cred, err := p.getTokenCredential()
+func (p *azureProvider) ProvidersClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ProvidersClient, error) {
+	cred, err := p.getTokenCredential(ctx, logger, sys)
 	if err != nil {
 		return nil, err
 	}
@@ -218,8 +220,8 @@ func (p *azureProvider) ProvidersClient(subscriptionID string) (client.Providers
 	return client, nil
 }
 
-func (p *azureProvider) ResourceClient(subscriptionID string) (client.ResourceClient, error) {
-	cred, err := p.getTokenCredential()
+func (p *azureProvider) ResourceClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ResourceClient, error) {
+	cred, err := p.getTokenCredential(ctx, logger, sys)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +252,7 @@ func (p *azureProvider) getClientOptions() *arm.ClientOptions {
 	}
 }
 
-func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
+func (p *azureProvider) getTokenCredential(ctx context.Context, logger hclog.Logger, sys logical.SystemView) (azcore.TokenCredential, error) {
 	clientCloudOpts := azcore.ClientOptions{Cloud: p.settings.CloudConfig}
 
 	if p.settings.ClientSecret != "" {
@@ -267,6 +269,24 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 		return cred, nil
 	}
 
+	if p.settings.IdentityTokenAudience != "" {
+		options := &azidentity.ClientAssertionCredentialOptions{
+			ClientOptions: clientCloudOpts,
+		}
+		getAssertion := getAssertionFunc(ctx, logger, sys, p.settings)
+		cred, err := azidentity.NewClientAssertionCredential(
+			p.settings.TenantID,
+			p.settings.ClientID,
+			getAssertion,
+			options,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create client assertion credential: %w", err)
+		}
+
+		return cred, nil
+	}
+
 	// Fall back to using managed service identity
 	options := &azidentity.ManagedIdentityCredentialOptions{
 		ClientOptions: clientCloudOpts,
@@ -277,6 +297,29 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 	}
 
 	return cred, nil
+}
+
+type getAssertion func(context.Context) (string, error)
+
+func getAssertionFunc(ctx context.Context, logger hclog.Logger, sys logical.SystemView, s *azureSettings) getAssertion {
+	return func(ctx context.Context) (string, error) {
+		req := &pluginutil.IdentityTokenRequest{
+			Audience: s.IdentityTokenAudience,
+			TTL:      s.IdentityTokenTTL * time.Second,
+		}
+		resp, err := sys.GenerateIdentityToken(ctx, req)
+		if err != nil {
+			return "", fmt.Errorf("failed to generate plugin identity token: %w", err)
+		}
+		logger.Info("fetched new plugin identity token")
+
+		if resp.TTL < req.TTL {
+			logger.Debug("generated plugin identity token has shorter TTL than requested",
+				"requested", req.TTL, "actual", resp.TTL)
+		}
+
+		return resp.Token.Token(), nil
+	}
 }
 
 type azureSettings struct {

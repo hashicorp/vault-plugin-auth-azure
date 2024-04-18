@@ -58,7 +58,7 @@ func (b *azureAuthBackend) pathRotateRoot(ctx context.Context, req *logical.Requ
 		return nil, err
 	}
 
-	client, err := provider.MSGraphClient()
+	client, err := provider.MSGraphClient(ctx, b.Logger(), b.System())
 	if err != nil {
 		return nil, err
 	}
