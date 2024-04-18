@@ -129,7 +129,7 @@ func TestConfig(t *testing.T) {
 					"tenant_id": "foo",
 				}
 
-				err = testConfigUpdate(t, b, s, configSubset)
+				_, err = testConfigUpdate(t, b, s, configSubset)
 				if err != nil {
 					t.Fatal(err)
 				}

@@ -18,6 +18,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/coreos/go-oidc"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/vault-plugin-auth-azure/client"
 	"github.com/hashicorp/vault/sdk/helper/policyutil"
 	"github.com/hashicorp/vault/sdk/logical"
@@ -184,7 +185,7 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 	roleName := "test-role"
 
 	// setup test response functions that mock the client GetByID response
-	nilIdentityRespFunc := func(_ string) (armresources.ClientGetByIDResponse, error) {
+	nilIdentityRespFunc := func(context.Context, hclog.Logger, logical.SystemView, string) (armresources.ClientGetByIDResponse, error) {
 		return armresources.ClientGetByIDResponse{}, nil
 	}
 	userAssignedRespFunc, systemAssignedRespFunc := getResourceByIDResponses(t, principalID)
@@ -195,7 +196,7 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 		claims      map[string]interface{}
 		roleData    map[string]interface{}
 		loginData   map[string]interface{}
-		clientFunc  func(resourceID string) (armresources.ClientGetByIDResponse, error)
+		clientFunc  func(context.Context, hclog.Logger, logical.SystemView, string) (armresources.ClientGetByIDResponse, error)
 		expectError bool
 	}{
 		"login happy path user-assigned managed identity": {
@@ -945,8 +946,8 @@ func TestGetAPIVersionForResource(t *testing.T) {
 // the azure arm resource client responses. If principalID is an empty string
 // then no identity data will be set in the response.
 func getResourceByIDResponses(t *testing.T, principalID string) (
-	func(_ string) (armresources.ClientGetByIDResponse, error),
-	func(_ string) (armresources.ClientGetByIDResponse, error),
+	func(context.Context, hclog.Logger, logical.SystemView, string) (armresources.ClientGetByIDResponse, error),
+	func(context.Context, hclog.Logger, logical.SystemView, string) (armresources.ClientGetByIDResponse, error),
 ) {
 	t.Helper()
 	u := armresources.ClientGetByIDResponse{
@@ -972,10 +973,10 @@ func getResourceByIDResponses(t *testing.T, principalID string) (
 		s.GenericResource.Identity.PrincipalID = &principalID
 	}
 
-	userAssignedRespFunc := func(_ string) (armresources.ClientGetByIDResponse, error) {
+	userAssignedRespFunc := func(context.Context, hclog.Logger, logical.SystemView, string) (armresources.ClientGetByIDResponse, error) {
 		return u, nil
 	}
-	systemAssignedRespFunc := func(_ string) (armresources.ClientGetByIDResponse, error) {
+	systemAssignedRespFunc := func(context.Context, hclog.Logger, logical.SystemView, string) (armresources.ClientGetByIDResponse, error) {
 		return s, nil
 	}
 
@@ -984,7 +985,7 @@ func getResourceByIDResponses(t *testing.T, principalID string) (
 
 // getProvidersResponse is a test helper to get the function that returns
 // the azure arm resource providers client response.
-func getProvidersResponse(t *testing.T, resourceID string) func(_ string) (armresources.ProvidersClientGetResponse, error) {
+func getProvidersResponse(t *testing.T, resourceID string) func(context.Context, hclog.Logger, logical.SystemView, string) (armresources.ProvidersClientGetResponse, error) {
 	t.Helper()
 
 	resourceType, err := arm.ParseResourceType(resourceID)
@@ -1008,7 +1009,7 @@ func getProvidersResponse(t *testing.T, resourceID string) func(_ string) (armre
 			},
 		},
 	}
-	providersRespFunc := func(_ string) (armresources.ProvidersClientGetResponse, error) {
+	providersRespFunc := func(context.Context, hclog.Logger, logical.SystemView, string) (armresources.ProvidersClientGetResponse, error) {
 		return u, nil
 	}
 	return providersRespFunc
@@ -1036,14 +1037,14 @@ func testJWT(t *testing.T, payload map[string]interface{}) string {
 }
 
 func getTestBackendFunctions(withLocation bool) (
-	func(_ string) (armcompute.VirtualMachinesClientGetResponse, error),
-	func(_ string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error),
-	func(_ string) (armmsi.UserAssignedIdentitiesClientGetResponse, error),
+	func(context.Context, hclog.Logger, logical.SystemView, string) (armcompute.VirtualMachinesClientGetResponse, error),
+	func(context.Context, hclog.Logger, logical.SystemView, string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error),
+	func(context.Context, hclog.Logger, logical.SystemView, string) (armmsi.UserAssignedIdentitiesClientGetResponse, error),
 ) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 
 	if !withLocation {
-		c := func(_ string) (armcompute.VirtualMachinesClientGetResponse, error) {
+		c := func(context.Context, hclog.Logger, logical.SystemView, string) (armcompute.VirtualMachinesClientGetResponse, error) {
 			id := armcompute.VirtualMachineIdentity{
 				PrincipalID: &principalID,
 			}
@@ -1053,7 +1054,7 @@ func getTestBackendFunctions(withLocation bool) (
 				},
 			}, nil
 		}
-		v := func(_ string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error) {
+		v := func(context.Context, hclog.Logger, logical.SystemView, string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error) {
 			id := armcompute.VirtualMachineScaleSetIdentity{
 				PrincipalID: &principalID,
 			}
@@ -1062,7 +1063,7 @@ func getTestBackendFunctions(withLocation bool) (
 			}}, nil
 		}
 
-		m := func(_ string) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
+		m := func(context.Context, hclog.Logger, logical.SystemView, string) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
 			userAssignedIdentityProperties := armmsi.UserAssignedIdentityProperties{
 				PrincipalID: &principalID,
 			}
@@ -1075,7 +1076,7 @@ func getTestBackendFunctions(withLocation bool) (
 	} else {
 		location := "loc"
 
-		c := func(vmName string) (armcompute.VirtualMachinesClientGetResponse, error) {
+		c := func(_ context.Context, _ hclog.Logger, _ logical.SystemView, vmName string) (armcompute.VirtualMachinesClientGetResponse, error) {
 			id := armcompute.VirtualMachineIdentity{
 				PrincipalID: &principalID,
 			}
@@ -1094,7 +1095,7 @@ func getTestBackendFunctions(withLocation bool) (
 			}
 			return armcompute.VirtualMachinesClientGetResponse{}, nil
 		}
-		v := func(vmssName string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error) {
+		v := func(_ context.Context, _ hclog.Logger, _ logical.SystemView, vmssName string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error) {
 			id := armcompute.VirtualMachineScaleSetIdentity{
 				PrincipalID: &principalID,
 			}
@@ -1114,7 +1115,7 @@ func getTestBackendFunctions(withLocation bool) (
 			return armcompute.VirtualMachineScaleSetsClientGetResponse{}, nil
 		}
 
-		m := func(_ string) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
+		m := func(context.Context, hclog.Logger, logical.SystemView, string) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
 			userAssignedIdentityProperties := armmsi.UserAssignedIdentityProperties{
 				PrincipalID: &principalID,
 			}
@@ -1127,8 +1128,8 @@ func getTestBackendFunctions(withLocation bool) (
 	}
 }
 
-func getTestMSGraphClient() func() (client.MSGraphClient, error) {
-	return func() (client.MSGraphClient, error) {
+func getTestMSGraphClient() func(context.Context, hclog.Logger, logical.SystemView) (client.MSGraphClient, error) {
+	return func(context.Context, hclog.Logger, logical.SystemView) (client.MSGraphClient, error) {
 		return nil, nil
 	}
 }
