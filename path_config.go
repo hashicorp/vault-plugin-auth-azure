@@ -5,10 +5,12 @@ package azureauth
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/helper/pluginidentityutil"
+	"github.com/hashicorp/vault/sdk/helper/pluginutil"
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
@@ -219,6 +221,19 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 
 	if config.IdentityTokenAudience != "" && config.ClientSecret != "" {
 		return logical.ErrorResponse("only one of 'client_secret' or 'identity_token_audience' can be set"), nil
+	}
+
+	// generate token to check if WIF is enabled on this edition of Vault
+	if config.IdentityTokenAudience != "" {
+		_, err := b.System().GenerateIdentityToken(ctx, &pluginutil.IdentityTokenRequest{
+			Audience: config.IdentityTokenAudience,
+		})
+		if err != nil {
+			if errors.Is(err, pluginidentityutil.ErrPluginWorkloadIdentityUnsupported) {
+				return logical.ErrorResponse(err.Error()), nil
+			}
+			return nil, err
+		}
 	}
 
 	// Create a settings object to validate all required settings
