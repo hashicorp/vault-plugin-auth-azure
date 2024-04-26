@@ -16,9 +16,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/coreos/go-oidc"
-	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/vault-plugin-auth-azure/client"
-	"github.com/hashicorp/vault/sdk/logical"
 )
 
 // mockKeySet is used in tests to bypass signature validation and return only
@@ -69,21 +67,21 @@ type mockProvidersClient struct {
 
 func (c *mockComputeClient) Get(ctx context.Context, _, vmName string, _ *armcompute.VirtualMachinesClientGetOptions) (armcompute.VirtualMachinesClientGetResponse, error) {
 	if c.computeClientFunc != nil {
-		return c.computeClientFunc(ctx, hclog.NewNullLogger(), nil, vmName)
+		return c.computeClientFunc(ctx, vmName)
 	}
 	return armcompute.VirtualMachinesClientGetResponse{}, nil
 }
 
 func (c *mockVMSSClient) Get(ctx context.Context, _, vmssName string, _ *armcompute.VirtualMachineScaleSetsClientGetOptions) (armcompute.VirtualMachineScaleSetsClientGetResponse, error) {
 	if c.vmssClientFunc != nil {
-		return c.vmssClientFunc(ctx, hclog.NewNullLogger(), nil, vmssName)
+		return c.vmssClientFunc(ctx, vmssName)
 	}
 	return armcompute.VirtualMachineScaleSetsClientGetResponse{}, nil
 }
 
 func (c *mockMSIClient) Get(ctx context.Context, _, resourceName string, _ *armmsi.UserAssignedIdentitiesClientGetOptions) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
 	if c.msiClientFunc != nil {
-		return c.msiClientFunc(ctx, hclog.NewNullLogger(), nil, resourceName)
+		return c.msiClientFunc(ctx, resourceName)
 	}
 	return armmsi.UserAssignedIdentitiesClientGetResponse{}, nil
 }
@@ -105,31 +103,31 @@ func (c *mockMSIClient) NewListByResourceGroupPager(resourceGroup string, _ *arm
 
 func (c *mockResourceClient) GetByID(ctx context.Context, resourceID, _ string, _ *armresources.ClientGetByIDOptions) (armresources.ClientGetByIDResponse, error) {
 	if c.resourceClientFunc != nil {
-		return c.resourceClientFunc(ctx, hclog.NewNullLogger(), nil, resourceID)
+		return c.resourceClientFunc(ctx, resourceID)
 	}
 	return armresources.ClientGetByIDResponse{}, nil
 }
 
 func (c *mockProvidersClient) Get(ctx context.Context, resourceID string, _ *armresources.ProvidersClientGetOptions) (armresources.ProvidersClientGetResponse, error) {
 	if c.providersClientFunc != nil {
-		return c.providersClientFunc(ctx, hclog.NewNullLogger(), nil, resourceID)
+		return c.providersClientFunc(ctx, resourceID)
 	}
 	return armresources.ProvidersClientGetResponse{}, nil
 }
 
-type computeClientFunc func(ctx context.Context, logger hclog.Logger, sys logical.SystemView, vmName string) (armcompute.VirtualMachinesClientGetResponse, error)
+type computeClientFunc func(ctx context.Context, vmName string) (armcompute.VirtualMachinesClientGetResponse, error)
 
-type vmssClientFunc func(ctx context.Context, logger hclog.Logger, sys logical.SystemView, vmssName string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error)
+type vmssClientFunc func(ctx context.Context, vmssName string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error)
 
-type msiClientFunc func(ctx context.Context, logger hclog.Logger, sys logical.SystemView, resourceName string) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
+type msiClientFunc func(ctx context.Context, resourceName string) (armmsi.UserAssignedIdentitiesClientGetResponse, error)
 
 type msiListFunc func(resoucename string) armmsi.UserAssignedIdentitiesClientListByResourceGroupResponse
 
-type msGraphClientFunc func(ctx context.Context, logger hclog.Logger, sys logical.SystemView) (client.MSGraphClient, error)
+type msGraphClientFunc func(ctx context.Context) (client.MSGraphClient, error)
 
-type resourceClientFunc func(ctx context.Context, logger hclog.Logger, sys logical.SystemView, resourceID string) (armresources.ClientGetByIDResponse, error)
+type resourceClientFunc func(ctx context.Context, resourceID string) (armresources.ClientGetByIDResponse, error)
 
-type providersClientFunc func(ctx context.Context, logger hclog.Logger, sys logical.SystemView, s string) (armresources.ProvidersClientGetResponse, error)
+type providersClientFunc func(ctx context.Context, s string) (armresources.ProvidersClientGetResponse, error)
 
 type mockProvider struct {
 	computeClientFunc
@@ -155,36 +153,36 @@ func (*mockProvider) TokenVerifier() client.TokenVerifier {
 	return newMockVerifier()
 }
 
-func (p *mockProvider) ComputeClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, s string) (client.ComputeClient, error) {
+func (p *mockProvider) ComputeClient(ctx context.Context, s string) (client.ComputeClient, error) {
 	return &mockComputeClient{
 		computeClientFunc: p.computeClientFunc,
 	}, nil
 }
 
-func (p *mockProvider) VMSSClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, s string) (client.VMSSClient, error) {
+func (p *mockProvider) VMSSClient(ctx context.Context, s string) (client.VMSSClient, error) {
 	return &mockVMSSClient{
 		vmssClientFunc: p.vmssClientFunc,
 	}, nil
 }
 
-func (p *mockProvider) MSIClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, s string) (client.MSIClient, error) {
+func (p *mockProvider) MSIClient(ctx context.Context, s string) (client.MSIClient, error) {
 	return &mockMSIClient{
 		msiClientFunc: p.msiClientFunc,
 		msiListFunc:   p.msiListFunc,
 	}, nil
 }
 
-func (p *mockProvider) MSGraphClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView) (client.MSGraphClient, error) {
+func (p *mockProvider) MSGraphClient(ctx context.Context) (client.MSGraphClient, error) {
 	return nil, nil
 }
 
-func (p *mockProvider) ResourceClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, s string) (client.ResourceClient, error) {
+func (p *mockProvider) ResourceClient(ctx context.Context, s string) (client.ResourceClient, error) {
 	return &mockResourceClient{
 		resourceClientFunc: p.resourceClientFunc,
 	}, nil
 }
 
-func (p *mockProvider) ProvidersClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, s string) (client.ProvidersClient, error) {
+func (p *mockProvider) ProvidersClient(ctx context.Context, s string) (client.ProvidersClient, error) {
 	return &mockProvidersClient{
 		providersClientFunc: p.providersClientFunc,
 	}, nil

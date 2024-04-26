@@ -45,18 +45,20 @@ const (
 
 type provider interface {
 	TokenVerifier() client.TokenVerifier
-	ComputeClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ComputeClient, error)
-	VMSSClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.VMSSClient, error)
-	MSIClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.MSIClient, error)
-	MSGraphClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView) (client.MSGraphClient, error)
-	ResourceClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ResourceClient, error)
-	ProvidersClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ProvidersClient, error)
+	ComputeClient(ctx context.Context, subscriptionID string) (client.ComputeClient, error)
+	VMSSClient(ctx context.Context, subscriptionID string) (client.VMSSClient, error)
+	MSIClient(ctx context.Context, subscriptionID string) (client.MSIClient, error)
+	MSGraphClient(ctx context.Context) (client.MSGraphClient, error)
+	ResourceClient(ctx context.Context, subscriptionID string) (client.ResourceClient, error)
+	ProvidersClient(ctx context.Context, subscriptionID string) (client.ProvidersClient, error)
 }
 
 type azureProvider struct {
 	oidcVerifier *oidc.IDTokenVerifier
 	settings     *azureSettings
 	httpClient   *http.Client
+	logger       hclog.Logger
+	systemView   logical.SystemView
 }
 
 type oidcDiscoveryInfo struct {
@@ -139,6 +141,8 @@ func (b *azureAuthBackend) newAzureProvider(ctx context.Context, config *azureCo
 		settings:     settings,
 		oidcVerifier: oidcVerifier,
 		httpClient:   httpClient,
+		logger:       b.Logger(),
+		systemView:   b.System(),
 	}, nil
 }
 
@@ -146,8 +150,8 @@ func (p *azureProvider) TokenVerifier() client.TokenVerifier {
 	return p.oidcVerifier
 }
 
-func (p *azureProvider) MSGraphClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView) (client.MSGraphClient, error) {
-	cred, err := p.getTokenCredential(ctx, logger, sys)
+func (p *azureProvider) MSGraphClient(ctx context.Context) (client.MSGraphClient, error) {
+	cred, err := p.getTokenCredential(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -160,8 +164,8 @@ func (p *azureProvider) MSGraphClient(ctx context.Context, logger hclog.Logger, 
 	return msGraphAppClient, nil
 }
 
-func (p *azureProvider) ComputeClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ComputeClient, error) {
-	cred, err := p.getTokenCredential(ctx, logger, sys)
+func (p *azureProvider) ComputeClient(ctx context.Context, subscriptionID string) (client.ComputeClient, error) {
+	cred, err := p.getTokenCredential(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +179,8 @@ func (p *azureProvider) ComputeClient(ctx context.Context, logger hclog.Logger, 
 	return client, nil
 }
 
-func (p *azureProvider) VMSSClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.VMSSClient, error) {
-	cred, err := p.getTokenCredential(ctx, logger, sys)
+func (p *azureProvider) VMSSClient(ctx context.Context, subscriptionID string) (client.VMSSClient, error) {
+	cred, err := p.getTokenCredential(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -190,8 +194,8 @@ func (p *azureProvider) VMSSClient(ctx context.Context, logger hclog.Logger, sys
 	return client, nil
 }
 
-func (p *azureProvider) MSIClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.MSIClient, error) {
-	cred, err := p.getTokenCredential(ctx, logger, sys)
+func (p *azureProvider) MSIClient(ctx context.Context, subscriptionID string) (client.MSIClient, error) {
+	cred, err := p.getTokenCredential(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -205,8 +209,8 @@ func (p *azureProvider) MSIClient(ctx context.Context, logger hclog.Logger, sys 
 	return client, nil
 }
 
-func (p *azureProvider) ProvidersClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ProvidersClient, error) {
-	cred, err := p.getTokenCredential(ctx, logger, sys)
+func (p *azureProvider) ProvidersClient(ctx context.Context, subscriptionID string) (client.ProvidersClient, error) {
+	cred, err := p.getTokenCredential(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -220,8 +224,8 @@ func (p *azureProvider) ProvidersClient(ctx context.Context, logger hclog.Logger
 	return client, nil
 }
 
-func (p *azureProvider) ResourceClient(ctx context.Context, logger hclog.Logger, sys logical.SystemView, subscriptionID string) (client.ResourceClient, error) {
-	cred, err := p.getTokenCredential(ctx, logger, sys)
+func (p *azureProvider) ResourceClient(ctx context.Context, subscriptionID string) (client.ResourceClient, error) {
+	cred, err := p.getTokenCredential(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +256,7 @@ func (p *azureProvider) getClientOptions() *arm.ClientOptions {
 	}
 }
 
-func (p *azureProvider) getTokenCredential(ctx context.Context, logger hclog.Logger, sys logical.SystemView) (azcore.TokenCredential, error) {
+func (p *azureProvider) getTokenCredential(ctx context.Context) (azcore.TokenCredential, error) {
 	clientCloudOpts := azcore.ClientOptions{Cloud: p.settings.CloudConfig}
 
 	if p.settings.ClientSecret != "" {
@@ -273,7 +277,7 @@ func (p *azureProvider) getTokenCredential(ctx context.Context, logger hclog.Log
 		options := &azidentity.ClientAssertionCredentialOptions{
 			ClientOptions: clientCloudOpts,
 		}
-		getAssertion := getAssertionFunc(ctx, logger, sys, p.settings)
+		getAssertion := getAssertionFunc(ctx, p.logger, p.systemView, p.settings)
 		cred, err := azidentity.NewClientAssertionCredential(
 			p.settings.TenantID,
 			p.settings.ClientID,
