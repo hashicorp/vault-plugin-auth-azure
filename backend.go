@@ -128,7 +128,7 @@ func (b *azureAuthBackend) periodicFunc(ctx context.Context, req *logical.Reques
 			return err
 		}
 
-		client, err := provider.MSGraphClient(ctx)
+		client, err := provider.MSGraphClient()
 		if err != nil {
 			return err
 		}
