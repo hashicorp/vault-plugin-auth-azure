@@ -185,7 +185,7 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 	roleName := "test-role"
 
 	// setup test response functions that mock the client GetByID response
-	nilIdentityRespFunc := func(string) (armresources.ClientGetByIDResponse, error) {
+	nilIdentityRespFunc := func(_ string) (armresources.ClientGetByIDResponse, error) {
 		return armresources.ClientGetByIDResponse{}, nil
 	}
 	userAssignedRespFunc, systemAssignedRespFunc := getResourceByIDResponses(t, principalID)
@@ -196,7 +196,7 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 		claims      map[string]interface{}
 		roleData    map[string]interface{}
 		loginData   map[string]interface{}
-		clientFunc  func(string) (armresources.ClientGetByIDResponse, error)
+		clientFunc  func(resourceID string) (armresources.ClientGetByIDResponse, error)
 		expectError bool
 	}{
 		"login happy path user-assigned managed identity": {
@@ -946,8 +946,8 @@ func TestGetAPIVersionForResource(t *testing.T) {
 // the azure arm resource client responses. If principalID is an empty string
 // then no identity data will be set in the response.
 func getResourceByIDResponses(t *testing.T, principalID string) (
-	func(string) (armresources.ClientGetByIDResponse, error),
-	func(string) (armresources.ClientGetByIDResponse, error),
+	func(_ string) (armresources.ClientGetByIDResponse, error),
+	func(_ string) (armresources.ClientGetByIDResponse, error),
 ) {
 	t.Helper()
 	u := armresources.ClientGetByIDResponse{
@@ -973,10 +973,10 @@ func getResourceByIDResponses(t *testing.T, principalID string) (
 		s.GenericResource.Identity.PrincipalID = &principalID
 	}
 
-	userAssignedRespFunc := func(string) (armresources.ClientGetByIDResponse, error) {
+	userAssignedRespFunc := func(_ string) (armresources.ClientGetByIDResponse, error) {
 		return u, nil
 	}
-	systemAssignedRespFunc := func(string) (armresources.ClientGetByIDResponse, error) {
+	systemAssignedRespFunc := func(_ string) (armresources.ClientGetByIDResponse, error) {
 		return s, nil
 	}
 
@@ -985,7 +985,7 @@ func getResourceByIDResponses(t *testing.T, principalID string) (
 
 // getProvidersResponse is a test helper to get the function that returns
 // the azure arm resource providers client response.
-func getProvidersResponse(t *testing.T, resourceID string) func(string) (armresources.ProvidersClientGetResponse, error) {
+func getProvidersResponse(t *testing.T, resourceID string) func(_ string) (armresources.ProvidersClientGetResponse, error) {
 	t.Helper()
 
 	resourceType, err := arm.ParseResourceType(resourceID)
@@ -1009,7 +1009,7 @@ func getProvidersResponse(t *testing.T, resourceID string) func(string) (armreso
 			},
 		},
 	}
-	providersRespFunc := func(string) (armresources.ProvidersClientGetResponse, error) {
+	providersRespFunc := func(_ string) (armresources.ProvidersClientGetResponse, error) {
 		return u, nil
 	}
 	return providersRespFunc
@@ -1037,14 +1037,14 @@ func testJWT(t *testing.T, payload map[string]interface{}) string {
 }
 
 func getTestBackendFunctions(withLocation bool) (
-	func(string) (armcompute.VirtualMachinesClientGetResponse, error),
-	func(string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error),
-	func(string) (armmsi.UserAssignedIdentitiesClientGetResponse, error),
+	func(_ string) (armcompute.VirtualMachinesClientGetResponse, error),
+	func(_ string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error),
+	func(_ string) (armmsi.UserAssignedIdentitiesClientGetResponse, error),
 ) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 
 	if !withLocation {
-		c := func(string) (armcompute.VirtualMachinesClientGetResponse, error) {
+		c := func(_ string) (armcompute.VirtualMachinesClientGetResponse, error) {
 			id := armcompute.VirtualMachineIdentity{
 				PrincipalID: &principalID,
 			}
@@ -1054,7 +1054,7 @@ func getTestBackendFunctions(withLocation bool) (
 				},
 			}, nil
 		}
-		v := func(string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error) {
+		v := func(_ string) (armcompute.VirtualMachineScaleSetsClientGetResponse, error) {
 			id := armcompute.VirtualMachineScaleSetIdentity{
 				PrincipalID: &principalID,
 			}
@@ -1063,7 +1063,7 @@ func getTestBackendFunctions(withLocation bool) (
 			}}, nil
 		}
 
-		m := func(string) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
+		m := func(_ string) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
 			userAssignedIdentityProperties := armmsi.UserAssignedIdentityProperties{
 				PrincipalID: &principalID,
 			}
@@ -1115,7 +1115,7 @@ func getTestBackendFunctions(withLocation bool) (
 			return armcompute.VirtualMachineScaleSetsClientGetResponse{}, nil
 		}
 
-		m := func(string) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
+		m := func(_ string) (armmsi.UserAssignedIdentitiesClientGetResponse, error) {
 			userAssignedIdentityProperties := armmsi.UserAssignedIdentityProperties{
 				PrincipalID: &principalID,
 			}
