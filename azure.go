@@ -25,12 +25,13 @@ import (
 	"github.com/coreos/go-oidc"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/vault-plugin-auth-azure/client"
 	"github.com/hashicorp/vault/sdk/helper/pluginidentityutil"
 	"github.com/hashicorp/vault/sdk/helper/pluginutil"
 	"github.com/hashicorp/vault/sdk/helper/useragent"
 	"github.com/hashicorp/vault/sdk/logical"
 	"golang.org/x/oauth2"
+
+	"github.com/hashicorp/vault-plugin-auth-azure/client"
 )
 
 // https://learn.microsoft.com/en-us/graph/sdks/national-clouds
@@ -45,12 +46,12 @@ const (
 
 type provider interface {
 	TokenVerifier() client.TokenVerifier
-	ComputeClient(ctx context.Context, subscriptionID string) (client.ComputeClient, error)
-	VMSSClient(ctx context.Context, subscriptionID string) (client.VMSSClient, error)
-	MSIClient(ctx context.Context, subscriptionID string) (client.MSIClient, error)
-	MSGraphClient(ctx context.Context) (client.MSGraphClient, error)
-	ResourceClient(ctx context.Context, subscriptionID string) (client.ResourceClient, error)
-	ProvidersClient(ctx context.Context, subscriptionID string) (client.ProvidersClient, error)
+	ComputeClient(subscriptionID string) (client.ComputeClient, error)
+	VMSSClient(subscriptionID string) (client.VMSSClient, error)
+	MSIClient(subscriptionID string) (client.MSIClient, error)
+	MSGraphClient() (client.MSGraphClient, error)
+	ResourceClient(subscriptionID string) (client.ResourceClient, error)
+	ProvidersClient(subscriptionID string) (client.ProvidersClient, error)
 }
 
 type azureProvider struct {
@@ -150,8 +151,8 @@ func (p *azureProvider) TokenVerifier() client.TokenVerifier {
 	return p.oidcVerifier
 }
 
-func (p *azureProvider) MSGraphClient(ctx context.Context) (client.MSGraphClient, error) {
-	cred, err := p.getTokenCredential(ctx)
+func (p *azureProvider) MSGraphClient() (client.MSGraphClient, error) {
+	cred, err := p.getTokenCredential()
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +165,8 @@ func (p *azureProvider) MSGraphClient(ctx context.Context) (client.MSGraphClient
 	return msGraphAppClient, nil
 }
 
-func (p *azureProvider) ComputeClient(ctx context.Context, subscriptionID string) (client.ComputeClient, error) {
-	cred, err := p.getTokenCredential(ctx)
+func (p *azureProvider) ComputeClient(subscriptionID string) (client.ComputeClient, error) {
+	cred, err := p.getTokenCredential()
 	if err != nil {
 		return nil, err
 	}
@@ -179,8 +180,8 @@ func (p *azureProvider) ComputeClient(ctx context.Context, subscriptionID string
 	return client, nil
 }
 
-func (p *azureProvider) VMSSClient(ctx context.Context, subscriptionID string) (client.VMSSClient, error) {
-	cred, err := p.getTokenCredential(ctx)
+func (p *azureProvider) VMSSClient(subscriptionID string) (client.VMSSClient, error) {
+	cred, err := p.getTokenCredential()
 	if err != nil {
 		return nil, err
 	}
@@ -194,8 +195,8 @@ func (p *azureProvider) VMSSClient(ctx context.Context, subscriptionID string) (
 	return client, nil
 }
 
-func (p *azureProvider) MSIClient(ctx context.Context, subscriptionID string) (client.MSIClient, error) {
-	cred, err := p.getTokenCredential(ctx)
+func (p *azureProvider) MSIClient(subscriptionID string) (client.MSIClient, error) {
+	cred, err := p.getTokenCredential()
 	if err != nil {
 		return nil, err
 	}
@@ -209,8 +210,8 @@ func (p *azureProvider) MSIClient(ctx context.Context, subscriptionID string) (c
 	return client, nil
 }
 
-func (p *azureProvider) ProvidersClient(ctx context.Context, subscriptionID string) (client.ProvidersClient, error) {
-	cred, err := p.getTokenCredential(ctx)
+func (p *azureProvider) ProvidersClient(subscriptionID string) (client.ProvidersClient, error) {
+	cred, err := p.getTokenCredential()
 	if err != nil {
 		return nil, err
 	}
@@ -224,8 +225,8 @@ func (p *azureProvider) ProvidersClient(ctx context.Context, subscriptionID stri
 	return client, nil
 }
 
-func (p *azureProvider) ResourceClient(ctx context.Context, subscriptionID string) (client.ResourceClient, error) {
-	cred, err := p.getTokenCredential(ctx)
+func (p *azureProvider) ResourceClient(subscriptionID string) (client.ResourceClient, error) {
+	cred, err := p.getTokenCredential()
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +257,7 @@ func (p *azureProvider) getClientOptions() *arm.ClientOptions {
 	}
 }
 
-func (p *azureProvider) getTokenCredential(ctx context.Context) (azcore.TokenCredential, error) {
+func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 	clientCloudOpts := azcore.ClientOptions{Cloud: p.settings.CloudConfig}
 
 	if p.settings.ClientSecret != "" {
@@ -277,7 +278,7 @@ func (p *azureProvider) getTokenCredential(ctx context.Context) (azcore.TokenCre
 		options := &azidentity.ClientAssertionCredentialOptions{
 			ClientOptions: clientCloudOpts,
 		}
-		getAssertion := getAssertionFunc(ctx, p.logger, p.systemView, p.settings)
+		getAssertion := getAssertionFunc(p.logger, p.systemView, p.settings)
 		cred, err := azidentity.NewClientAssertionCredential(
 			p.settings.TenantID,
 			p.settings.ClientID,
@@ -305,7 +306,7 @@ func (p *azureProvider) getTokenCredential(ctx context.Context) (azcore.TokenCre
 
 type getAssertion func(context.Context) (string, error)
 
-func getAssertionFunc(ctx context.Context, logger hclog.Logger, sys logical.SystemView, s *azureSettings) getAssertion {
+func getAssertionFunc(logger hclog.Logger, sys logical.SystemView, s *azureSettings) getAssertion {
 	return func(ctx context.Context) (string, error) {
 		req := &pluginutil.IdentityTokenRequest{
 			Audience: s.IdentityTokenAudience,
@@ -381,6 +382,7 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 	settings.ClientSecret = clientSecret
 
 	settings.IdentityTokenAudience = config.IdentityTokenAudience
+	settings.IdentityTokenTTL = config.IdentityTokenTTL
 
 	environment := os.Getenv("AZURE_ENVIRONMENT")
 	if environment == "" {

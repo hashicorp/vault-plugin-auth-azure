@@ -280,7 +280,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	// If vmss name is specified, the vm name will be ignored and only the scale set
 	// will be verified since vm names are generated automatically for scale sets
 	case vmssName != "":
-		client, err := b.provider.VMSSClient(ctx, subscriptionID)
+		client, err := b.provider.VMSSClient(subscriptionID)
 		if err != nil {
 			return err
 		}
@@ -320,7 +320,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 
 			// Principal ID is nil for VMSS flex orchestration mode, so we
 			// must look up the user-assigned identity using the MSI client
-			msiClient, err := b.provider.MSIClient(ctx, msiID.SubscriptionID)
+			msiClient, err := b.provider.MSIClient(msiID.SubscriptionID)
 			if err != nil {
 				return fmt.Errorf("failed to create client to retrieve user-assigned identity: %w", err)
 			}
@@ -334,7 +334,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			}
 		}
 	case vmName != "":
-		client, err := b.provider.ComputeClient(ctx, subscriptionID)
+		client, err := b.provider.ComputeClient(subscriptionID)
 		if err != nil {
 			return err
 		}
@@ -378,7 +378,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			return err
 		}
 
-		client, err := b.provider.ResourceClient(ctx, subscriptionID)
+		client, err := b.provider.ResourceClient(subscriptionID)
 		if err != nil {
 			return err
 		}
@@ -420,7 +420,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		}
 
 		clientIDs := map[string]struct{}{}
-		c, err := b.provider.MSIClient(ctx, subscriptionID)
+		c, err := b.provider.MSIClient(subscriptionID)
 		if err != nil {
 			return fmt.Errorf("failed to create client to retrieve app ids: %w", err)
 		}
@@ -536,7 +536,7 @@ func (b *azureAuthBackend) getAPIVersionForResource(ctx context.Context, subscri
 	}
 	b.cacheLock.RUnlock()
 
-	client, err := b.provider.ProvidersClient(ctx, subscriptionID)
+	client, err := b.provider.ProvidersClient(subscriptionID)
 	if err != nil {
 		return "", err
 	}
