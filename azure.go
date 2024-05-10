@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -446,4 +447,11 @@ func graphURIFromName(name string) (string, error) {
 	}
 
 	return c, nil
+}
+
+var rx = regexp.MustCompile(`[a-zA-Z][a-zA-Z0-9\-]+`)
+
+// verify the field provided matches Azure's requirements.
+func validateAzureField(value string) bool {
+	return rx.MatchString(value)
 }
