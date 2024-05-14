@@ -1,5 +1,6 @@
 ## Unreleased
 IMPROVEMENTS:
+* Add login field validation for subscription id, resource group name, vmss name, and vm name
 * Updated dependencies:
   * `github.com/Azure/azure-sdk-for-go/sdk/azcore` v1.9.1 -> v1.10.0
   * `github.com/go-jose/go-jose/v3` v3.0.1 -> v3.0.3
