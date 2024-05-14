@@ -449,9 +449,11 @@ func graphURIFromName(name string) (string, error) {
 	return c, nil
 }
 
-var rx = regexp.MustCompile(`([a-zA-Z][a-zA-Z0-9\-]*)|^$`)
+var nameRx = regexp.MustCompile(`^([a-zA-Z][a-zA-Z0-9\-]*)$|^$`)
+var rgRx = regexp.MustCompile(`^([\-_.\pL\pN]*[\-_\pL\pN])$|^$`)
 
-// verify the field provided matches Azure's requirements.
-func validateAzureField(value string) bool {
-	return rx.MatchString(value)
+// verify the field provided matches Azure's requirements
+// (see: https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules).
+func validateAzureField(regex *regexp.Regexp, value string) bool {
+	return regex.MatchString(value)
 }

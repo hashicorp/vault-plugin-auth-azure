@@ -136,16 +136,16 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 	vmName := data.Get("vm_name").(string)
 	resourceID := data.Get("resource_id").(string)
 
-	if !validateAzureField(subscriptionID) {
+	if !validateAzureField(nameRx, subscriptionID) {
 		return logical.ErrorResponse(fmt.Sprintf("invalid subscription id %q", subscriptionID)), nil
 	}
-	if !validateAzureField(resourceGroupName) {
+	if !validateAzureField(rgRx, resourceGroupName) {
 		return logical.ErrorResponse(fmt.Sprintf("invalid resource group name %q", resourceGroupName)), nil
 	}
-	if !validateAzureField(vmssName) {
+	if !validateAzureField(nameRx, vmssName) {
 		return logical.ErrorResponse(fmt.Sprintf("invalid vmss_name %q", vmssName)), nil
 	}
-	if !validateAzureField(vmName) {
+	if !validateAzureField(nameRx, vmName) {
 		return logical.ErrorResponse(fmt.Sprintf("invalid vm name %q", vmName)), nil
 	}
 

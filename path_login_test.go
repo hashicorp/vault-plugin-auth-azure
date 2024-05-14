@@ -790,15 +790,15 @@ func TestLogin_InvalidCharacters(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
 	loginData["subscription_id"] = "sub"
-	loginData["vmss_name"] = ".."
+	loginData["vmss_name"] = "a/../b"
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
 	loginData["vmss_name"] = "vmss"
-	loginData["vm_name"] = ".."
+	loginData["vm_name"] = "../a"
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
 	loginData["vm_name"] = "vm"
-	loginData["resource_group_name"] = ".."
+	loginData["resource_group_name"] = "a/../b"
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
 	//claims["nbf"] = time.Now().Add(60 * time.Second).Unix()
