@@ -449,7 +449,7 @@ func graphURIFromName(name string) (string, error) {
 	return c, nil
 }
 
-var rx = regexp.MustCompile(`[a-zA-Z][a-zA-Z0-9\-]+`)
+var rx = regexp.MustCompile(`([a-zA-Z][a-zA-Z0-9\-]*)|^$`)
 
 // verify the field provided matches Azure's requirements.
 func validateAzureField(value string) bool {

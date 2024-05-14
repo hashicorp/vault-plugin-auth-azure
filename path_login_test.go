@@ -761,6 +761,54 @@ func TestLogin_AppID(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 }
 
+func TestLogin_InvalidCharacters(t *testing.T) {
+	b, s := getTestBackend(t)
+
+	roleName := "testrole"
+	roleData := map[string]interface{}{
+		"name":                        roleName,
+		"policies":                    []string{"dev", "prod"},
+		"bound_service_principal_ids": []string{"*"},
+	}
+	testRoleCreate(t, b, s, roleData)
+
+	claims := map[string]interface{}{
+		"exp": time.Now().Add(60 * time.Second).Unix(),
+		"nbf": time.Now().Add(-60 * time.Second).Unix(),
+	}
+
+	loginData := map[string]interface{}{
+		"role":            roleName,
+		"subscription_id": "sub",
+		"vmss_name":       "vmss",
+		"vm_name":         "vm",
+		"resource_group":  "rg",
+	}
+	testLoginSuccess(t, b, s, loginData, claims, roleData)
+
+	loginData["subscription_id"] = ".." // illegal
+	testLoginFailure(t, b, s, loginData, claims, roleData)
+
+	loginData["subscription_id"] = "sub"
+	loginData["vmss_name"] = ".."
+	testLoginFailure(t, b, s, loginData, claims, roleData)
+
+	loginData["vmss_name"] = "vmss"
+	loginData["vm_name"] = ".."
+	testLoginFailure(t, b, s, loginData, claims, roleData)
+
+	loginData["vm_name"] = "vm"
+	loginData["resource_group_name"] = ".."
+	testLoginFailure(t, b, s, loginData, claims, roleData)
+
+	//claims["nbf"] = time.Now().Add(60 * time.Second).Unix()
+	//testLoginFailure(t, b, s, loginData, claims, roleData)
+	//
+	//claims["nbf"] = time.Now().Add(-60 * time.Second).Unix()
+	//claims["exp"] = time.Now().Add(-60 * time.Second).Unix()
+	//testLoginFailure(t, b, s, loginData, claims, roleData)
+}
+
 func testLoginSuccess(t *testing.T, b *azureAuthBackend, s logical.Storage, loginData, claims, roleData map[string]interface{}) {
 	t.Helper()
 	if err := testLoginWithClaims(t, b, s, loginData, claims, roleData); err != nil {
