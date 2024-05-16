@@ -449,7 +449,7 @@ func graphURIFromName(name string) (string, error) {
 	return c, nil
 }
 
-var nameRx = regexp.MustCompile(`^([a-zA-Z][a-zA-Z0-9\-]*)$|^$`)
+var nameRx = regexp.MustCompile(`^([a-zA-Z0-9][a-zA-Z0-9\-]*)$|^$`)
 var rgRx = regexp.MustCompile(`^([\-_.\pL\pN]*[\-_\pL\pN])$|^$`)
 
 // verify the field provided matches Azure's requirements
