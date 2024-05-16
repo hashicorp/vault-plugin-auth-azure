@@ -487,7 +487,7 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 	b, s := getTestBackendWithComputeClient(t, c, v, m, nil, g)
 
 	roleName := "testrole"
-	subID := "subID"
+	subID := "1234abcd-1234-abcd-1234-abcd1234ef90"
 	roleData := map[string]interface{}{
 		"name":                   roleName,
 		"policies":               []string{"dev", "prod"},
@@ -551,7 +551,7 @@ func TestLogin_BoundResourceGroup(t *testing.T) {
 	}
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
-	loginData["subscription_id"] = "sub"
+	loginData["subscription_id"] = "1234abcd-1234-abcd-1234-abcd1234ef90"
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
 	loginData["resource_group_name"] = rg
@@ -602,7 +602,7 @@ func TestLogin_BoundResourceGroupWithUserAssignedID(t *testing.T) {
 	}
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
-	loginData["subscription_id"] = "sub"
+	loginData["subscription_id"] = "1234abcd-1234-abcd-1234-abcd1234ef90"
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
 	loginData["resource_group_name"] = rg
@@ -648,7 +648,7 @@ func TestLogin_BoundLocation(t *testing.T) {
 	}
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
-	loginData["subscription_id"] = "sub"
+	loginData["subscription_id"] = "1234abcd-1234-abcd-1234-abcd1234abcd"
 	loginData["resource_group_name"] = "rg"
 
 	loginData["vmss_name"] = "good"
@@ -693,7 +693,7 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 	}
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
-	loginData["subscription_id"] = "sub"
+	loginData["subscription_id"] = "1234abcd-1234-abcd-1234-abcd1234ef90"
 	loginData["resource_group_name"] = "rg"
 
 	loginData["vmss_name"] = "goodvmss"
@@ -753,7 +753,7 @@ func TestLogin_AppID(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
 	loginData["resource_group_name"] = resourceGroup
-	loginData["subscription_id"] = "sub"
+	loginData["subscription_id"] = "1234abcd-1234-abcd-1234-abcd1234ef90"
 	loginData["vmss_name"] = "vmss"
 	testLoginSuccess(t, b, s, loginData, claims, roleData)
 
@@ -779,7 +779,7 @@ func TestLogin_InvalidCharacters(t *testing.T) {
 
 	loginData := map[string]interface{}{
 		"role":            roleName,
-		"subscription_id": "sub",
+		"subscription_id": "1234abcd-1234-1234-abcd-abcd1234abcd",
 		"vmss_name":       "vmss",
 		"vm_name":         "vm",
 		"resource_group":  "rg",
@@ -789,7 +789,7 @@ func TestLogin_InvalidCharacters(t *testing.T) {
 	loginData["subscription_id"] = ".." // illegal
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
-	loginData["subscription_id"] = "sub"
+	loginData["subscription_id"] = "1234abcd-1234-1234-abcd-1234-abcd1234abcd"
 	loginData["vmss_name"] = "a/../b"
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 
