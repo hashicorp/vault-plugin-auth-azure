@@ -11,7 +11,6 @@ FEATURES:
 IMPROVEMENTS:
 * Bump github.com/coreos/go-oidc to v3 (https://github.com/hashicorp/vault-plugin-auth-azure/pull/157)
 * Updated dependencies: (https://github.com/hashicorp/vault-plugin-auth-azure/pull/154)
->>>>>>> main
 * Updated dependencies:
   * `github.com/Azure/azure-sdk-for-go/sdk/azcore` v1.9.1 -> v1.10.0
   * `github.com/go-jose/go-jose/v3` v3.0.1 -> v3.0.3
