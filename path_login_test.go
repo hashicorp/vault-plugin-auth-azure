@@ -800,13 +800,6 @@ func TestLogin_InvalidCharacters(t *testing.T) {
 	loginData["vm_name"] = "vm"
 	loginData["resource_group_name"] = "a/../b"
 	testLoginFailure(t, b, s, loginData, claims, roleData)
-
-	//claims["nbf"] = time.Now().Add(60 * time.Second).Unix()
-	//testLoginFailure(t, b, s, loginData, claims, roleData)
-	//
-	//claims["nbf"] = time.Now().Add(-60 * time.Second).Unix()
-	//claims["exp"] = time.Now().Add(-60 * time.Second).Unix()
-	//testLoginFailure(t, b, s, loginData, claims, roleData)
 }
 
 func testLoginSuccess(t *testing.T, b *azureAuthBackend, s logical.Storage, loginData, claims, roleData map[string]interface{}) {
