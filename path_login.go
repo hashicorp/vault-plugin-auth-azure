@@ -286,6 +286,10 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		return errors.New("subscription_id and resource_group_name are required")
 	}
 
+	if err := claims.verifyResourceGroupName(resourceGroupName); err != nil {
+		return err
+	}
+
 	var location *string
 	principalIDs := map[string]struct{}{}
 
@@ -349,6 +353,11 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	case vmName != "":
 		client, err := b.provider.ComputeClient(subscriptionID)
 		if err != nil {
+			return err
+		}
+
+		// Check VM name matches the VM name in any of the token's xms_az_rid or xm_mirid claims
+		if err = claims.verifyVMName(vmName); err != nil {
 			return err
 		}
 
@@ -439,7 +448,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		}
 
 		// aggregate the list of valid resource groups to check (the resource group provided by the resource, plus
-		// the resouces specified as valid by the role entry)
+		// the resources specified as valid by the role entry)
 		rgChecks := []string{resourceGroupName}
 		rgChecks = append(rgChecks, role.BoundResourceGroups...)
 
@@ -519,6 +528,52 @@ type additionalClaims struct {
 	ObjectID  string   `json:"oid"`
 	AppID     string   `json:"appid"`
 	GroupIDs  []string `json:"groups"`
+	// XMSAzureResourceID is an optional claim which can be used to identify the
+	// resource ID of the resource to which the identity is assigned for
+	// managed identity authentication
+	XMSAzureResourceID string `json:"xms_az_rid,omitempty"`
+	// XMSManagedIdentityResourceID is typically included in tokens
+	// that are issued to a managed identity in Azure, particularly when the token is
+	// obtained from the Azure Instance Metadata Service (IMDS) on an Azure VM.
+	// This claim indicates the Azure resource ID of the managed identity's resource,
+	// such as a virtual machine.
+	XMSManagedIdentityResourceID string `json:"xms_mirid,omitempty"`
+}
+
+func (c *additionalClaims) verifyVMName(vmName string) error {
+	if c.XMSAzureResourceID == "" && c.XMSManagedIdentityResourceID == "" {
+		return errors.New("xms_az_rid and xms_mirid claims are missing from token")
+	}
+	var errs []error
+	if strings.Contains(c.XMSAzureResourceID, fmt.Sprintf("/virtualMachines/%s", vmName)) {
+		return nil
+	}
+	errs = append(errs, fmt.Errorf("xms_az_rid token claim does not match vm_name %s", vmName))
+
+	if strings.Contains(c.XMSManagedIdentityResourceID, fmt.Sprintf("/virtualMachines/%s", vmName)) {
+		return nil
+	}
+	errs = append(errs, fmt.Errorf("xms_mirid token claim does not match vm_name %s", vmName))
+
+	return errors.Join(errs...)
+}
+
+func (c *additionalClaims) verifyResourceGroupName(resourceGroupName string) error {
+	if c.XMSAzureResourceID == "" && c.XMSManagedIdentityResourceID == "" {
+		return errors.New("xms_az_rid and xms_mirid claims missing from token")
+	}
+	var errs []error
+	if strings.Contains(c.XMSAzureResourceID, fmt.Sprintf("/resourcegroups/%s", resourceGroupName)) {
+		return nil
+	}
+	errs = append(errs, fmt.Errorf("xms_az_rid token claim does not match resoure_group_name %s", resourceGroupName))
+
+	if strings.Contains(c.XMSManagedIdentityResourceID, fmt.Sprintf("/resourcegroups/%s", resourceGroupName)) {
+		return nil
+	}
+	errs = append(errs, fmt.Errorf("xms_mirid token claim does not match resoure_group_name %s", resourceGroupName))
+
+	return errors.Join(errs...)
 }
 
 const (
