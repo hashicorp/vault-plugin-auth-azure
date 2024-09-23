@@ -439,7 +439,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		}
 
 		// aggregate the list of valid resource groups to check (the resource group provided by the resource, plus
-		// the resouces specified as valid by the role entry)
+		// the resources specified as valid by the role entry)
 		rgChecks := []string{resourceGroupName}
 		rgChecks = append(rgChecks, role.BoundResourceGroups...)
 
@@ -485,6 +485,35 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 			return errors.New("location not authorized")
 		}
 	}
+
+	// JWT's payload
+	//{
+	//  "aud": "https://management.azure.com/",
+	//  "iss": "https://sts.windows.net/<redacted>/",
+	//  "iat": 1726780200,
+	//  "nbf": 1726780200,
+	//  "exp": 1726866900,
+	//  "aio": "E2dgYDgXmfJYzZ7ZJFTp7vnqVWcOAQA=",
+	//  "appid": "8d92b87a-e6d5-482e-9a38-7cd14cee307e",
+	//  "appidacr": "2",
+	//  "idp": "https://sts.windows.net/<redacted>/",
+	//  "idtyp": "app",
+	//  "oid": "774ab886-8193-42ca-bfdb-3f96ff1b0528",
+	//  "rh": "0.AFIABLx_IyrFi0Wvl-r3FXwM1EZIf3kAutdPukPawfj2MBPNAAA.",
+	//  "sub": "774ab886-8193-42ca-bfdb-3f96ff1b0528",
+	//  "tid": "237fbc04-c52a-458b-af97-eaf7157c0cd4",
+	//  "uti": "6sKst-9REUesv8HiJAUnAA",
+	//  "ver": "1.0",
+	//  "xms_az_rid": "/subscriptions/<subscription-id>/resourcegroups/Vault-demo-2/providers/Microsoft.Compute/virtualMachines/test-vm-wrong-group",
+	//  "xms_idrel": "18 7",
+	//  "xms_mirid": "/subscriptions/<subscription-id>/resourcegroups/Vault-demo-2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/test-vm-wrong-group",
+	//  "xms_tcdt": 1674059474
+	//}
+	//
+	// We construct the string that will match xms_az_rid key of JWT
+	// "/subscriptions/%s/resourcegroups/%s/" is the prefix of xms_az_rid's value
+	// "xms_az_rid": "/subscriptions/<subscription-id>/resourcegroups/Vault-demo-2/providers/Microsoft.Compute/virtualMachines/test-vm-wrong-group"
+	// If the prefix mismatches, return a short descriptive error
 
 	return nil
 }
