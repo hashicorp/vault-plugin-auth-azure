@@ -4,7 +4,7 @@
 
 BUGS:
 
-* an endless loop of warning spamming the logs on login error (https://github.com/hashicorp/vault-plugin-auth-azure/pull/170)
+* fix an endless loop of warning spamming the logs on login error (https://github.com/hashicorp/vault-plugin-auth-azure/pull/170)
 
 ## v0.19.0
 
