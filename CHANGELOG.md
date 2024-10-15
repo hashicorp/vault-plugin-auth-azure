@@ -2,8 +2,9 @@
 
 ## v0.18.1
 
-IMPROVEMENTS:
-* Bump github.com/coreos/go-oidc to v3 (https://github.com/hashicorp/vault-plugin-auth-azure/pull/157)
+BUGS:
+
+* fix an endless loop of warning spamming the logs on login error
 
 ## v0.18.0
 
@@ -11,6 +12,7 @@ FEATURES:
 * Add support for Workload Identify Federation (https://github.com/hashicorp/vault-plugin-auth-azure/pull/151)
 
 IMPROVEMENTS:
+* Bump github.com/coreos/go-oidc to v3 (https://github.com/hashicorp/vault-plugin-auth-azure/pull/157)
 * Updated dependencies: (https://github.com/hashicorp/vault-plugin-auth-azure/pull/154)
 * Updated dependencies:
   * `github.com/Azure/azure-sdk-for-go/sdk/azcore` v1.9.1 -> v1.10.0
