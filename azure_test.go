@@ -270,6 +270,18 @@ func TestValidationRegex(t *testing.T) {
 			regex:   rgRx,
 			isMatch: true,
 		},
+		{
+			name:    "paren resource group",
+			in:      ".(сыноо)",
+			regex:   rgRx,
+			isMatch: true,
+		},
+		{
+			name:    "resource group, invalid end with period",
+			in:      ".(сыноо-_).",
+			regex:   rgRx,
+			isMatch: false,
+		},
 	}
 
 	for _, tc := range cases {
