@@ -450,8 +450,9 @@ func graphURIFromName(name string) (string, error) {
 }
 
 // guidRx from https://learn.microsoft.com/en-us/rest/api/defenderforcloud/tasks/get-subscription-level-task
-var guidRx = regexp.MustCompile(`^[0-9A-Fa-f]{8}-([0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}$`)
-var nameRx = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-]*$`)
+var guidRx = regexp.MustCompile(`^[0-9A-Fa-f]{8}-([0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}$`) // just a uuid
+// nameRx from https://azure.github.io/PSRule.Rules.Azure/en/rules/Azure.VM.Name/#description
+var nameRx = regexp.MustCompile(`^[a-zA-Z]$|^[a-zA-Z][a-zA-Z0-9.\-_]*[a-zA-Z0-9_]$`) // alphanumeric, doesn't start with a number, at least 1 character, doesn't end with a . or -
 var rgRx = regexp.MustCompile(`^[\-_.\pL\pN]*[\-_\pL\pN]$`)
 
 // verify the field provided matches Azure's requirements
