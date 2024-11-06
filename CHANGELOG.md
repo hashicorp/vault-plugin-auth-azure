@@ -1,5 +1,9 @@
 ## Unreleased
 
+## v0.19.2
+
+* expand vm, vmss, and resource group validation checks to include additional characters (https://github.com/hashicorp/vault-plugin-auth-azure/pull/172)
+
 ## v0.19.1
 
 BUGS:
