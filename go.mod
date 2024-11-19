@@ -2,7 +2,7 @@ module github.com/hashicorp/vault-plugin-auth-azure
 
 go 1.21
 
-toolchain go1.23.3
+toolchain go1.22.2
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.1
