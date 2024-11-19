@@ -22,7 +22,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
-	"github.com/coreos/go-oidc"
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/vault-plugin-auth-azure/client"
 	"github.com/hashicorp/vault/sdk/helper/useragent"

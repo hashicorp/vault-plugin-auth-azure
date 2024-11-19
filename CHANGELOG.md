@@ -1,5 +1,9 @@
 ## Unreleased
 
+IMPROVEMENTS:
+* Updated dependencies:
+  * `github.com/go-jose/go-jose/v3` v3.0.1 -> v3.0.3
+
 ## v0.17.1
 
 BUGS:
