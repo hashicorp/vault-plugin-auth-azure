@@ -4,6 +4,10 @@ IMPROVEMENTS:
 * Updated dependencies:
   * `github.com/go-jose/go-jose/v3` v3.0.1 -> v3.0.3
   * `github.com/coreos/go-oidc` v2.2.1 -> 3.11.0
+  * `github.com/docker/docker` v25.0.2 -> v25.0.6
+  * `github.com/Azure/azure-sdk-for-go/sdk/azidentity` v1.5.1 -> v1.6.0
+  * `github.com/hashicorp/go-retryable` v0.7.1 -> v0.7.7
+  * `google.golang.org/protobuf` v1.32.0 -> v1.33.0
 
 ## v0.17.1
 
