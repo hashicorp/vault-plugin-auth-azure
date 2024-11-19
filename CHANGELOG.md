@@ -1,8 +1,9 @@
-## Unreleased
+## v0.17.2
 
 IMPROVEMENTS:
 * Updated dependencies:
   * `github.com/go-jose/go-jose/v3` v3.0.1 -> v3.0.3
+  * `github.com/coreos/go-oidc` v2.2.1 -> 3.11.0
 
 ## v0.17.1
 
