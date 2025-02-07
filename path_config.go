@@ -254,10 +254,10 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		return nil, err
 	}
 
-	if config.DisableAutomatedRotation {
+	if config.ShouldDeregisterRotationJob() {
 		dr := &rotation.RotationJobDeregisterRequest{
-			MountType: req.MountType,
-			ReqPath:   req.Path,
+			MountPoint: req.MountPoint,
+			ReqPath:    req.Path,
 		}
 
 		err := b.System().DeregisterRotationJob(ctx, dr)
@@ -268,7 +268,7 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		// Now that the root config is set up, register the rotation job if it's required.
 		r := &rotation.RotationJobConfigureRequest{
 			Name:             rootRotationJobName,
-			MountType:        req.MountPoint,
+			MountPoint:       req.MountPoint,
 			ReqPath:          req.Path,
 			RotationSchedule: config.RotationSchedule,
 			RotationWindow:   config.RotationWindow,
