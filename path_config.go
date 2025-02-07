@@ -268,13 +268,14 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		// Now that the root config is set up, register the rotation job if it's required.
 		r := &rotation.RotationJobConfigureRequest{
 			Name:             rootRotationJobName,
-			MountType:        req.MountType,
+			MountType:        req.MountPoint,
 			ReqPath:          req.Path,
 			RotationSchedule: config.RotationSchedule,
 			RotationWindow:   config.RotationWindow,
 			RotationPeriod:   config.RotationPeriod,
 		}
 
+		b.Logger().Debug("registering rotation job", "mount", r.MountType, "path", r.ReqPath)
 		_, err = b.System().RegisterRotationJob(ctx, r)
 		if err != nil {
 			return logical.ErrorResponse("error registering rotation job: %s", err), nil
