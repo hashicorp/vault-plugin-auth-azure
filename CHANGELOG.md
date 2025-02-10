@@ -1,5 +1,10 @@
 ## Unreleased
 
+IMPROVEMENTS:
+* Updated dependencies:
+  * `golang.org/x/net` v0.29.0 -> v0.35.0
+  * `golang.org/x/crypto` v0.27.0 -> v0.33.0
+
 ## v0.19.2
 
 BUGS:
