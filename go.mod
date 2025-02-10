@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/vault/api v1.15.0
-	github.com/hashicorp/vault/sdk v0.14.2-0.20250207174825-3dc893917915
+	github.com/hashicorp/vault/sdk v0.14.2-0.20250210233644-9b70487623a5
 	github.com/microsoftgraph/msgraph-sdk-go v1.53.0
 	golang.org/x/oauth2 v0.24.0
 )

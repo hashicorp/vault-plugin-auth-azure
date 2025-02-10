@@ -275,7 +275,7 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 			RotationPeriod:   config.RotationPeriod,
 		}
 
-		b.Logger().Debug("registering rotation job", "mount", r.MountType, "path", r.ReqPath)
+		b.Logger().Debug("registering rotation job", "mount", r.MountPoint, "path", r.ReqPath)
 		_, err = b.System().RegisterRotationJob(ctx, r)
 		if err != nil {
 			return logical.ErrorResponse("error registering rotation job: %s", err), nil
