@@ -6,6 +6,7 @@ package azureauth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/hashicorp/vault/sdk/helper/automatedrotationutil"
@@ -254,7 +255,9 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		return nil, err
 	}
 
+	var rotOp string
 	if config.ShouldDeregisterRotationJob() {
+		rotOp = "deregistration"
 		dr := &rotation.RotationJobDeregisterRequest{
 			MountPoint: req.MountPoint,
 			ReqPath:    req.Path,
@@ -265,7 +268,7 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 			return logical.ErrorResponse("error de-registering rotation job: %s", err), nil
 		}
 	} else if config.ShouldRegisterRotationJob() {
-		// Now that the root config is set up, register the rotation job if it's required.
+		rotOp = "registration"
 		r := &rotation.RotationJobConfigureRequest{
 			Name:             rootRotationJobName,
 			MountPoint:       req.MountPoint,
@@ -287,7 +290,12 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		return nil, err
 	}
 	if err := req.Storage.Put(ctx, entry); err != nil {
-		return nil, err
+		wrappedError := err
+		if rotOp != "" {
+			wrappedError = fmt.Errorf("write to storage failed but the rotation manager still succeeded; "+
+				"operation=%s, mount=%s, path=%s, storageError=%s", rotOp, req.MountPoint, req.Path, err)
+		}
+		return nil, wrappedError
 	}
 
 	// Reset backend
