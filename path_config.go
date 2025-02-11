@@ -285,15 +285,24 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		}
 	}
 
+	wrapRotationError := func(innerError error) error {
+		wrappedError := fmt.Errorf("write to storage failed, but the rotation manager still succeeded: "+
+			"operation=%s, mount=%s, path=%s, storageError=%s", rotOp, req.MountPoint, req.Path, err)
+		return wrappedError
+	}
+
 	entry, err := logical.StorageEntryJSON("config", config)
 	if err != nil {
-		return nil, err
+		var wrappedError error
+		if rotOp != "" {
+			wrappedError = wrapRotationError(err)
+		}
+		return nil, wrappedError
 	}
 	if err := req.Storage.Put(ctx, entry); err != nil {
-		wrappedError := err
+		var wrappedError error
 		if rotOp != "" {
-			wrappedError = fmt.Errorf("write to storage failed but the rotation manager still succeeded; "+
-				"operation=%s, mount=%s, path=%s, storageError=%s", rotOp, req.MountPoint, req.Path, err)
+			wrappedError = wrapRotationError(err)
 		}
 		return nil, wrappedError
 	}
