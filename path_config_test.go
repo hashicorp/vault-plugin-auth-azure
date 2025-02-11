@@ -152,6 +152,21 @@ func TestConfig(t *testing.T) {
 	}
 }
 
+func TestRotationConfig(t *testing.T) {
+	// Ensure rotation settings return an error
+	b, s := getTestBackend(t)
+
+	configData := map[string]interface{}{
+		"tenant_id":       "tid",
+		"resource":        "res",
+		"rotation_period": 10,
+	}
+	_, err := testConfigCreate(t, b, s, configData)
+	if err.Error() != "error registering rotation job: rotation manager capabilities not supported in Vault community edition" {
+		t.Fail()
+	}
+}
+
 func TestConfigDelete(t *testing.T) {
 	b, s := getTestBackend(t)
 
