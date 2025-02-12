@@ -1,4 +1,4 @@
-## Unreleased
+## v0.20.0
 
 IMPROVEMENTS:
 * Updated dependencies:
