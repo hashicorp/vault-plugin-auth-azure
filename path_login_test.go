@@ -181,6 +181,7 @@ func TestLogin(t *testing.T) {
 func TestLogin_ManagedIdentity(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	subscriptionID := "eb936495-7356-4a35-af3e-ea68af201f0c"
+	resourceGroupName := "azure-func-rg"
 	resourceID := "/subscriptions/eb936495-7356-4a35-af3e-ea68af201f0c/resourceGroups/azure-func-rg/providers/Microsoft.Web/sites/my-azure-func"
 	roleName := "test-role"
 
@@ -213,7 +214,7 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 			},
 			loginData: map[string]interface{}{
 				"role":                roleName,
-				"resource_group_name": "rg",
+				"resource_group_name": resourceGroupName,
 				"subscription_id":     subscriptionID,
 				"resource_id":         resourceID,
 			},
@@ -234,7 +235,7 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 			},
 			loginData: map[string]interface{}{
 				"role":                roleName,
-				"resource_group_name": "rg",
+				"resource_group_name": resourceGroupName,
 				"subscription_id":     subscriptionID,
 				"resource_id":         resourceID,
 			},

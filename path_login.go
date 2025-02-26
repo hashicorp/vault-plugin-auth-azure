@@ -238,44 +238,6 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 	return resp, nil
 }
 
-func (b *azureAuthBackend) verifyClaims(claims *additionalClaims, role *azureRole) error {
-	notBefore := time.Time(claims.NotBefore)
-	if notBefore.After(time.Now()) {
-		return fmt.Errorf("token is not yet valid (Token Not Before: %v)", notBefore)
-	}
-
-	if (len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*") &&
-		(len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*") {
-		return fmt.Errorf("expected specific bound_group_ids or bound_service_principal_ids; both cannot be '*'")
-	}
-	switch {
-	case len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*":
-		// Globbing on PrincipalIDs; can skip Service Principal ID check
-	case len(role.BoundServicePrincipalIDs) > 0:
-		if !strListContains(role.BoundServicePrincipalIDs, claims.ObjectID) {
-			return fmt.Errorf("service principal not authorized: %s", claims.ObjectID)
-		}
-	}
-
-	switch {
-	case len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*":
-		// Globbing on GroupIDs; can skip group ID check
-	case len(role.BoundGroupIDs) > 0:
-		var found bool
-		for _, group := range claims.GroupIDs {
-			if strListContains(role.BoundGroupIDs, group) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return fmt.Errorf("groups not authorized: %v", claims.GroupIDs)
-		}
-	}
-
-	return nil
-}
-
 func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, resourceGroupName, vmName, vmssName, resourceID string, claims *additionalClaims, role *azureRole) error {
 	// If not checking anything with the resource id, exit early
 	if len(role.BoundResourceGroups) == 0 && len(role.BoundSubscriptionsIDs) == 0 && len(role.BoundLocations) == 0 && len(role.BoundScaleSets) == 0 {
@@ -602,7 +564,7 @@ func (c *additionalClaims) verifyVMName(vmName string) error {
 // the provided resource_group_name field on login
 func (c *additionalClaims) verifyResourceGroupName(resourceGroupName string, vmName, vmssName, resourceID string) error {
 	if vmssName == "" && vmName == "" {
-		if strings.Contains(resourceID, fmt.Sprintf("/resourcegroups/%s", resourceGroupName)) {
+		if strings.Contains(resourceID, fmt.Sprintf("/resourceGroups/%s", resourceGroupName)) {
 			return nil
 		}
 		return errors.New("provided resource_id does not match resource_group_name")
