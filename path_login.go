@@ -175,7 +175,7 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 	}
 
 	// Check additional claims in token
-	if err := b.verifyClaims(claims, role); err != nil {
+	if err := claims.verifyRole(role); err != nil {
 		return nil, err
 	}
 
@@ -286,13 +286,8 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		return errors.New("subscription_id and resource_group_name are required")
 	}
 
-	if err := claims.verifyResourceGroupName(resourceGroupName); err != nil {
-		return err
-	}
-
 	var location *string
 	principalIDs := map[string]struct{}{}
-
 	switch {
 	// If vmss name is specified, the vm name will be ignored and only the scale set
 	// will be verified since vm names are generated automatically for scale sets
@@ -429,6 +424,10 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		}
 	}
 
+	if err := claims.verifyResourceGroupName(resourceGroupName, vmName, vmssName, resourceID); err != nil {
+		return err
+	}
+
 	var wifMatch bool
 	// Ensure the token OID is the principal id of the system-assigned identity
 	// or one of the user-assigned identities
@@ -528,7 +527,7 @@ type additionalClaims struct {
 	ObjectID  string   `json:"oid"`
 	AppID     string   `json:"appid"`
 	GroupIDs  []string `json:"groups"`
-	// XMSAzureResourceID is an optional claim which can be used to identify the
+	// XMSAzureResourceID is used to identify the
 	// resource ID of the resource to which the identity is assigned for
 	// managed identity authentication
 	XMSAzureResourceID string `json:"xms_az_rid,omitempty"`
@@ -540,6 +539,47 @@ type additionalClaims struct {
 	XMSManagedIdentityResourceID string `json:"xms_mirid,omitempty"`
 }
 
+// verifyRole checks the additional claims in the token against the role
+func (c *additionalClaims) verifyRole(role *azureRole) error {
+	notBefore := time.Time(c.NotBefore)
+	if notBefore.After(time.Now()) {
+		return fmt.Errorf("token is not yet valid (Token Not Before: %v)", notBefore)
+	}
+
+	if (len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*") &&
+		(len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*") {
+		return fmt.Errorf("expected specific bound_group_ids or bound_service_principal_ids; both cannot be '*'")
+	}
+	switch {
+	case len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*":
+		// Globbing on PrincipalIDs; can skip Service Principal ID check
+	case len(role.BoundServicePrincipalIDs) > 0:
+		if !strListContains(role.BoundServicePrincipalIDs, c.ObjectID) {
+			return fmt.Errorf("service principal not authorized: %s", c.ObjectID)
+		}
+	}
+
+	switch {
+	case len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*":
+		// Globbing on GroupIDs; can skip group ID check
+	case len(role.BoundGroupIDs) > 0:
+		var found bool
+		for _, group := range c.GroupIDs {
+			if strListContains(role.BoundGroupIDs, group) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("groups not authorized: %v", c.GroupIDs)
+		}
+	}
+
+	return nil
+}
+
+// verifyVMName checks the additional claims in the token against
+// the provided vm_name field on login
 func (c *additionalClaims) verifyVMName(vmName string) error {
 	if c.XMSAzureResourceID == "" && c.XMSManagedIdentityResourceID == "" {
 		return errors.New("xms_az_rid and xms_mirid claims are missing from token")
@@ -558,7 +598,16 @@ func (c *additionalClaims) verifyVMName(vmName string) error {
 	return errors.Join(errs...)
 }
 
-func (c *additionalClaims) verifyResourceGroupName(resourceGroupName string) error {
+// verifyResourceGroupName checks the additional claims in the token against
+// the provided resource_group_name field on login
+func (c *additionalClaims) verifyResourceGroupName(resourceGroupName string, vmName, vmssName, resourceID string) error {
+	if vmssName == "" && vmName == "" {
+		if strings.Contains(resourceID, fmt.Sprintf("/resourcegroups/%s", resourceGroupName)) {
+			return nil
+		}
+		return errors.New("provided resource_id does not match resource_group_name")
+	}
+
 	if c.XMSAzureResourceID == "" && c.XMSManagedIdentityResourceID == "" {
 		return errors.New("xms_az_rid and xms_mirid claims missing from token")
 	}
