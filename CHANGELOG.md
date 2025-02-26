@@ -1,3 +1,12 @@
+## v0.20.1
+### February 26, 2025
+
+IMPROVEMENTS:
+* Updated dependencies:
+  * `golang.org/x/crypto` v0.33.0 -> v0.35.0
+  * `github.com/jose/go-jose` v4.0.4 -> v4.0.5
+  * `golang.org/x/oauth2` v0.24.0 -> v0.27.0
+
 ## v0.20.0
 
 FEATURES:
