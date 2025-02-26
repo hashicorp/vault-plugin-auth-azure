@@ -175,7 +175,7 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 	}
 
 	// Check additional claims in token
-	if err := b.verifyClaims(claims, role); err != nil {
+	if err := claims.verifyRole(role); err != nil {
 		return nil, err
 	}
 
@@ -238,44 +238,6 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 	return resp, nil
 }
 
-func (b *azureAuthBackend) verifyClaims(claims *additionalClaims, role *azureRole) error {
-	notBefore := time.Time(claims.NotBefore)
-	if notBefore.After(time.Now()) {
-		return fmt.Errorf("token is not yet valid (Token Not Before: %v)", notBefore)
-	}
-
-	if (len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*") &&
-		(len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*") {
-		return fmt.Errorf("expected specific bound_group_ids or bound_service_principal_ids; both cannot be '*'")
-	}
-	switch {
-	case len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*":
-		// Globbing on PrincipalIDs; can skip Service Principal ID check
-	case len(role.BoundServicePrincipalIDs) > 0:
-		if !strListContains(role.BoundServicePrincipalIDs, claims.ObjectID) {
-			return fmt.Errorf("service principal not authorized: %s", claims.ObjectID)
-		}
-	}
-
-	switch {
-	case len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*":
-		// Globbing on GroupIDs; can skip group ID check
-	case len(role.BoundGroupIDs) > 0:
-		var found bool
-		for _, group := range claims.GroupIDs {
-			if strListContains(role.BoundGroupIDs, group) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return fmt.Errorf("groups not authorized: %v", claims.GroupIDs)
-		}
-	}
-
-	return nil
-}
-
 func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, resourceGroupName, vmName, vmssName, resourceID string, claims *additionalClaims, role *azureRole) error {
 	// If not checking anything with the resource id, exit early
 	if len(role.BoundResourceGroups) == 0 && len(role.BoundSubscriptionsIDs) == 0 && len(role.BoundLocations) == 0 && len(role.BoundScaleSets) == 0 {
@@ -288,7 +250,6 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 
 	var location *string
 	principalIDs := map[string]struct{}{}
-
 	switch {
 	// If vmss name is specified, the vm name will be ignored and only the scale set
 	// will be verified since vm names are generated automatically for scale sets
@@ -349,6 +310,11 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 	case vmName != "":
 		client, err := b.provider.ComputeClient(subscriptionID)
 		if err != nil {
+			return err
+		}
+
+		// Check VM name matches the VM name in any of the token's xms_az_rid or xm_mirid claims
+		if err = claims.verifyVMName(vmName); err != nil {
 			return err
 		}
 
@@ -420,6 +386,10 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		}
 	}
 
+	if err := claims.verifyResourceGroupName(resourceGroupName, vmName, vmssName, resourceID); err != nil {
+		return err
+	}
+
 	var wifMatch bool
 	// Ensure the token OID is the principal id of the system-assigned identity
 	// or one of the user-assigned identities
@@ -439,7 +409,7 @@ func (b *azureAuthBackend) verifyResource(ctx context.Context, subscriptionID, r
 		}
 
 		// aggregate the list of valid resource groups to check (the resource group provided by the resource, plus
-		// the resouces specified as valid by the role entry)
+		// the resources specified as valid by the role entry)
 		rgChecks := []string{resourceGroupName}
 		rgChecks = append(rgChecks, role.BoundResourceGroups...)
 
@@ -519,6 +489,102 @@ type additionalClaims struct {
 	ObjectID  string   `json:"oid"`
 	AppID     string   `json:"appid"`
 	GroupIDs  []string `json:"groups"`
+	// XMSAzureResourceID is used to identify the
+	// resource ID of the resource to which the identity is assigned for
+	// managed identity authentication
+	XMSAzureResourceID string `json:"xms_az_rid,omitempty"`
+	// XMSManagedIdentityResourceID is typically included in tokens
+	// that are issued to a managed identity in Azure, particularly when the token is
+	// obtained from the Azure Instance Metadata Service (IMDS) on an Azure VM.
+	// This claim indicates the Azure resource ID of the managed identity's resource,
+	// such as a virtual machine.
+	XMSManagedIdentityResourceID string `json:"xms_mirid,omitempty"`
+}
+
+// verifyRole checks the additional claims in the token against the role
+func (c *additionalClaims) verifyRole(role *azureRole) error {
+	notBefore := time.Time(c.NotBefore)
+	if notBefore.After(time.Now()) {
+		return fmt.Errorf("token is not yet valid (Token Not Before: %v)", notBefore)
+	}
+
+	if (len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*") &&
+		(len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*") {
+		return fmt.Errorf("expected specific bound_group_ids or bound_service_principal_ids; both cannot be '*'")
+	}
+	switch {
+	case len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*":
+		// Globbing on PrincipalIDs; can skip Service Principal ID check
+	case len(role.BoundServicePrincipalIDs) > 0:
+		if !strListContains(role.BoundServicePrincipalIDs, c.ObjectID) {
+			return fmt.Errorf("service principal not authorized: %s", c.ObjectID)
+		}
+	}
+
+	switch {
+	case len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*":
+		// Globbing on GroupIDs; can skip group ID check
+	case len(role.BoundGroupIDs) > 0:
+		var found bool
+		for _, group := range c.GroupIDs {
+			if strListContains(role.BoundGroupIDs, group) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("groups not authorized: %v", c.GroupIDs)
+		}
+	}
+
+	return nil
+}
+
+// verifyVMName checks the additional claims in the token against
+// the provided vm_name field on login
+func (c *additionalClaims) verifyVMName(vmName string) error {
+	if c.XMSAzureResourceID == "" && c.XMSManagedIdentityResourceID == "" {
+		return errors.New("xms_az_rid and xms_mirid claims are missing from token")
+	}
+	var errs []error
+	if strings.Contains(c.XMSAzureResourceID, fmt.Sprintf("/virtualMachines/%s", vmName)) {
+		return nil
+	}
+	errs = append(errs, fmt.Errorf("xms_az_rid token claim does not match vm_name %s", vmName))
+
+	if strings.Contains(c.XMSManagedIdentityResourceID, fmt.Sprintf("/virtualMachines/%s", vmName)) {
+		return nil
+	}
+	errs = append(errs, fmt.Errorf("xms_mirid token claim does not match vm_name %s", vmName))
+
+	return errors.Join(errs...)
+}
+
+// verifyResourceGroupName checks the additional claims in the token against
+// the provided resource_group_name field on login
+func (c *additionalClaims) verifyResourceGroupName(resourceGroupName string, vmName, vmssName, resourceID string) error {
+	if vmssName == "" && vmName == "" {
+		if strings.Contains(resourceID, fmt.Sprintf("/resourceGroups/%s", resourceGroupName)) {
+			return nil
+		}
+		return errors.New("provided resource_id does not match resource_group_name")
+	}
+
+	if c.XMSAzureResourceID == "" && c.XMSManagedIdentityResourceID == "" {
+		return errors.New("xms_az_rid and xms_mirid claims missing from token")
+	}
+	var errs []error
+	if strings.Contains(c.XMSAzureResourceID, fmt.Sprintf("/resourcegroups/%s", resourceGroupName)) {
+		return nil
+	}
+	errs = append(errs, fmt.Errorf("xms_az_rid token claim does not match resoure_group_name %s", resourceGroupName))
+
+	if strings.Contains(c.XMSManagedIdentityResourceID, fmt.Sprintf("/resourcegroups/%s", resourceGroupName)) {
+		return nil
+	}
+	errs = append(errs, fmt.Errorf("xms_mirid token claim does not match resoure_group_name %s", resourceGroupName))
+
+	return errors.Join(errs...)
 }
 
 const (

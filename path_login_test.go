@@ -181,6 +181,7 @@ func TestLogin(t *testing.T) {
 func TestLogin_ManagedIdentity(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	subscriptionID := "eb936495-7356-4a35-af3e-ea68af201f0c"
+	resourceGroupName := "azure-func-rg"
 	resourceID := "/subscriptions/eb936495-7356-4a35-af3e-ea68af201f0c/resourceGroups/azure-func-rg/providers/Microsoft.Web/sites/my-azure-func"
 	roleName := "test-role"
 
@@ -213,7 +214,7 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 			},
 			loginData: map[string]interface{}{
 				"role":                roleName,
-				"resource_group_name": "rg",
+				"resource_group_name": resourceGroupName,
 				"subscription_id":     subscriptionID,
 				"resource_id":         resourceID,
 			},
@@ -234,7 +235,7 @@ func TestLogin_ManagedIdentity(t *testing.T) {
 			},
 			loginData: map[string]interface{}{
 				"role":                roleName,
-				"resource_group_name": "rg",
+				"resource_group_name": resourceGroupName,
 				"subscription_id":     subscriptionID,
 				"resource_id":         resourceID,
 			},
@@ -867,13 +868,13 @@ func TestVerifyClaims(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 	role := new(azureRole)
-	err = b.verifyClaims(claims, role)
+	err = claims.verifyRole(role)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
 	claims.NotBefore = jsonTime(time.Now().Add(10 * time.Second))
-	err = b.verifyClaims(claims, role)
+	err = claims.verifyRole(role)
 	if err == nil {
 		t.Fatal("expected claim verification error")
 	}
@@ -899,10 +900,10 @@ func TestVerifyClaims(t *testing.T) {
 			bgIds:  []string{"test-group-1"},
 			bspIds: []string{"*"},
 			claims: additionalClaims{
-				claims.NotBefore,
-				claims.ObjectID,
-				claims.AppID,
-				[]string{"test-group-2"},
+				NotBefore: claims.NotBefore,
+				ObjectID:  claims.ObjectID,
+				AppID:     claims.AppID,
+				GroupIDs:  []string{"test-group-2"},
 			},
 			error: "groups not authorized",
 		},
@@ -910,10 +911,10 @@ func TestVerifyClaims(t *testing.T) {
 			bgIds:  []string{"test-group-1", "test-group2"},
 			bspIds: []string{"*"},
 			claims: additionalClaims{
-				claims.NotBefore,
-				claims.ObjectID,
-				claims.AppID,
-				[]string{"test-group-2"},
+				NotBefore: claims.NotBefore,
+				ObjectID:  claims.ObjectID,
+				AppID:     claims.AppID,
+				GroupIDs:  []string{"test-group-2"},
 			},
 			error: "",
 		},
@@ -921,10 +922,10 @@ func TestVerifyClaims(t *testing.T) {
 			bgIds:  []string{"*"},
 			bspIds: []string{"spId1"},
 			claims: additionalClaims{
-				claims.NotBefore,
-				"test-oid",
-				claims.AppID,
-				claims.GroupIDs,
+				NotBefore: claims.NotBefore,
+				ObjectID:  "test-oid",
+				AppID:     claims.AppID,
+				GroupIDs:  claims.GroupIDs,
 			},
 			error: "service principal not authorized",
 		},
@@ -932,10 +933,10 @@ func TestVerifyClaims(t *testing.T) {
 			bgIds:  []string{"*"},
 			bspIds: []string{"spId1", "test-oid"},
 			claims: additionalClaims{
-				claims.NotBefore,
-				"test-oid",
-				claims.AppID,
-				claims.GroupIDs,
+				NotBefore: claims.NotBefore,
+				ObjectID:  "test-oid",
+				AppID:     claims.AppID,
+				GroupIDs:  claims.GroupIDs,
 			},
 			error: "",
 		},
@@ -947,7 +948,7 @@ func TestVerifyClaims(t *testing.T) {
 			role.BoundServicePrincipalIDs = testCase.bspIds
 			claims = &testCase.claims
 
-			err = b.verifyClaims(claims, role)
+			err = claims.verifyRole(role)
 
 			if err != nil && testCase.error != "" && !strings.Contains(err.Error(), testCase.error) {
 				t.Fatalf("expected an error %s, got %v", testCase.error, err)
