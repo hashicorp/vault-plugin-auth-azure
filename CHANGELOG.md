@@ -1,3 +1,8 @@
+## Unreleased
+
+IMPROVEMENTS:
+* Require `resource_group_name`, `vm_name`, and `vmss_name` to match token claims on login (https://github.com/hashicorp/vault-plugin-auth-azure/pull/186)
+
 ## v0.20.1
 ### February 26, 2025
 
