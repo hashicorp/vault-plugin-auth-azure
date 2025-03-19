@@ -27,9 +27,21 @@ var defaultResourceClientAPIVersion = "2022-03-01"
 
 const (
 	// Depending on the identities are attached to a standalone or VMSS-stemmed virtual machine,
-	// we might get different claims in xms_mirid. If there is a user-assigned managed identity,
-	// the xms_mirid will be in the format of fmtRID. Otherwise, it will be in the format of
-	// fmtRIDWithUserAssignedIdentities, xms_az_rid will be in the format of fmtRID.
+	// we might get different claim patterns in xms_mirid.
+	// If system assigned managed identity is enabled and no identity is specified in the Instance
+	// Metadata Service request, xms_mirid will be in the format of fmtRID, and xms_az_rid doesn't exist.
+	// If system assigned managed identity is not enabled, and only one user-assigned identity exists,
+	// xms_mirid will be in the format of fmtRIDWithUserAssignedIdentities, xms_az_rid will be
+	// in the format of fmtRID.
+	// If system assigned managed identity is not enabled, and multiple user-assigned identities exist,
+	// users are required to specify a managed identity in the Instance Metadata Service request.
+	// xms_mirid will be in the format of fmtRIDWithUserAssignedIdentities, xms_az_rid will be
+	// in the format of fmtRID.
+	//
+	// See the following for more details
+	// https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/managed-identities-faq#what-identity-will-imds-default-to-if-i-dont-specify-the-identity-in-the-request
+	// https://learn.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=portal%2Chttp#rest-endpoint-reference
+
 	// fmtRID is the format of the resource ID that has a virtual machine name
 	fmtRID = "/subscriptions/%s/resourcegroups/%s/providers/Microsoft.Compute/virtualMachines/%s"
 
