@@ -1,3 +1,8 @@
+## Unreleased
+
+IMPROVEMENTS:
+* Require `resource_group_name`, `vm_name`, and `vmss_name` to match token claims on login (https://github.com/hashicorp/vault-plugin-auth-azure/pull/186)
+
 ## v0.17.2
 
 IMPROVEMENTS:
@@ -16,7 +21,6 @@ BUGS:
 * fix an endless loop of warning spamming the logs on login error
 
 ## v0.17.0
-
 IMPROVEMENTS:
 * Make `framework.WALPrefix`` a local path [[GH-137](https://github.com/hashicorp/vault-plugin-auth-azure/pull/137)]
 * Updated dependencies:
