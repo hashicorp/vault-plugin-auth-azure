@@ -1,5 +1,8 @@
 ## Unreleased
 
+IMPROVEMENTS:
+* Require `resource_group_name`, `vm_name`, and `vmss_name` to match token claims on login (https://github.com/hashicorp/vault-plugin-auth-azure/pull/186)
+
 ## v0.18.1
 
 BUGS:
@@ -22,6 +25,12 @@ IMPROVEMENTS:
   * `github.com/microsoftgraph/msgraph-sdk-go` v1.32.0 -> v1.35.0
   * `github.com/microsoftgraph/msgraph-sdk-go-core` v1.0.1 -> v1.1.0
   * `golang.org/x/oauth2` v0.16.0 -> v0.17.0
+
+## v0.17.1
+
+BUGS:
+
+* fix an endless loop of warning spamming the logs on login error
 
 ## v0.17.0
 IMPROVEMENTS:
