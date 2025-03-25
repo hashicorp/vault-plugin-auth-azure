@@ -5,6 +5,12 @@
 
 IMPROVEMENTS:
 * Require `resource_group_name`, `vm_name`, and `vmss_name` to match token claims on login (https://github.com/hashicorp/vault-plugin-auth-azure/pull/186)
+* Update dependencies:
+  * `github.com/Azure/azure-sdk-for-go/sdk/azcore` v1.14.0 -> v1.17.0
+  * `github.com/Azure/azure-sdk-for-go/sdk/azidentity` v1.7.0 -> v1.8.2
+  * `github.com/hashicorp/vault/api` v1.15.0 -> v1.16.0
+  * `golang.org/x/oauth2` v0.27.0 -> v0.28.0
+* Upgrade to Go 1.23.6
 
 ## v0.20.1
 ### February 26, 2025
