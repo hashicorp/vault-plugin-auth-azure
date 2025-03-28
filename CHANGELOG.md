@@ -1,5 +1,11 @@
 ## Unreleased
 
+## v0.20.3
+### March 27, 2025
+
+BUG FIXES:
+* Fix a panic when a performance standby node attempts to write/update config (https://github.com/hashicorp/vault-plugin-auth-azure/pull/198)
+
 ## v0.20.2
 ### March 25, 2025
 
