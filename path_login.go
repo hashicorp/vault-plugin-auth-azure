@@ -45,6 +45,9 @@ const (
 	// fmtRID is the format of the resource ID that has a virtual machine name
 	fmtRID = "/subscriptions/%s/resourcegroups/%s/providers/Microsoft.Compute/virtualMachines/%s"
 
+	// fmtVMSSRID is the format of the resource ID when VMSS is in uniform mode that just has the scaleset name
+	fmtVMSSRID = "/subscriptions/%s/resourcegroups/%s/providers/Microsoft.Compute/virtualMachineScaleSet/%s"
+
 	// fmtRIDWithUserAssignedIdentities is the format of the resource ID that has a user-assigned managed identity
 	fmtRIDWithUserAssignedIdentities = "/subscriptions/%s/resourcegroups/%s/providers/Microsoft.ManagedIdentity/userAssignedIdentities/%s"
 
@@ -56,9 +59,13 @@ const (
 	// e.g. If VM name is "test-vm", the claim has a substring like "virtualMachines/test-vm"
 	fmtVMClaimPattern = "/virtualMachines/%s"
 
-	// fmtVMSSClaimPattern is used to match the VMSS name in the xms_az_rid and xms_mirid claims
+	// fmtVMSSFlexibleClaimPattern is used to match the VMSS name in the xms_az_rid and xms_mirid claims
 	// e.g. If VMSS name is "test-vmss", the claim has a substring like "virtualMachines/test-vmss_f9ae3d85"
-	fmtVMSSClaimPattern = "/virtualMachines/%s_"
+	fmtVMSSFlexibleClaimPattern = "/virtualMachines/%s_"
+
+	// fmtVMSSUniformClaimPattern is used to match the VMSS name in the xms_az_rid and xms_mirid claims
+	// e.g. If VMSS name is "test-vmss", the claim has a substring like "virtualMachineScaleSet/test-vmss"
+	fmtVMSSUniformClaimPattern = "/virtualMachineScaleSet/%s"
 
 	// fmtRGClaimPattern is used to match the resource group name in the xms_az_rid and xms_mirid claims
 	// e.g If the resource group name is demo, the claim has a substring like "resourcegroups/demo"
@@ -618,9 +625,14 @@ func (c *additionalClaims) verifyVM(vmName string) error {
 }
 
 // verifyVMSS checks the additional claims in the token against
-// the provided vm_name field on login
+// the provided vm_name field on login. We have to check both the uniform and flexible
+// claim patterns.
 func (c *additionalClaims) verifyVMSS(vmssName string) error {
-	return c.verifyXMSClaims(fmtVMSSClaimPattern, "vmss_name", vmssName)
+	err := c.verifyXMSClaims(fmtVMSSFlexibleClaimPattern, "vmss_name", vmssName)
+	if err != nil {
+		return c.verifyXMSClaims(fmtVMSSUniformClaimPattern, "vmss_name", vmssName)
+	}
+	return err
 }
 
 // verifyResourceGroup checks the additional claims in the token against
