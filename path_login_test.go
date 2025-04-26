@@ -1272,7 +1272,7 @@ func TestLogin_AppID(t *testing.T) {
 			},
 		},
 		{
-			// The flexible VMSS in this case has user-assigned managed identities
+			// The Flexible VMSS in this case has user-assigned managed identities
 			// so xms_az_rid is present
 			name: "success with vmss_name with user-assigned managed identities",
 			claims: map[string]interface{}{
@@ -1293,7 +1293,7 @@ func TestLogin_AppID(t *testing.T) {
 			expectedSuccess: true,
 		},
 		{
-			// The uniform VMSS in this case has user-assigned managed identities
+			// The Uniform VMSS in this case has user-assigned managed identities
 			// so xms_az_rid is present
 			name: "success with vmss_name with user-assigned managed identities",
 			claims: map[string]interface{}{

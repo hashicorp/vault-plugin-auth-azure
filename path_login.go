@@ -625,14 +625,21 @@ func (c *additionalClaims) verifyVM(vmName string) error {
 }
 
 // verifyVMSS checks the additional claims in the token against
-// the provided vm_name field on login. We have to check both the uniform and flexible
-// claim patterns.
+// the provided vm_name field on login. We have to check both the
+// uniform and flexible claim patterns. Since flexible is recommended
+// and default, check it first; if it fails, fall back to uniform.
 func (c *additionalClaims) verifyVMSS(vmssName string) error {
-	err := c.verifyXMSClaims(fmtVMSSFlexibleClaimPattern, "vmss_name", vmssName)
-	if err != nil {
-		return c.verifyXMSClaims(fmtVMSSUniformClaimPattern, "vmss_name", vmssName)
+	var errs []error
+	if err := c.verifyXMSClaims(fmtVMSSFlexibleClaimPattern, "vmss_name", vmssName); err != nil {
+		errs = append(errs, fmt.Errorf("failed to verify flexible vmss claim: %w", err))
+
+		if err := c.verifyXMSClaims(fmtVMSSUniformClaimPattern, "vmss_name", vmssName); err != nil {
+			errs = append(errs, fmt.Errorf("failed to verify uniform vmss claim: %w", err))
+			return errors.Join(errs...)
+		}
 	}
-	return err
+
+	return nil
 }
 
 // verifyResourceGroup checks the additional claims in the token against
