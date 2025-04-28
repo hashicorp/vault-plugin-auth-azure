@@ -558,7 +558,7 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 			},
 		},
 		{
-			name: "success with vmss_name with user-assigned managed identities",
+			name: "success with flexible vmss_name with user-assigned managed identities",
 			claims: map[string]interface{}{
 				"exp": time.Now().Add(60 * time.Second).Unix(),
 				"nbf": time.Now().Add(-60 * time.Second).Unix(),
@@ -707,7 +707,7 @@ func TestLogin_BoundResourceGroup(t *testing.T) {
 		{
 			// The VM in this case has user-assigned managed identities
 			// so xms_az_rid is present
-			name: "success with vmss_name with user-assigned managed identities",
+			name: "success with flexible vmss_name with user-assigned managed identities",
 			claims: map[string]interface{}{
 				"exp": time.Now().Add(60 * time.Second).Unix(),
 				"nbf": time.Now().Add(-60 * time.Second).Unix(),
@@ -868,7 +868,7 @@ func TestLogin_BoundLocation(t *testing.T) {
 		{
 			// The VMSS in this case has user-assigned managed identities
 			// so xms_az_rid is present
-			name: "success with vmss_name with user-assigned managed identities",
+			name: "success with flexible vmss_name with user-assigned managed identities",
 			claims: map[string]interface{}{
 				"exp": time.Now().Add(60 * time.Second).Unix(),
 				"nbf": time.Now().Add(-60 * time.Second).Unix(),
@@ -1105,7 +1105,7 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 		{
 			// The Flexible VMSS in this case has user-assigned managed identities
 			// so xms_az_rid is present
-			name: "success with vmss_name with user-assigned managed identities",
+			name: "success with flexible vmss_name with user-assigned managed identities",
 			claims: map[string]interface{}{
 				"exp": time.Now().Add(60 * time.Second).Unix(),
 				"nbf": time.Now().Add(-60 * time.Second).Unix(),
@@ -1126,7 +1126,7 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 		{
 			// The Uniform VMSS in this case has user-assigned managed identities
 			// so xms_az_rid is present
-			name: "success with vmss_name with user-assigned managed identities",
+			name: "success with uniform vmss_name with user-assigned managed identities",
 			claims: map[string]interface{}{
 				"exp": time.Now().Add(60 * time.Second).Unix(),
 				"nbf": time.Now().Add(-60 * time.Second).Unix(),
@@ -1274,7 +1274,7 @@ func TestLogin_AppID(t *testing.T) {
 		{
 			// The Flexible VMSS in this case has user-assigned managed identities
 			// so xms_az_rid is present
-			name: "success with vmss_name with user-assigned managed identities",
+			name: "success with flexible vmss_name with user-assigned managed identities",
 			claims: map[string]interface{}{
 				"exp":   time.Now().Add(60 * time.Second).Unix(),
 				"nbf":   time.Now().Add(-60 * time.Second).Unix(),
@@ -1988,7 +1988,7 @@ func Test_additionalClaims_verifyVMSS(t *testing.T) {
 			wantErr: assert.Error,
 		},
 		{
-			name: "error if vmss_name does not match when only xms_mirid exists",
+			name: "error if flexible vmss_name does not match when only xms_mirid exists",
 			fields: fields{
 				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
 				ObjectID:  principalID,
@@ -2003,7 +2003,7 @@ func Test_additionalClaims_verifyVMSS(t *testing.T) {
 			wantErr: assert.Error,
 		},
 		{
-			name: "error if vmss_name does not match when xms_az_rid and xms_mirid exist",
+			name: "error if flexible vmss_name does not match when xms_az_rid and xms_mirid exist",
 			fields: fields{
 				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
 				ObjectID:  principalID,
@@ -2020,7 +2020,7 @@ func Test_additionalClaims_verifyVMSS(t *testing.T) {
 			wantErr: assert.Error,
 		},
 		{
-			name: "happy if vmss_name matches xms_mirid",
+			name: "happy if flexible vmss_name matches xms_mirid",
 			fields: fields{
 				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
 				ObjectID:  principalID,
@@ -2035,7 +2035,7 @@ func Test_additionalClaims_verifyVMSS(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name: "happy if vmss_name matches xms_mirid",
+			name: "happy if uniform vmss_name matches xms_mirid",
 			fields: fields{
 				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
 				ObjectID:  principalID,
@@ -2050,7 +2050,7 @@ func Test_additionalClaims_verifyVMSS(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name: "happy if vmss_name matches xms_az_rid",
+			name: "happy if flexible vmss_name matches xms_az_rid",
 			fields: fields{
 				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
 				ObjectID:  principalID,
@@ -2067,7 +2067,7 @@ func Test_additionalClaims_verifyVMSS(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name: "happy if vmss_name matches xms_az_rid",
+			name: "happy if uniform vmss_name matches xms_az_rid",
 			fields: fields{
 				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
 				ObjectID:  principalID,
@@ -2173,7 +2173,7 @@ func Test_additionalClaims_verifyResourceGroup(t *testing.T) {
 			wantErr: assert.Error,
 		},
 		{
-			name: "happy with matching xms_mirid when vmss is provided",
+			name: "happy with matching xms_mirid when flexible vmss is provided",
 			fields: fields{
 				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
 				ObjectID:  principalID,
@@ -2189,7 +2189,7 @@ func Test_additionalClaims_verifyResourceGroup(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name: "happy with matching xms_mirid when vmss is provided",
+			name: "happy with matching xms_mirid when uniform vmss is provided",
 			fields: fields{
 				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
 				ObjectID:  principalID,
@@ -2205,7 +2205,7 @@ func Test_additionalClaims_verifyResourceGroup(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name: "happy with matching xms_az_rid when vmss is provided",
+			name: "happy with matching xms_az_rid when flexible vmss is provided",
 			fields: fields{
 				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
 				ObjectID:  principalID,
@@ -2223,7 +2223,7 @@ func Test_additionalClaims_verifyResourceGroup(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name: "happy with matching xms_az_rid when vmss is provided",
+			name: "happy with matching xms_az_rid when uniform vmss is provided",
 			fields: fields{
 				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
 				ObjectID:  principalID,

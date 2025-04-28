@@ -46,7 +46,7 @@ const (
 	fmtRID = "/subscriptions/%s/resourcegroups/%s/providers/Microsoft.Compute/virtualMachines/%s"
 
 	// fmtVMSSRID is the format of the resource ID when VMSS is in uniform mode that just has the scaleset name
-	fmtVMSSRID = "/subscriptions/%s/resourcegroups/%s/providers/Microsoft.Compute/virtualMachineScaleSet/%s"
+	fmtVMSSRID = "/subscriptions/%s/resourcegroups/%s/providers/Microsoft.Compute/virtualMachineScaleSets/%s"
 
 	// fmtRIDWithUserAssignedIdentities is the format of the resource ID that has a user-assigned managed identity
 	fmtRIDWithUserAssignedIdentities = "/subscriptions/%s/resourcegroups/%s/providers/Microsoft.ManagedIdentity/userAssignedIdentities/%s"
@@ -64,8 +64,8 @@ const (
 	fmtVMSSFlexibleClaimPattern = "/virtualMachines/%s_"
 
 	// fmtVMSSUniformClaimPattern is used to match the VMSS name in the xms_az_rid and xms_mirid claims
-	// e.g. If VMSS name is "test-vmss", the claim has a substring like "virtualMachineScaleSet/test-vmss"
-	fmtVMSSUniformClaimPattern = "/virtualMachineScaleSet/%s"
+	// e.g. If VMSS name is "test-vmss", the claim has a substring like "virtualMachineScaleSets/test-vmss"
+	fmtVMSSUniformClaimPattern = "/virtualMachineScaleSets/%s"
 
 	// fmtRGClaimPattern is used to match the resource group name in the xms_az_rid and xms_mirid claims
 	// e.g If the resource group name is demo, the claim has a substring like "resourcegroups/demo"
