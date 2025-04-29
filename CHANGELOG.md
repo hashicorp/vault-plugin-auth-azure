@@ -1,5 +1,8 @@
 ## Unreleased
 
+BUG FIXES:
+* Fix validation of token claims for Uniform VMSS (https://github.com/hashicorp/vault-plugin-auth-azure/pull/203).
+
 ## v0.17.3
 
 IMPROVEMENTS:
