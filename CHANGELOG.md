@@ -1,7 +1,7 @@
 ## Unreleased
 
 ## v0.20.4
-### April 29, 2025
+### May 7, 2025
 
 BUG FIXES:
 * Fix validation of token claims for Uniform VMSS (https://github.com/hashicorp/vault-plugin-auth-azure/pull/203).
