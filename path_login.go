@@ -563,10 +563,16 @@ func (c *additionalClaims) verifyRole(role *azureRole) error {
 		return fmt.Errorf("token is not yet valid (Token Not Before: %v)", notBefore)
 	}
 
-	if (len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*") &&
-		(len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*") {
+	isBoundSPWildcard := len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*"
+	isBoundGroupWildcard := len(role.BoundGroupIDs) == 1 && role.BoundGroupIDs[0] == "*"
+	isBoundSPEmpty := len(role.BoundServicePrincipalIDs) == 0
+	isBoundGroupEmpty := len(role.BoundGroupIDs) == 0
+
+	// Both BoundServicePrincipalIDs and BoundGroupIDs cannot be "*" or empty at the same time
+	if (isBoundSPWildcard && isBoundGroupWildcard) || (isBoundSPEmpty && isBoundGroupEmpty) {
 		return fmt.Errorf("expected specific bound_group_ids or bound_service_principal_ids; both cannot be '*'")
 	}
+
 	switch {
 	case len(role.BoundServicePrincipalIDs) == 1 && role.BoundServicePrincipalIDs[0] == "*":
 		// Globbing on PrincipalIDs; can skip Service Principal ID check
