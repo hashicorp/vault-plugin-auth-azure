@@ -1528,22 +1528,6 @@ func TestVerifyClaims(t *testing.T) {
 	if err := idToken.Claims(claims); err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	role := new(azureRole)
-	err = claims.verifyRole(role)
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	claims.NotBefore = jsonTime(time.Now().Add(10 * time.Second))
-	err = claims.verifyRole(role)
-	if err == nil {
-		t.Fatal("expected claim verification error")
-	}
-
-	claims = new(additionalClaims)
-	if err = idToken.Claims(claims); err != nil {
-		t.Fatalf("err: %v", err)
-	}
 
 	testCases := map[string]struct {
 		bgIds  []string
@@ -1555,7 +1539,13 @@ func TestVerifyClaims(t *testing.T) {
 			bgIds:  []string{"*"},
 			bspIds: []string{"*"},
 			claims: *claims,
-			error:  "both cannot be '*'",
+			error:  "both cannot be empty or '*'",
+		},
+		"Should error since both fields can't be empty": {
+			bgIds:  []string{},
+			bspIds: []string{},
+			claims: *claims,
+			error:  "both cannot be empty or '*'",
 		},
 		"Should error since claim GroupID not in role GroupIDs": {
 			bgIds:  []string{"test-group-1"},
@@ -1605,6 +1595,9 @@ func TestVerifyClaims(t *testing.T) {
 
 	for test, testCase := range testCases {
 		t.Run(test, func(t *testing.T) {
+			role := new(azureRole)
+			claims = new(additionalClaims)
+
 			role.BoundGroupIDs = testCase.bgIds
 			role.BoundServicePrincipalIDs = testCase.bspIds
 			claims = &testCase.claims

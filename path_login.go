@@ -570,7 +570,7 @@ func (c *additionalClaims) verifyRole(role *azureRole) error {
 
 	// Both BoundServicePrincipalIDs and BoundGroupIDs cannot be "*" or empty at the same time
 	if (isBoundSPWildcard && isBoundGroupWildcard) || (isBoundSPEmpty && isBoundGroupEmpty) {
-		return fmt.Errorf("expected specific bound_group_ids or bound_service_principal_ids; both cannot be '*'")
+		return fmt.Errorf("expected specific bound_group_ids or bound_service_principal_ids; both cannot be empty or '*'")
 	}
 
 	switch {
