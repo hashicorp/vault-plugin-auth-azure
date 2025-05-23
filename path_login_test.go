@@ -495,9 +495,10 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 	roleName := "testrole"
 	subID := "1234abcd-1234-abcd-1234-abcd1234ef90"
 	roleData := map[string]interface{}{
-		"name":                   roleName,
-		"policies":               []string{"dev", "prod"},
-		"bound_subscription_ids": []string{subID},
+		"name":                        roleName,
+		"policies":                    []string{"dev", "prod"},
+		"bound_subscription_ids":      []string{subID},
+		"bound_service_principal_ids": []string{principalID},
 	}
 	testRoleCreate(t, b, s, roleData)
 
