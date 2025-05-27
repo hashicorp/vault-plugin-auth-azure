@@ -1,5 +1,11 @@
 ## Unreleased
 
+## v0.20.5
+### May 27, 2025
+
+IMPROVEMENTS:
+* Either `bound_group_ids` or `bound_service_principal_ids` must be specified and cannot be set to a wildcard (*) when creating an Azure auth role.
+
 ## v0.20.4
 ### May 7, 2025
 
