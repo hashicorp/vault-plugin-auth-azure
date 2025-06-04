@@ -495,9 +495,10 @@ func TestLogin_BoundSubscriptionID(t *testing.T) {
 	roleName := "testrole"
 	subID := "1234abcd-1234-abcd-1234-abcd1234ef90"
 	roleData := map[string]interface{}{
-		"name":                   roleName,
-		"policies":               []string{"dev", "prod"},
-		"bound_subscription_ids": []string{subID},
+		"name":                        roleName,
+		"policies":                    []string{"dev", "prod"},
+		"bound_subscription_ids":      []string{subID},
+		"bound_service_principal_ids": []string{principalID},
 	}
 	testRoleCreate(t, b, s, roleData)
 
@@ -642,9 +643,10 @@ func TestLogin_BoundResourceGroup(t *testing.T) {
 	roleName := "testrole"
 	rgName := "rg"
 	roleData := map[string]interface{}{
-		"name":                  roleName,
-		"policies":              []string{"dev", "prod"},
-		"bound_resource_groups": []string{rgName},
+		"name":                        roleName,
+		"policies":                    []string{"dev", "prod"},
+		"bound_resource_groups":       []string{rgName},
+		"bound_service_principal_ids": []string{principalID},
 	}
 	testRoleCreate(t, b, s, roleData)
 
@@ -828,9 +830,10 @@ func TestLogin_BoundLocation(t *testing.T) {
 	rgName := "rg"
 	roleName := "testrole"
 	roleData := map[string]interface{}{
-		"name":            roleName,
-		"policies":        []string{"dev", "prod"},
-		"bound_locations": []string{location},
+		"name":                        roleName,
+		"policies":                    []string{"dev", "prod"},
+		"bound_locations":             []string{location},
+		"bound_service_principal_ids": []string{principalID},
 	}
 	testRoleCreate(t, b, s, roleData)
 
@@ -1065,9 +1068,10 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 	rgName := "rg"
 	roleName := "testrole"
 	roleData := map[string]interface{}{
-		"name":             roleName,
-		"policies":         []string{"dev", "prod"},
-		"bound_scale_sets": []string{vmssName},
+		"name":                        roleName,
+		"policies":                    []string{"dev", "prod"},
+		"bound_scale_sets":            []string{vmssName},
+		"bound_service_principal_ids": []string{principalID},
 	}
 	testRoleCreate(t, b, s, roleData)
 
@@ -1200,6 +1204,7 @@ func TestLogin_BoundScaleSet(t *testing.T) {
 func TestLogin_AppID(t *testing.T) {
 	subscriptionID := "1234abcd-1234-abcd-1234-abcd1234ef90"
 	appID := "123e4567-e89b-12d3-a456-426655440000"
+	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	badAppID := "aeoifkj"
 	rgName1 := "rg-1"
 	rgName2 := "rg-2"
@@ -1234,9 +1239,10 @@ func TestLogin_AppID(t *testing.T) {
 	vmssName := "vmss"
 	roleName := "testrole"
 	roleData := map[string]interface{}{
-		"name":                  roleName,
-		"policies":              []string{"dev", "prod"},
-		"bound_resource_groups": []string{rgName1, rgName2},
+		"name":                        roleName,
+		"policies":                    []string{"dev", "prod"},
+		"bound_resource_groups":       []string{rgName1, rgName2},
+		"bound_service_principal_ids": []string{principalID},
 	}
 	testRoleCreate(t, b, s, roleData)
 
@@ -1279,6 +1285,7 @@ func TestLogin_AppID(t *testing.T) {
 				"exp":   time.Now().Add(60 * time.Second).Unix(),
 				"nbf":   time.Now().Add(-60 * time.Second).Unix(),
 				"appid": appID,
+				"oid":   principalID,
 				"xms_az_rid": fmt.Sprintf(fmtRID,
 					subscriptionID, rgName1, fmt.Sprintf("%s_randomInstanceID", vmssName)),
 				"xms_mirid": fmt.Sprintf(fmtRIDWithUserAssignedIdentities,
@@ -1300,6 +1307,7 @@ func TestLogin_AppID(t *testing.T) {
 				"exp":   time.Now().Add(60 * time.Second).Unix(),
 				"nbf":   time.Now().Add(-60 * time.Second).Unix(),
 				"appid": appID,
+				"oid":   principalID,
 				"xms_az_rid": fmt.Sprintf(fmtVMSSRID,
 					subscriptionID, rgName1, vmssName),
 				"xms_mirid": fmt.Sprintf(fmtRIDWithUserAssignedIdentities,
@@ -1361,6 +1369,7 @@ func TestLogin_AppID(t *testing.T) {
 				"exp":        time.Now().Add(60 * time.Second).Unix(),
 				"nbf":        time.Now().Add(-60 * time.Second).Unix(),
 				"appid":      appID,
+				"oid":        principalID,
 				"xms_az_rid": fmt.Sprintf(fmtRID, subscriptionID, rgName1, vmName),
 				"xms_mirid": fmt.Sprintf(fmtRIDWithUserAssignedIdentities,
 					subscriptionID, rgName1, "userAssignedMI"),
@@ -1381,6 +1390,7 @@ func TestLogin_AppID(t *testing.T) {
 				"exp":   time.Now().Add(60 * time.Second).Unix(),
 				"nbf":   time.Now().Add(-60 * time.Second).Unix(),
 				"appid": appID,
+				"oid":   principalID,
 				"xms_mirid": fmt.Sprintf(fmtRID,
 					subscriptionID, rgName1, vmName),
 			},
@@ -1528,22 +1538,6 @@ func TestVerifyClaims(t *testing.T) {
 	if err := idToken.Claims(claims); err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	role := new(azureRole)
-	err = claims.verifyRole(role)
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	claims.NotBefore = jsonTime(time.Now().Add(10 * time.Second))
-	err = claims.verifyRole(role)
-	if err == nil {
-		t.Fatal("expected claim verification error")
-	}
-
-	claims = new(additionalClaims)
-	if err = idToken.Claims(claims); err != nil {
-		t.Fatalf("err: %v", err)
-	}
 
 	testCases := map[string]struct {
 		bgIds  []string
@@ -1555,7 +1549,13 @@ func TestVerifyClaims(t *testing.T) {
 			bgIds:  []string{"*"},
 			bspIds: []string{"*"},
 			claims: *claims,
-			error:  "both cannot be '*'",
+			error:  "both cannot be empty or '*'",
+		},
+		"Should error since both fields can't be empty": {
+			bgIds:  []string{},
+			bspIds: []string{},
+			claims: *claims,
+			error:  "both cannot be empty or '*'",
 		},
 		"Should error since claim GroupID not in role GroupIDs": {
 			bgIds:  []string{"test-group-1"},
@@ -1605,6 +1605,9 @@ func TestVerifyClaims(t *testing.T) {
 
 	for test, testCase := range testCases {
 		t.Run(test, func(t *testing.T) {
+			role := new(azureRole)
+			claims = new(additionalClaims)
+
 			role.BoundGroupIDs = testCase.bgIds
 			role.BoundServicePrincipalIDs = testCase.bspIds
 			claims = &testCase.claims
