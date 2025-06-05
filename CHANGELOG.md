@@ -1,7 +1,10 @@
 ## Unreleased
 
 ## v0.21.0
-### May 27, 2025
+### Jun 05, 2025
+
+IMPROVEMENTS:
+* building with go 1.24.3
 
 BREAKING CHANGES:
 * Either `bound_group_ids` or `bound_service_principal_ids` must be specified. Both fields cannot be set to a wildcard (*) when creating an Azure auth role.
