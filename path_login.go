@@ -738,5 +738,8 @@ func (b *azureAuthBackend) getAPIVersionForResource(ctx context.Context, subscri
 }
 
 func containsInsensitive(a, b string) bool {
+	if a == "" || b == "" {
+		return false
+	}
 	return strings.Contains(strings.ToLower(a), strings.ToLower(b))
 }
