@@ -1,5 +1,11 @@
 ## Unreleased
 
+## v0.21.1
+### Jun 13, 2025
+
+IMPROVEMENTS:
+* case insensitive resource group name matching during login
+
 ## v0.21.0
 ### Jun 05, 2025
 
