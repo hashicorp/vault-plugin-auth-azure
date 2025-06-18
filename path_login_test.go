@@ -2159,6 +2159,40 @@ func Test_additionalClaims_verifyResourceGroup(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
+			name: "happy with uppercase resource group name",
+			fields: fields{
+				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
+				ObjectID:  principalID,
+				AppID:     appID,
+				GroupIDs:  []string{"test-group-1"},
+			},
+			args: args{
+				resourceGroupName: strings.ToUpper(rgName),
+				resourceID: fmt.Sprintf(fmtResourceGroupID, subscriptionID, rgName,
+					"providers/Microsoft.Web",
+					"sites",
+					"my-azure-func"),
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "happy with mixed case resource group name",
+			fields: fields{
+				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
+				ObjectID:  principalID,
+				AppID:     appID,
+				GroupIDs:  []string{"test-group-1"},
+			},
+			args: args{
+				resourceGroupName: "rG",
+				resourceID: fmt.Sprintf(fmtResourceGroupID, subscriptionID, rgName,
+					"providers/Microsoft.Web",
+					"sites",
+					"my-azure-func"),
+			},
+			wantErr: assert.NoError,
+		},
+		{
 			name: "error with missing xms_az_rid xms_mirid when vmss is provided",
 			fields: fields{
 				NotBefore: jsonTime(time.Now().Add(60 * time.Second)),
