@@ -3,6 +3,9 @@
 ## v0.21.1
 ### Jun 18, 2025
 
+IMPROVEMENTS:
+* building with go 1.24.4
+
 BUG FIXES:
 * fix a bug where logins would fail when resource_group_name contains incorrect character cases (https://github.com/hashicorp/vault-plugin-auth-azure/pull/222)
 
