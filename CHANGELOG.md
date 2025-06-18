@@ -1,5 +1,11 @@
 ## Unreleased
 
+## v0.17.5
+### Jun 13, 2025
+
+BUG FIXES:
+* fix a bug where logins would fail when resource_group_name contains incorrect character cases (https://github.com/hashicorp/vault-plugin-auth-azure/pull/222)
+
 ## v0.17.4
 
 BUG FIXES:
