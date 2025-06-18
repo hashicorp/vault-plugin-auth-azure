@@ -4,7 +4,7 @@
 ### Jun 18, 2025
 
 BUG FIXES:
-* fix a bug where logins would fail when resource_group_name contains incorrect character cases
+* fix a bug where logins would fail when resource_group_name contains incorrect character cases (https://github.com/hashicorp/vault-plugin-auth-azure/pull/222)
 
 ## v0.21.0
 ### Jun 05, 2025
@@ -19,7 +19,7 @@ BREAKING CHANGES:
 ### Jun 13, 2025
 
 BUG FIXES:
-* fix a bug where logins would fail when resource_group_name contains incorrect character cases
+* fix a bug where logins would fail when resource_group_name contains incorrect character cases (https://github.com/hashicorp/vault-plugin-auth-azure/pull/222)
 
 ## v0.20.4
 ### May 7, 2025
@@ -63,7 +63,7 @@ IMPROVEMENTS:
 ### Jun 13, 2025
 
 BUG FIXES:
-* fix a bug where logins would fail when resource_group_name contains incorrect character cases
+* fix a bug where logins would fail when resource_group_name contains incorrect character cases (https://github.com/hashicorp/vault-plugin-auth-azure/pull/222)
 
 ## v0.19.4
 ### May 7, 2025
@@ -116,7 +116,7 @@ IMPROVEMENTS:
 ### Jun 13, 2025
 
 BUG FIXES:
-* fix a bug where logins would fail when resource_group_name contains incorrect character cases
+* fix a bug where logins would fail when resource_group_name contains incorrect character cases (https://github.com/hashicorp/vault-plugin-auth-azure/pull/222)
 
 ## v0.18.3
 ### May 7, 2025
@@ -164,7 +164,7 @@ IMPROVEMENTS:
 ### Jun 13, 2025
 
 BUG FIXES:
-* fix a bug where logins would fail when resource_group_name contains incorrect character cases
+* fix a bug where logins would fail when resource_group_name contains incorrect character cases (https://github.com/hashicorp/vault-plugin-auth-azure/pull/222)
 
 ## v0.17.4
 ### May 7, 2025
