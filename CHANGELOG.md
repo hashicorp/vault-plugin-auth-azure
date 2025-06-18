@@ -1,10 +1,10 @@
 ## Unreleased
 
 ## v0.21.1
-### Jun 13, 2025
+### Jun 18, 2025
 
-IMPROVEMENTS:
-* case insensitive resource group name matching during login
+BUG FIXES:
+* fix a bug where logins would fail when resource_group_name contains incorrect character cases
 
 ## v0.21.0
 ### Jun 05, 2025
@@ -14,6 +14,12 @@ IMPROVEMENTS:
 
 BREAKING CHANGES:
 * Either `bound_group_ids` or `bound_service_principal_ids` must be specified. Both fields cannot be set to a wildcard (*) when creating an Azure auth role.
+
+## v0.20.5
+### Jun 13, 2025
+
+BUG FIXES:
+* fix a bug where logins would fail when resource_group_name contains incorrect character cases
 
 ## v0.20.4
 ### May 7, 2025
@@ -52,6 +58,12 @@ IMPROVEMENTS:
 * Updated dependencies:
   * `golang.org/x/net` v0.29.0 -> v0.35.0
   * `golang.org/x/crypto` v0.27.0 -> v0.33.0
+
+## v0.19.5
+### Jun 13, 2025
+
+BUG FIXES:
+* fix a bug where logins would fail when resource_group_name contains incorrect character cases
 
 ## v0.19.4
 ### May 7, 2025
@@ -100,6 +112,12 @@ IMPROVEMENTS:
   * `github.com/microsoftgraph/msgraph-sdk-go-core` v1.1.0 -> v1.2.1
   * `golang.org/x/oauth2` v0.20.0 -> v0.23.0
 
+## v0.18.4
+### Jun 13, 2025
+
+BUG FIXES:
+* fix a bug where logins would fail when resource_group_name contains incorrect character cases
+
 ## v0.18.3
 ### May 7, 2025
 
@@ -141,6 +159,12 @@ IMPROVEMENTS:
   * `github.com/microsoftgraph/msgraph-sdk-go` v1.32.0 -> v1.35.0
   * `github.com/microsoftgraph/msgraph-sdk-go-core` v1.0.1 -> v1.1.0
   * `golang.org/x/oauth2` v0.16.0 -> v0.17.0
+
+## v0.17.5
+### Jun 13, 2025
+
+BUG FIXES:
+* fix a bug where logins would fail when resource_group_name contains incorrect character cases
 
 ## v0.17.4
 ### May 7, 2025
