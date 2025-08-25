@@ -106,7 +106,7 @@ You only need to do this once. If you don't have `changie` installed, choose one
     ```
 * **Go Install**:
     ```shell
-    go install [github.com/miniscruff/changie@latest](https://github.com/miniscruff/changie@latest)
+    go install github.com/miniscruff/changie@latest
     ```
 * **Other Methods**:
   See the [official changie installation guide](https://changie.dev/guide/installation/) for other options, including pre-compiled binaries.
