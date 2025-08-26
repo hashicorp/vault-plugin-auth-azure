@@ -259,50 +259,19 @@ func (p *azureProvider) getClientOptions() *arm.ClientOptions {
 }
 
 func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
-	clientCloudOpts := azcore.ClientOptions{Cloud: p.settings.CloudConfig}
 
-	if p.settings.ClientSecret != "" {
-		options := &azidentity.ClientSecretCredentialOptions{
-			ClientOptions: clientCloudOpts,
-		}
-
-		cred, err := azidentity.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID,
-			p.settings.ClientSecret, options)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create client secret token credential: %w", err)
-		}
-
-		return cred, nil
+	clientOptions := azcore.ClientOptions{Cloud: p.settings.CloudConfig}
+	options := &azidentity.DefaultAzureCredentialOptions{
+		ClientOptions: clientOptions,
+		TenantID:      p.settings.TenantID,
 	}
 
-	if p.settings.IdentityTokenAudience != "" {
-		options := &azidentity.ClientAssertionCredentialOptions{
-			ClientOptions: clientCloudOpts,
-		}
-		getAssertion := getAssertionFunc(p.logger, p.systemView, p.settings)
-		cred, err := azidentity.NewClientAssertionCredential(
-			p.settings.TenantID,
-			p.settings.ClientID,
-			getAssertion,
-			options,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create client assertion credential: %w", err)
-		}
-
-		return cred, nil
-	}
-
-	// Fall back to using managed service identity
-	options := &azidentity.ManagedIdentityCredentialOptions{
-		ClientOptions: clientCloudOpts,
-	}
-	cred, err := azidentity.NewManagedIdentityCredential(options)
+	credential, err := azidentity.NewDefaultAzureCredential(options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create managed identity token credential: %w", err)
+		return nil, fmt.Errorf("failed to create token credential: %w", err)
 	}
 
-	return cred, nil
+	return credential, nil
 }
 
 type getAssertion func(context.Context) (string, error)
