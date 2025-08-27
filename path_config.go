@@ -46,12 +46,16 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 				Type:        framework.TypeString,
 				Description: `The OAuth2 client id to connection to Azure. This value can also be provided with the AZURE_CLIENT_ID environment variable.`,
 				DisplayAttrs: &framework.DisplayAttributes{
-					Name: "Client ID",
+					Name:  "Client ID",
+					Group: "Azure Options",
 				},
 			},
 			"client_secret": {
 				Type:        framework.TypeString,
 				Description: `The OAuth2 client secret to connection to Azure. This value can also be provided with the AZURE_CLIENT_SECRET environment variable.`,
+				DisplayAttrs: &framework.DisplayAttributes{
+					Group: "Azure Options",
+				},
 			},
 			"root_password_ttl": {
 				Type:        framework.TypeDurationSecond,
