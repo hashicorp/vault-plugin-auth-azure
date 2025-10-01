@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -1510,10 +1511,10 @@ func testLoginWithJWT(t *testing.T, b *azureAuthBackend, s logical.Storage, jwt 
 		return fmt.Errorf("err: %v", err)
 	}
 	if resp.IsError() {
-		return fmt.Errorf(resp.Error().Error())
+		return errors.New(resp.Error().Error())
 	}
 	if resp.Auth == nil {
-		return fmt.Errorf("received nil auth data")
+		return errors.New("received nil auth data")
 	}
 
 	if !policyutil.EquivalentPolicies(resp.Auth.Policies, roleData["policies"].([]string)) {
