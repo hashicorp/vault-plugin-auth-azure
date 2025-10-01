@@ -1,3 +1,16 @@
+## v0.22.0
+### October 1, 2025
+
+* bump .go-version for scan reasons (#245)
+* Automated dependency upgrades (#180)
+* fix lint (#244)
+* Bump github.com/docker/docker (#238)
+* Vault 29753 init changie (#239)
+* Add backport assistant workflow (#236)
+* Bump requests in /bootstrap/terraform/function/function-project (#221)
+* Add backport assistant workflow (#235)
+* [Compliance] - PR Template Changes Required (#234)
+
 ## v0.21.1
 ### Jun 18, 2025
 
