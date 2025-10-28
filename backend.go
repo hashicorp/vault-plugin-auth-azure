@@ -81,7 +81,13 @@ func backend() *azureAuthBackend {
 		// periodicFunc to clean up old credentials
 		PeriodicFunc: b.periodicFunc,
 
-		RotateCredential: b.rotateRootCredential,
+		RotateCredential: func(ctx context.Context, req *logical.Request) error {
+			// Only rotate on the primary
+			if !b.WriteSafeReplicationState() {
+				return logical.ErrReadOnly
+			}
+			return b.rotateRootCredential(ctx, req)
+		},
 	}
 
 	b.resourceAPIVersionCache = make(map[string]string)
