@@ -5,6 +5,7 @@ package azureauth
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -355,5 +356,103 @@ func TestConfig_RetryCustom(t *testing.T) {
 
 	if azureSettings.RetryDelay != retryDelay {
 		t.Fatalf("wrong 'retry_delay' azure settings value: expected %v, got %v", retryDelay, azureSettings.RetryDelay)
+	}
+}
+
+func TestConfig_ConfigTakesPrecedenceOverEnvVars(t *testing.T) {
+	b, s := getTestBackend(t)
+
+	configData := map[string]interface{}{
+		"tenant_id": "config-tenant",
+		"resource":  "config-resource",
+		"client_id": "config-client",
+	}
+
+	if _, err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	t.Setenv("AZURE_TENANT_ID", "env-tenant")
+	t.Setenv("AZURE_AD_RESOURCE", "env-resource")
+	t.Setenv("AZURE_CLIENT_ID", "env-client")
+	t.Setenv("AZURE_CLIENT_SECRET", "env-secret")
+	t.Setenv("AZURE_ENVIRONMENT", "AZURECHINACLOUD")
+
+	config, err := b.config(context.Background(), s)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	settings, err := b.getAzureSettings(context.Background(), config)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	if settings.TenantID != "config-tenant" {
+		t.Fatalf("expected TenantID from config, got %q", settings.TenantID)
+	}
+	if settings.Resource != "config-resource" {
+		t.Fatalf("expected Resource from config, got %q", settings.Resource)
+	}
+	if settings.ClientID != "config-client" {
+		t.Fatalf("expected ClientID from config, got %q", settings.ClientID)
+	}
+}
+
+func TestConfig_EnvVarsFallbackWhenConfigEmpty(t *testing.T) {
+	b, s := getTestBackend(t)
+
+	configData := map[string]interface{}{
+		"tenant_id": "tid",
+		"resource":  "resource",
+	}
+
+	if _, err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// Overwrite config with empty values to simulate unset fields
+	config := &azureConfig{}
+
+	t.Setenv("AZURE_TENANT_ID", "env-tenant")
+	t.Setenv("AZURE_AD_RESOURCE", "env-resource")
+	t.Setenv("AZURE_CLIENT_ID", "env-client")
+	t.Setenv("AZURE_CLIENT_SECRET", "env-secret")
+	t.Setenv("AZURE_ENVIRONMENT", "AZURECHINACLOUD")
+
+	settings, err := b.getAzureSettings(context.Background(), config)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	if settings.TenantID != "env-tenant" {
+		t.Fatalf("expected TenantID from env, got %q", settings.TenantID)
+	}
+	if settings.Resource != "env-resource" {
+		t.Fatalf("expected Resource from env, got %q", settings.Resource)
+	}
+	if settings.ClientID != "env-client" {
+		t.Fatalf("expected ClientID from env, got %q", settings.ClientID)
+	}
+	if settings.ClientSecret != "env-secret" {
+		t.Fatalf("expected ClientSecret from env, got %q", settings.ClientSecret)
+	}
+}
+
+func TestConfig_MissingTenantIDReturnsError(t *testing.T) {
+	b, _ := getTestBackend(t)
+
+	os.Unsetenv("AZURE_TENANT_ID")
+
+	config := &azureConfig{
+		Resource: "resource",
+	}
+
+	_, err := b.getAzureSettings(context.Background(), config)
+	if err == nil {
+		t.Fatal("expected error when tenant_id is missing from both config and env")
+	}
+	if err.Error() != "tenant_id is required" {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
