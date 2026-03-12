@@ -1,3 +1,17 @@
+## v0.23.0
+### March 12, 2026
+
+IMPROVEMENTS:
+* Upgraded go to 1.26.1 ([#]())
+* Updated dependencies
+   * `github.com/hashicorp/vault/sdk` v0.19.0 => v0.23.0
+   * `golang.org/x/text` v0.28.0 => v0.33.0
+   * `golang.org/x/sys` v0.35.0 => v0.40.0
+   * `golang.org/x/crypto` v0.41.0 => v0.47.0
+   * `golang.org/x/net` v0.43.0 => v0.49.0
+   * `github.com/hashicorp/vault/api` v1.21.0 => v1.22.0
+   * `github.com/go-jose/go-jose/v4` v4.1.1 => v4.1.3
+
 ## v0.22.0
 ### October 1, 2025
 
