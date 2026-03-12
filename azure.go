@@ -350,20 +350,22 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 		RetryDelay:    config.RetryDelay,
 	}
 
+	envTenantID := os.Getenv("AZURE_TENANT_ID")
 	switch {
 	case config.TenantID != "":
 		settings.TenantID = config.TenantID
-	case os.Getenv("AZURE_TENANT_ID") != "":
-		settings.TenantID = os.Getenv("AZURE_TENANT_ID")
+	case envTenantID != "":
+		settings.TenantID = envTenantID
 	default:
 		return nil, errors.New("tenant_id is required")
 	}
 
+	envResource := os.Getenv("AZURE_AD_RESOURCE")
 	switch {
 	case config.Resource != "":
 		settings.Resource = config.Resource
-	case os.Getenv("AZURE_AD_RESOURCE") != "":
-		settings.Resource = os.Getenv("AZURE_AD_RESOURCE")
+	case envResource != "":
+		settings.Resource = envResource
 	default:
 		return nil, errors.New("resource is required")
 	}

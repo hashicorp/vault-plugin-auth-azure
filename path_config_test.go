@@ -5,7 +5,6 @@ package azureauth
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -442,7 +441,7 @@ func TestConfig_EnvVarsFallbackWhenConfigEmpty(t *testing.T) {
 func TestConfig_MissingTenantIDReturnsError(t *testing.T) {
 	b, _ := getTestBackend(t)
 
-	os.Unsetenv("AZURE_TENANT_ID")
+	t.Setenv("AZURE_TENANT_ID", "")
 
 	config := &azureConfig{
 		Resource: "resource",
