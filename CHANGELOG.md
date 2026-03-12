@@ -2,8 +2,8 @@
 ### March 12, 2026
 
 IMPROVEMENTS:
-* Upgraded go to 1.26.1 ([#]())
-* Updated dependencies
+* Upgrade go to 1.26.1 (https://github.com/hashicorp/vault-plugin-auth-azure/pull/#254)
+* Update dependencies (https://github.com/hashicorp/vault-plugin-auth-azure/pull/#254)
    * `github.com/hashicorp/vault/sdk` v0.19.0 => v0.23.0
    * `golang.org/x/text` v0.28.0 => v0.33.0
    * `golang.org/x/sys` v0.35.0 => v0.40.0
