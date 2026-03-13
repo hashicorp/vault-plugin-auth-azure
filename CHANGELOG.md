@@ -1,3 +1,6 @@
+## Unreleased
+* Upgraded `github.com/hashicorp/vault/sdk` v0.19.0 => v0.23.0 (https://github.com/hashicorp/vault-plugin-auth-azure/pull/255)
+
 ## v0.22.0
 ### October 1, 2025
 
