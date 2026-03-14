@@ -352,43 +352,42 @@ func (b *azureAuthBackend) getAzureSettings(ctx context.Context, config *azureCo
 
 	envTenantID := os.Getenv("AZURE_TENANT_ID")
 	switch {
-	case envTenantID != "":
-		settings.TenantID = envTenantID
 	case config.TenantID != "":
 		settings.TenantID = config.TenantID
+	case envTenantID != "":
+		settings.TenantID = envTenantID
 	default:
 		return nil, errors.New("tenant_id is required")
 	}
 
 	envResource := os.Getenv("AZURE_AD_RESOURCE")
 	switch {
-	case envResource != "":
-		settings.Resource = envResource
 	case config.Resource != "":
 		settings.Resource = config.Resource
+	case envResource != "":
+		settings.Resource = envResource
 	default:
 		return nil, errors.New("resource is required")
 	}
 
-	clientID := os.Getenv("AZURE_CLIENT_ID")
+	clientID := config.ClientID
 	if clientID == "" {
-		clientID = config.ClientID
+		clientID = os.Getenv("AZURE_CLIENT_ID")
 	}
 	settings.ClientID = clientID
 
-	clientSecret := os.Getenv("AZURE_CLIENT_SECRET")
+	clientSecret := config.ClientSecret
 	if clientSecret == "" {
-		clientSecret = config.ClientSecret
+		clientSecret = os.Getenv("AZURE_CLIENT_SECRET")
 	}
 	settings.ClientSecret = clientSecret
 
 	settings.IdentityTokenAudience = config.IdentityTokenAudience
 	settings.IdentityTokenTTL = config.IdentityTokenTTL
 
-	environment := os.Getenv("AZURE_ENVIRONMENT")
+	environment := config.Environment
 	if environment == "" {
-		// set environment from config
-		environment = config.Environment
+		environment = os.Getenv("AZURE_ENVIRONMENT")
 	}
 	if environment == "" {
 		// Default to Azure public cloud
