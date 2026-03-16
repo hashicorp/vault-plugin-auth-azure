@@ -1,3 +1,12 @@
+## v0.23.0
+### March 16, 2026
+
+* prepare v0.23.0 release (#254)
+* upgrade github.com/hashicorp/vault/sdk v0.19.0 => v0.23.0 (#255)
+* [COMPLIANCE] Update Copyright and License Headers (#250)
+* chore: remove changie (#247)
+* Update changelog for v0.22.0 release (#246)
+
 ## Unreleased
 
 ## v0.23.0
