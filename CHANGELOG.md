@@ -4,7 +4,13 @@
 ### March 18, 2026
 IMPROVEMENTS:
 * Config values now take precedence over environment variables in `getAzureSettingsUpdate` (https://github.com/hashicorp/vault-plugin-auth-azure/pull/#252)
-
+* Updated dependencies (https://github.com/hashicorp/vault-plugin-auth-azure/pull/257)
+  * `golang.org/x/oauth2` v0.31.0 => v0.36.0
+  * `github.com/Azure/azure-sdk-for-go/sdk/azidentity` v1.12.0 => v1.13.1
+  * `github.com/Azure/azure-sdk-for-go/sdk/azcore` v1.19.1 => v1.21.0
+  * `github.com/microsoftgraph/msgraph-sdk-go` v1.86.0 => v1.96.0
+  * `github.com/coreos/go-oidc/v3` v3.15.0 => v3.17.0
+  * `google.golang.org/grpc` v1.70.0 => v1.79.3
 
 ## v0.23.0
 ### March 16, 2026
