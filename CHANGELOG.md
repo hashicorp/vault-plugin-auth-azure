@@ -1,7 +1,7 @@
 ## Unreleased
 
 ## v0.24.0
-### March 18, 2026
+### March 19, 2026
 
 BREAKING CHANGES:
 * Config values now take precedence over environment variables in `getAzureSettingsUpdate` (https://github.com/hashicorp/vault-plugin-auth-azure/pull/#252)
