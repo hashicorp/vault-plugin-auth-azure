@@ -1,3 +1,13 @@
+## v0.24.0
+### March 20, 2026
+
+* Automated dependency upgrades (#248)
+* Update CHANGELOG.md (#258)
+* updates config display attrs (#242)
+* update deps to clear CVE-2026-33186 for v0.24.0 release (#257)
+* prepare v0.24.0 release (#256)
+* change: config values should take precedence over environment variables in getAzureSettingsupdate (#252)
+
 ## Unreleased
 
 ## v0.24.0
