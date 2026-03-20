@@ -1,9 +1,12 @@
 ## Unreleased
 
 ## v0.24.0
-### March 18, 2026
-IMPROVEMENTS:
+### March 19, 2026
+
+BREAKING CHANGES:
 * Config values now take precedence over environment variables in `getAzureSettingsUpdate` (https://github.com/hashicorp/vault-plugin-auth-azure/pull/#252)
+
+IMPROVEMENTS:
 * Updated dependencies (https://github.com/hashicorp/vault-plugin-auth-azure/pull/257)
   * `golang.org/x/oauth2` v0.31.0 => v0.36.0
   * `github.com/Azure/azure-sdk-for-go/sdk/azidentity` v1.12.0 => v1.13.1
