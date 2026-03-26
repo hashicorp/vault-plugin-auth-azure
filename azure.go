@@ -452,7 +452,7 @@ func graphURIFromName(name string) (string, error) {
 var (
 	guidRx = regexp.MustCompile(`^[0-9A-Fa-f]{8}-([0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}$`) // just a uuid
 	// nameRx based on https://azure.github.io/PSRule.Rules.Azure/en/rules/Azure.VM.Name/#description
-	nameRx = regexp.MustCompile(`^[a-zA-Z]$|^[a-zA-Z][a-zA-Z0-9.\-_]*[a-zA-Z0-9_]$`) // alphanumeric, doesn't start with a number, at least 1 character, doesn't end with a . or -
+	nameRx = regexp.MustCompile(`^[a-zA-Z0-9]$|^[a-zA-Z0-9][a-zA-Z0-9.\-_]*[a-zA-Z0-9_]$`) // alphanumeric, at least 1 character, doesn't end with a . or -
 	// https://azure.github.io/PSRule.Rules.Azure/en/rules/Azure.ResourceGroup.Name/ and https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules
 	// The latter documentation specifically allows characters in unicode letter/digit categories, which is wider than a-zA-Z0-9.
 	rgRx = regexp.MustCompile(`^[\-_.()\pL\pN]*[\-_()\pL\pN]$`)
