@@ -81,6 +81,10 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 				Description: "The initial amount of delay to use before retrying an operation, increasing exponentially.",
 				Required:    false,
 			},
+			"auth_type": {
+				Type:        framework.TypeString,
+				Description: `Specifies how Vault authenticates to Azure for resource metadata lookups. Valid values: auto, root_creds, plugin_wif, aks_wi, msi. Defaults to auto (existing discovery logic) for backward compatibility.`,
+			},
 		},
 		Operations: map[logical.Operation]framework.OperationHandler{
 			logical.ReadOperation: &framework.PathOperation{
@@ -147,6 +151,7 @@ type azureConfig struct {
 	MaxRetries                    int32         `json:"max_retries"`
 	MaxRetryDelay                 time.Duration `json:"max_retry_delay"`
 	RetryDelay                    time.Duration `json:"retry_delay"`
+	AuthType                      string        `json:"auth_type"`
 }
 
 func (b *azureAuthBackend) config(ctx context.Context, s logical.Storage) (*azureConfig, error) {
@@ -208,6 +213,21 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		config.ClientSecret = clientSecret.(string)
 	}
 
+	if authTypeRaw, ok := data.GetOk("auth_type"); ok {
+		authType := authTypeRaw.(string)
+		validAuthTypes := map[string]bool{
+			"auto":       true,
+			"root_creds": true,
+			"plugin_wif": true,
+			"aks_wi":     true,
+			"msi":        true,
+		}
+		if !validAuthTypes[authType] {
+			return logical.ErrorResponse("invalid auth_type %q: must be one of auto, root_creds, plugin_wif, aks_wi, msi", authType), nil
+		}
+		config.AuthType = authType
+	}
+
 	config.RootPasswordTTL = defaultRootPasswordTTL
 	rootExpirationRaw, ok := data.GetOk("root_password_ttl")
 	if ok {
@@ -242,6 +262,13 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 
 	if config.IdentityTokenAudience != "" && config.ClientSecret != "" {
 		return logical.ErrorResponse("only one of 'client_secret' or 'identity_token_audience' can be set"), nil
+	}
+
+	if config.AuthType == "root_creds" && config.ClientSecret == "" {
+		return logical.ErrorResponse("auth_type 'root_creds' requires client_secret to be set"), nil
+	}
+	if config.AuthType == "plugin_wif" && config.IdentityTokenAudience == "" {
+		return logical.ErrorResponse("auth_type 'plugin_wif' requires identity_token_audience to be set"), nil
 	}
 
 	// generate token to check if WIF is enabled on this edition of Vault
@@ -342,6 +369,7 @@ func (b *azureAuthBackend) pathConfigRead(ctx context.Context, req *logical.Requ
 			"retry_delay":       config.RetryDelay,
 			"max_retry_delay":   config.MaxRetryDelay,
 			"max_retries":       config.MaxRetries,
+			"auth_type":         config.AuthType,
 		},
 	}
 	config.PopulatePluginIdentityTokenData(resp.Data)

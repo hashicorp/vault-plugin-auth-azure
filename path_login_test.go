@@ -180,6 +180,75 @@ func TestLogin(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 }
 
+// TestLogin_Rootless_AKS_WI verifies the secretless/rootless login path:
+// - auth_type is set to "aks_wi" (no client_secret ever configured)
+// - the role uses only bound_service_principal_ids — no infrastructure bounds
+// - verifyResource exits early, so zero ARM API calls are made
+// - authentication succeeds purely via JWT OIDC verification + claim matching
+func TestLogin_Rootless_AKS_WI(t *testing.T) {
+	b, s := getTestBackend(t)
+
+	// Configure the backend with auth_type=aks_wi and no client_secret.
+	// tenant_id and resource are still required for OIDC token verification.
+	configData := map[string]interface{}{
+		"tenant_id": "test-tenant-id",
+		"resource":  "https://management.azure.com/",
+		"client_id": "test-managed-identity-client-id",
+		"auth_type": "aks_wi",
+	}
+	if _, err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("config write failed: %v", err)
+	}
+	// pathConfigWrite calls b.reset() which clears b.provider. Re-inject the mock
+	// so that login uses the test verifier instead of contacting the real Azure OIDC endpoint.
+	b.provider = newMockProvider(nil, nil, nil, nil, nil)
+
+	// Verify auth_type is stored and returned correctly.
+	resp, err := b.HandleRequest(context.Background(), &logical.Request{
+		Operation: logical.ReadOperation,
+		Path:      "config",
+		Storage:   s,
+	})
+	if err != nil || (resp != nil && resp.IsError()) {
+		t.Fatalf("config read failed: err=%v resp=%v", err, resp)
+	}
+	if got := resp.Data["auth_type"]; got != "aks_wi" {
+		t.Fatalf("expected auth_type=aks_wi, got %q", got)
+	}
+
+	principalID := "aabbccdd-1234-5678-abcd-000000000001"
+	roleName := "rootless-role"
+
+	// Role uses only bound_service_principal_ids — no subscription/resource-group/location/scale-set.
+	// This means verifyResource() will exit early and make NO ARM calls.
+	roleData := map[string]interface{}{
+		"name":                        roleName,
+		"policies":                    []string{"aks-policy"},
+		"bound_service_principal_ids": []string{principalID},
+	}
+	testRoleCreate(t, b, s, roleData)
+
+	// Happy-path: JWT OID matches the bound_service_principal_ids.
+	claimsOK := map[string]interface{}{
+		"exp": time.Now().Add(60 * time.Second).Unix(),
+		"nbf": time.Now().Add(-60 * time.Second).Unix(),
+		"oid": principalID,
+	}
+	loginData := map[string]interface{}{
+		"role": roleName,
+		// No subscription_id / resource_group_name / vm_name / vmss_name — fully rootless.
+	}
+	testLoginSuccess(t, b, s, loginData, claimsOK, roleData)
+
+	// Failure path: JWT OID does NOT match any bound principal.
+	claimsBadOID := map[string]interface{}{
+		"exp": time.Now().Add(60 * time.Second).Unix(),
+		"nbf": time.Now().Add(-60 * time.Second).Unix(),
+		"oid": "00000000-0000-0000-0000-000000000000",
+	}
+	testLoginFailure(t, b, s, loginData, claimsBadOID, roleData)
+}
+
 func TestLogin_ManagedIdentity(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	subscriptionID := "eb936495-7356-4a35-af3e-ea68af201f0c"
