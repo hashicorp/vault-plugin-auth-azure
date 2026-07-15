@@ -191,6 +191,10 @@ func (p *mockProvider) ProvidersClient(subscriptionID string) (client.ProvidersC
 	}, nil
 }
 
+func (p *mockProvider) VerifyCredential(_ context.Context) error {
+	return nil
+}
+
 func TestValidationRegex(t *testing.T) {
 	cases := []struct {
 		name    string

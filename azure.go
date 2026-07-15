@@ -53,6 +53,10 @@ type provider interface {
 	MSGraphClient() (client.MSGraphClient, error)
 	ResourceClient(subscriptionID string) (client.ResourceClient, error)
 	ProvidersClient(subscriptionID string) (client.ProvidersClient, error)
+	// VerifyCredential probes the configured credential by requesting a token.
+	// For aks_wi this detects AADSTS70021 (federated credential not yet propagated)
+	// before any ARM call is attempted.
+	VerifyCredential(ctx context.Context) error
 }
 
 type azureProvider struct {
@@ -239,6 +243,35 @@ func (p *azureProvider) ResourceClient(subscriptionID string) (client.ResourceCl
 	}
 
 	return client, nil
+}
+
+// isFederatedCredentialNotReady returns true when an Azure AD token exchange
+// fails because the federated identity credential has not yet propagated.
+// Azure AD returns AADSTS70021 in this window (typically up to ~60 seconds
+// after the federated credential is created).
+func isFederatedCredentialNotReady(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "AADSTS70021")
+}
+
+// VerifyCredential calls GetToken on the configured credential with the ARM
+// scope so that AADSTS70021 (federated credential not yet propagated) is
+// surfaced immediately rather than buried inside a later ARM call error.
+func (p *azureProvider) VerifyCredential(ctx context.Context) error {
+	cred, err := p.getTokenCredential()
+	if err != nil {
+		return fmt.Errorf("failed to build Azure credential: %w", err)
+	}
+	_, err = cred.GetToken(ctx, policy.TokenRequestOptions{
+		Scopes: []string{p.settings.Resource + "/.default"},
+	})
+	if err != nil {
+		if isFederatedCredentialNotReady(err) {
+			return fmt.Errorf("aks_wi: Vault's federated identity credential has not propagated yet "+
+				"(AADSTS70021); wait ~60 seconds after creating the credential in Azure AD and retry login: %w", err)
+		}
+		return fmt.Errorf("aks_wi: failed to acquire Azure access token: %w", err)
+	}
+	return nil
 }
 
 func (p *azureProvider) getClientOptions() *arm.ClientOptions {
