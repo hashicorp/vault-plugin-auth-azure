@@ -255,7 +255,9 @@ func isFederatedCredentialNotReady(err error) bool {
 
 // VerifyCredential calls GetToken on the configured credential with the ARM
 // scope so that AADSTS70021 (federated credential not yet propagated) is
-// surfaced immediately rather than buried inside a later ARM call error.
+// surfaced with a clear, actionable error at login time rather than being
+// buried inside a later ARM call failure — or going undetected entirely for
+// roles that use only bound_service_principal_ids (which make no ARM calls).
 func (p *azureProvider) VerifyCredential(ctx context.Context) error {
 	cred, err := p.getTokenCredential()
 	if err != nil {

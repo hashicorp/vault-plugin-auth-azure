@@ -297,3 +297,35 @@ func TestValidationRegex(t *testing.T) {
 		})
 	}
 }
+
+func TestIsFederatedCredentialNotReady(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{
+			name: "nil error",
+			err:  nil,
+			want: false,
+		},
+		{
+			name: "propagation error AADSTS70021",
+			err:  errors.New("AADSTS70021: No matching federated identity record found"),
+			want: true,
+		},
+		{
+			name: "unrelated error",
+			err:  errors.New("AADSTS700016: application not found in the directory"),
+			want: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := isFederatedCredentialNotReady(tc.err); got != tc.want {
+				t.Fatalf("isFederatedCredentialNotReady() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
