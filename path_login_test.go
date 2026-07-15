@@ -249,6 +249,54 @@ func TestLogin_Rootless_AKS_WI(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claimsBadOID, roleData)
 }
 
+// TestLogin_AKS_WI_CredentialNotReady verifies the aks_wi login gating:
+// when VerifyCredential fails (e.g. the federated identity credential has not
+// propagated yet and Azure AD returns AADSTS70021), login is rejected before
+// JWT verification with the propagation error surfaced to the caller.
+func TestLogin_AKS_WI_CredentialNotReady(t *testing.T) {
+	b, s := getTestBackend(t)
+
+	configData := map[string]interface{}{
+		"tenant_id": "test-tenant-id",
+		"resource":  "https://management.azure.com/",
+		"client_id": "test-managed-identity-client-id",
+		"auth_type": "aks_wi",
+	}
+	if _, err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("config write failed: %v", err)
+	}
+
+	// Re-inject the mock (pathConfigWrite clears b.provider) and make
+	// VerifyCredential simulate the federated credential propagation window.
+	mp := newMockProvider(nil, nil, nil, nil, nil)
+	mp.verifyCredentialFunc = func(_ context.Context) error {
+		return fmt.Errorf("aks_wi: Vault's federated identity credential has not propagated yet (AADSTS70021)")
+	}
+	b.provider = mp
+
+	principalID := "aabbccdd-1234-5678-abcd-000000000001"
+	roleName := "rootless-role"
+	roleData := map[string]interface{}{
+		"name":                        roleName,
+		"policies":                    []string{"aks-policy"},
+		"bound_service_principal_ids": []string{principalID},
+	}
+	testRoleCreate(t, b, s, roleData)
+
+	claims := map[string]interface{}{
+		"exp": time.Now().Add(60 * time.Second).Unix(),
+		"nbf": time.Now().Add(-60 * time.Second).Unix(),
+		"oid": principalID,
+	}
+	loginData := map[string]interface{}{
+		"role": roleName,
+	}
+
+	// Even though the JWT claims match the bound principal, login must fail
+	// because VerifyCredential returns the propagation error.
+	testLoginFailure(t, b, s, loginData, claims, roleData)
+}
+
 func TestLogin_ManagedIdentity(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	subscriptionID := "eb936495-7356-4a35-af3e-ea68af201f0c"

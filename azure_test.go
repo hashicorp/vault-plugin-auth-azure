@@ -140,6 +140,7 @@ type mockProvider struct {
 	msGraphClientFunc
 	resourceClientFunc
 	providersClientFunc
+	verifyCredentialFunc func(ctx context.Context) error
 }
 
 func newMockProvider(c computeClientFunc, v vmssClientFunc, m msiClientFunc, ml msiListFunc, g msGraphClientFunc) *mockProvider {
@@ -191,7 +192,10 @@ func (p *mockProvider) ProvidersClient(subscriptionID string) (client.ProvidersC
 	}, nil
 }
 
-func (p *mockProvider) VerifyCredential(_ context.Context) error {
+func (p *mockProvider) VerifyCredential(ctx context.Context) error {
+	if p.verifyCredentialFunc != nil {
+		return p.verifyCredentialFunc(ctx)
+	}
 	return nil
 }
 
