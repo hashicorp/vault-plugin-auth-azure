@@ -27,7 +27,6 @@ func TestConfig(t *testing.T) {
 				"tenant_id": "tid",
 			},
 			expected: map[string]interface{}{
-				"auth_type":                  "",
 				"client_id":                  "",
 				"environment":                "",
 				"identity_token_audience":    "",
@@ -53,7 +52,6 @@ func TestConfig(t *testing.T) {
 				"environment": "AzurePublicCloud",
 			},
 			expected: map[string]interface{}{
-				"auth_type":                  "",
 				"client_id":                  "",
 				"environment":                "AzurePublicCloud",
 				"identity_token_audience":    "",
@@ -107,32 +105,6 @@ func TestConfig(t *testing.T) {
 			},
 			expected: map[string]interface{}{
 				"auth_type":                  "msi",
-				"client_id":                  "",
-				"environment":                "",
-				"identity_token_audience":    "",
-				"identity_token_ttl":         int64(0),
-				"max_retries":                defaultMaxRetries,
-				"max_retry_delay":            defaultMaxRetryDelay,
-				"resource":                   "resource",
-				"retry_delay":                defaultRetryDelay,
-				"root_password_ttl":          15768000,
-				"tenant_id":                  "tid",
-				"rotation_window":            float64(0),
-				"rotation_period":            float64(0),
-				"rotation_policy":            "",
-				"rotation_schedule":          "",
-				"disable_automated_rotation": false,
-			},
-		},
-		{
-			name: "auth_type auto happy path",
-			config: map[string]interface{}{
-				"resource":  "resource",
-				"tenant_id": "tid",
-				"auth_type": "auto",
-			},
-			expected: map[string]interface{}{
-				"auth_type":                  "auto",
 				"client_id":                  "",
 				"environment":                "",
 				"identity_token_audience":    "",
@@ -211,7 +183,6 @@ func TestConfig(t *testing.T) {
 				"tenant_id":               "tid",
 			},
 			expected: map[string]interface{}{
-				"auth_type":                  "",
 				"client_id":                  "",
 				"environment":                "",
 				"identity_token_audience":    "vault-azure-secrets-d0f0d253",
@@ -371,7 +342,6 @@ func TestConfig_RetryDefaults(t *testing.T) {
 	}
 
 	expected := map[string]interface{}{
-		"auth_type":                  "",
 		"client_id":                  "",
 		"environment":                "",
 		"identity_token_audience":    "",
@@ -432,7 +402,6 @@ func TestConfig_RetryCustom(t *testing.T) {
 	}
 
 	expected := map[string]interface{}{
-		"auth_type":                  "",
 		"client_id":                  "",
 		"environment":                "",
 		"identity_token_audience":    "",

@@ -83,7 +83,7 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 			},
 			"auth_type": {
 				Type:        framework.TypeString,
-				Description: `Specifies how Vault authenticates to Azure for resource metadata lookups. Valid values: auto, root_creds, plugin_wif, aks_wi, msi. Defaults to auto (existing discovery logic) for backward compatibility.`,
+				Description: `Specifies how Vault authenticates to Azure for resource metadata lookups. Valid values: root_creds, plugin_wif, aks_wi, msi. If not specified, defaults to auto (existing discovery logic) for backward compatibility.`,
 			},
 		},
 		Operations: map[logical.Operation]framework.OperationHandler{
@@ -216,14 +216,13 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 	if authTypeRaw, ok := data.GetOk("auth_type"); ok {
 		authType := authTypeRaw.(string)
 		validAuthTypes := map[string]bool{
-			"auto":       true,
 			"root_creds": true,
 			"plugin_wif": true,
 			"aks_wi":     true,
 			"msi":        true,
 		}
 		if !validAuthTypes[authType] {
-			return logical.ErrorResponse("invalid auth_type %q: must be one of auto, root_creds, plugin_wif, aks_wi, msi", authType), nil
+			return logical.ErrorResponse("invalid auth_type %q: must be one of root_creds, plugin_wif, aks_wi, msi", authType), nil
 		}
 		config.AuthType = authType
 	}
