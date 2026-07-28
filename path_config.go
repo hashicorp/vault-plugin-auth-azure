@@ -226,9 +226,6 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 			return logical.ErrorResponse("invalid auth_type %q: must be one of auto, root_creds, plugin_wif, aks_wi, msi", authType), nil
 		}
 		config.AuthType = authType
-	} else if config.AuthType == "" {
-		// Default to "auto" if auth_type is not provided and not already set
-		config.AuthType = "auto"
 	}
 
 	config.RootPasswordTTL = defaultRootPasswordTTL
@@ -372,9 +369,14 @@ func (b *azureAuthBackend) pathConfigRead(ctx context.Context, req *logical.Requ
 			"retry_delay":       config.RetryDelay,
 			"max_retry_delay":   config.MaxRetryDelay,
 			"max_retries":       config.MaxRetries,
-			"auth_type":         config.AuthType,
 		},
 	}
+	
+	// Only include auth_type in response if it's explicitly set
+	if config.AuthType != "" {
+		resp.Data["auth_type"] = config.AuthType
+	}
+	
 	config.PopulatePluginIdentityTokenData(resp.Data)
 	config.PopulateAutomatedRotationData(resp.Data)
 
