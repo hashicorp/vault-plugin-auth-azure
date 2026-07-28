@@ -226,6 +226,9 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 			return logical.ErrorResponse("invalid auth_type %q: must be one of auto, root_creds, plugin_wif, aks_wi, msi", authType), nil
 		}
 		config.AuthType = authType
+	} else if config.AuthType == "" {
+		// Default to "auto" if auth_type is not provided and not already set
+		config.AuthType = "auto"
 	}
 
 	config.RootPasswordTTL = defaultRootPasswordTTL
