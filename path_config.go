@@ -370,12 +370,12 @@ func (b *azureAuthBackend) pathConfigRead(ctx context.Context, req *logical.Requ
 			"max_retries":       config.MaxRetries,
 		},
 	}
-	
+
 	// Only include auth_type in response if it's explicitly set
 	if config.AuthType != "" {
 		resp.Data["auth_type"] = config.AuthType
 	}
-	
+
 	config.PopulatePluginIdentityTokenData(resp.Data)
 	config.PopulateAutomatedRotationData(resp.Data)
 
