@@ -294,7 +294,7 @@ func (p *azureProvider) getClientOptions() *arm.ClientOptions {
 }
 
 func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
-	clientCloudOpts := azcore.ClientOptions{Cloud: p.settings.CloudConfig}
+	cloudOpts := azcore.ClientOptions{Cloud: p.settings.CloudConfig}
 
 	authType := p.settings.AuthType
 	if authType == "" {
@@ -307,120 +307,80 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 		if p.settings.ClientSecret == "" {
 			return nil, errors.New("auth_type 'root_creds' requires client_secret to be configured")
 		}
-		options := &azidentity.ClientSecretCredentialOptions{
-			ClientOptions: clientCloudOpts,
-		}
-		cred, err := azidentity.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID,
-			p.settings.ClientSecret, options)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create client secret token credential: %w", err)
-		}
-		return cred, nil
+		return newClientSecretCred(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, cloudOpts)
 
 	case "plugin_wif":
 		// Explicit Vault plugin workload identity federation. identity_token_audience must be set.
 		if p.settings.IdentityTokenAudience == "" {
 			return nil, errors.New("auth_type 'plugin_wif' requires identity_token_audience to be configured")
 		}
-		options := &azidentity.ClientAssertionCredentialOptions{
-			ClientOptions: clientCloudOpts,
-		}
-		getAssertion := getAssertionFunc(p.logger, p.systemView, p.settings)
-		cred, err := azidentity.NewClientAssertionCredential(
-			p.settings.TenantID,
-			p.settings.ClientID,
-			getAssertion,
-			options,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create client assertion credential: %w", err)
-		}
-		return cred, nil
+		return newClientAssertionCred(p.settings.TenantID, p.settings.ClientID,
+			getAssertionFunc(p.logger, p.systemView, p.settings), cloudOpts)
 
 	case "aks_wi":
 		// Explicit AKS Workload Identity. The SDK reads AZURE_FEDERATED_TOKEN_FILE automatically.
-		// ClientID and TenantID are set explicitly from plugin config so that cross-tenant ARM
-		// calls work correctly regardless of the env vars injected by the AKS webhook.
-		options := &azidentity.WorkloadIdentityCredentialOptions{
-			ClientOptions: clientCloudOpts,
-			ClientID:      p.settings.ClientID,
-			TenantID:      p.settings.TenantID,
-		}
-		cred, err := azidentity.NewWorkloadIdentityCredential(options)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create workload identity credential: %w", err)
-		}
-		return cred, nil
+		return newWorkloadIdentityCred(p.settings.TenantID, p.settings.ClientID, cloudOpts)
 
 	case "msi":
 		// Explicit managed service identity (IMDS).
-		options := &azidentity.ManagedIdentityCredentialOptions{
-			ClientOptions: clientCloudOpts,
-			ID:            azidentity.ClientID(p.settings.ClientID),
-		}
-		cred, err := azidentity.NewManagedIdentityCredential(options)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create managed identity token credential: %w", err)
-		}
-		return cred, nil
+		return newManagedIdentityCred(p.settings.ClientID, cloudOpts)
 
-	default: // "auto" — backward-compatible waterfall
+	default: // "auto" — backward-compatible waterfall.
 		if p.settings.ClientSecret != "" {
-			options := &azidentity.ClientSecretCredentialOptions{
-				ClientOptions: clientCloudOpts,
-			}
-			cred, err := azidentity.NewClientSecretCredential(p.settings.TenantID, p.settings.ClientID,
-				p.settings.ClientSecret, options)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create client secret token credential: %w", err)
-			}
-			return cred, nil
+			return newClientSecretCred(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, cloudOpts)
 		}
-
 		if p.settings.IdentityTokenAudience != "" {
-			options := &azidentity.ClientAssertionCredentialOptions{
-				ClientOptions: clientCloudOpts,
-			}
-			getAssertion := getAssertionFunc(p.logger, p.systemView, p.settings)
-			cred, err := azidentity.NewClientAssertionCredential(
-				p.settings.TenantID,
-				p.settings.ClientID,
-				getAssertion,
-				options,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create client assertion credential: %w", err)
-			}
-			return cred, nil
+			return newClientAssertionCred(p.settings.TenantID, p.settings.ClientID,
+				getAssertionFunc(p.logger, p.systemView, p.settings), cloudOpts)
 		}
-
-		// The presence of AZURE_FEDERATED_TOKEN_FILE indicates an AKS workload identity context.
-		// Use WorkloadIdentityCredential with explicit ClientID/TenantID from plugin config to
-		// enable cross-tenant ARM calls (avoids InvalidAuthenticationTokenTenant errors).
 		if os.Getenv("AZURE_FEDERATED_TOKEN_FILE") != "" {
-			options := &azidentity.WorkloadIdentityCredentialOptions{
-				ClientOptions: clientCloudOpts,
-				ClientID:      p.settings.ClientID,
-				TenantID:      p.settings.TenantID,
-			}
-			cred, err := azidentity.NewWorkloadIdentityCredential(options)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create workload identity credential: %w", err)
-			}
-			return cred, nil
+			return newWorkloadIdentityCred(p.settings.TenantID, p.settings.ClientID, cloudOpts)
 		}
-
-		// Fall back to managed service identity
-		options := &azidentity.ManagedIdentityCredentialOptions{
-			ClientOptions: clientCloudOpts,
-			ID:            azidentity.ClientID(p.settings.ClientID),
-		}
-		cred, err := azidentity.NewManagedIdentityCredential(options)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create managed identity token credential: %w", err)
-		}
-		return cred, nil
+		return newManagedIdentityCred(p.settings.ClientID, cloudOpts)
 	}
+}
+
+func newClientSecretCred(tenantID, clientID, clientSecret string, cloudOpts azcore.ClientOptions) (azcore.TokenCredential, error) {
+	cred, err := azidentity.NewClientSecretCredential(tenantID, clientID, clientSecret,
+		&azidentity.ClientSecretCredentialOptions{ClientOptions: cloudOpts})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client secret token credential: %w", err)
+	}
+	return cred, nil
+}
+
+func newClientAssertionCred(tenantID, clientID string, getAssertion getAssertion, cloudOpts azcore.ClientOptions) (azcore.TokenCredential, error) {
+	cred, err := azidentity.NewClientAssertionCredential(tenantID, clientID, getAssertion,
+		&azidentity.ClientAssertionCredentialOptions{ClientOptions: cloudOpts})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client assertion credential: %w", err)
+	}
+	return cred, nil
+}
+
+func newWorkloadIdentityCred(tenantID, clientID string, cloudOpts azcore.ClientOptions) (azcore.TokenCredential, error) {
+	cred, err := azidentity.NewWorkloadIdentityCredential(
+		&azidentity.WorkloadIdentityCredentialOptions{
+			ClientOptions: cloudOpts,
+			ClientID:      clientID,
+			TenantID:      tenantID,
+		})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create workload identity credential: %w", err)
+	}
+	return cred, nil
+}
+
+func newManagedIdentityCred(clientID string, cloudOpts azcore.ClientOptions) (azcore.TokenCredential, error) {
+	cred, err := azidentity.NewManagedIdentityCredential(
+		&azidentity.ManagedIdentityCredentialOptions{
+			ClientOptions: cloudOpts,
+			ID:            azidentity.ClientID(clientID),
+		})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create managed identity token credential: %w", err)
+	}
+	return cred, nil
 }
 
 type getAssertion func(context.Context) (string, error)
