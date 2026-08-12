@@ -43,6 +43,12 @@ const (
 	azurePublicCloudEnvName = "AZUREPUBLICCLOUD"
 	azureChinaCloudEnvName  = "AZURECHINACLOUD"
 	azureUSGovCloudEnvName  = "AZUREUSGOVERNMENTCLOUD"
+
+	aadErrFederatedCredentialNotReady = "AADSTS70021"
+	authTypeRootCreds = "root_creds"
+	authTypePluginWIF = "plugin_wif"
+	authTypeAKSWI     = "aks_wi"
+	authTypeMSI       = "msi"
 )
 
 type provider interface {
@@ -53,9 +59,6 @@ type provider interface {
 	MSGraphClient() (client.MSGraphClient, error)
 	ResourceClient(subscriptionID string) (client.ResourceClient, error)
 	ProvidersClient(subscriptionID string) (client.ProvidersClient, error)
-	// VerifyCredential probes the configured credential by requesting a token.
-	// For aks_wi this detects AADSTS70021 (federated credential not yet propagated)
-	// before any ARM call is attempted.
 	VerifyCredential(ctx context.Context) error
 }
 
@@ -247,17 +250,15 @@ func (p *azureProvider) ResourceClient(subscriptionID string) (client.ResourceCl
 
 // isFederatedCredentialNotReady returns true when an Azure AD token exchange
 // fails because the federated identity credential has not yet propagated.
-// Azure AD returns AADSTS70021 in this window (typically up to ~60 seconds
-// after the federated credential is created).
 func isFederatedCredentialNotReady(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "AADSTS70021")
+	return err != nil && strings.Contains(err.Error(), aadErrFederatedCredentialNotReady)
 }
 
 // VerifyCredential calls GetToken on the configured credential with the ARM
-// scope so that AADSTS70021 (federated credential not yet propagated) is
-// surfaced with a clear, actionable error at login time rather than being
-// buried inside a later ARM call failure — or going undetected entirely for
-// roles that use only bound_service_principal_ids (which make no ARM calls).
+// scope so that aadErrFederatedCredentialNotReady is surfaced with a clear,
+// actionable error at login time rather than being buried inside a later ARM
+// call failure — or going undetected for roles using only
+// bound_service_principal_ids (which make no ARM calls).
 func (p *azureProvider) VerifyCredential(ctx context.Context) error {
 	cred, err := p.getTokenCredential()
 	if err != nil {
@@ -269,7 +270,8 @@ func (p *azureProvider) VerifyCredential(ctx context.Context) error {
 	if err != nil {
 		if isFederatedCredentialNotReady(err) {
 			return fmt.Errorf("aks_wi: Vault's federated identity credential has not propagated yet "+
-				"(AADSTS70021); wait ~60 seconds after creating the credential in Azure AD and retry login: %w", err)
+				"(%s); wait ~60 seconds after creating the credential in Azure AD and retry login: %w",
+				aadErrFederatedCredentialNotReady, err)
 		}
 		return fmt.Errorf("aks_wi: failed to acquire Azure access token: %w", err)
 	}
@@ -296,20 +298,15 @@ func (p *azureProvider) getClientOptions() *arm.ClientOptions {
 func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 	cloudOpts := azcore.ClientOptions{Cloud: p.settings.CloudConfig}
 
-	authType := p.settings.AuthType
-	if authType == "" {
-		authType = "auto"
-	}
-
-	switch authType {
-	case "root_creds":
+	switch p.settings.AuthType {
+	case authTypeRootCreds:
 		// Explicit client secret credential. client_secret must be configured.
 		if p.settings.ClientSecret == "" {
 			return nil, errors.New("auth_type 'root_creds' requires client_secret to be configured")
 		}
 		return newClientSecretCred(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, cloudOpts)
 
-	case "plugin_wif":
+	case authTypePluginWIF:
 		// Explicit Vault plugin workload identity federation. identity_token_audience must be set.
 		if p.settings.IdentityTokenAudience == "" {
 			return nil, errors.New("auth_type 'plugin_wif' requires identity_token_audience to be configured")
@@ -317,15 +314,15 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 		return newClientAssertionCred(p.settings.TenantID, p.settings.ClientID,
 			getAssertionFunc(p.logger, p.systemView, p.settings), cloudOpts)
 
-	case "aks_wi":
+	case authTypeAKSWI:
 		// Explicit AKS Workload Identity. The SDK reads AZURE_FEDERATED_TOKEN_FILE automatically.
 		return newWorkloadIdentityCred(p.settings.TenantID, p.settings.ClientID, cloudOpts)
 
-	case "msi":
+	case authTypeMSI:
 		// Explicit managed service identity (IMDS).
 		return newManagedIdentityCred(p.settings.ClientID, cloudOpts)
 
-	default: // "auto" — backward-compatible waterfall.
+	default: // Backward-compatible discovery flow.
 		if p.settings.ClientSecret != "" {
 			return newClientSecretCred(p.settings.TenantID, p.settings.ClientID, p.settings.ClientSecret, cloudOpts)
 		}

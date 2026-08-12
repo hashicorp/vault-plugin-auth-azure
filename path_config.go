@@ -82,8 +82,14 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 				Required:    false,
 			},
 			"auth_type": {
-				Type:        framework.TypeString,
-				Description: `Specifies how Vault authenticates to Azure for resource metadata lookups. Valid values: root_creds, plugin_wif, aks_wi, msi. If not specified, defaults to auto (existing discovery logic) for backward compatibility.`,
+				Type: framework.TypeString,
+				Description: fmt.Sprintf(
+					"Specifies how Vault authenticates to Azure for resource metadata lookups. "+
+						"Valid values: %s, %s, %s, %s. "+
+						"If not specified, defaults to existing discovery logic for backward compatibility.",
+					authTypeRootCreds, authTypePluginWIF, authTypeAKSWI, authTypeMSI,
+				),
+				Required: false,
 			},
 		},
 		Operations: map[logical.Operation]framework.OperationHandler{
@@ -216,13 +222,14 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 	if authTypeRaw, ok := data.GetOk("auth_type"); ok {
 		authType := authTypeRaw.(string)
 		validAuthTypes := map[string]bool{
-			"root_creds": true,
-			"plugin_wif": true,
-			"aks_wi":     true,
-			"msi":        true,
+			authTypeRootCreds: true,
+			authTypePluginWIF: true,
+			authTypeAKSWI:     true,
+			authTypeMSI:       true,
 		}
 		if !validAuthTypes[authType] {
-			return logical.ErrorResponse("invalid auth_type %q: must be one of root_creds, plugin_wif, aks_wi, msi", authType), nil
+			return logical.ErrorResponse("invalid auth_type %q: must be one of %s, %s, %s, %s",
+				authType, authTypeRootCreds, authTypePluginWIF, authTypeAKSWI, authTypeMSI), nil
 		}
 		config.AuthType = authType
 	}
@@ -263,10 +270,10 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		return logical.ErrorResponse("only one of 'client_secret' or 'identity_token_audience' can be set"), nil
 	}
 
-	if config.AuthType == "root_creds" && config.ClientSecret == "" {
+	if config.AuthType == authTypeRootCreds && config.ClientSecret == "" {
 		return logical.ErrorResponse("auth_type 'root_creds' requires client_secret to be set"), nil
 	}
-	if config.AuthType == "plugin_wif" && config.IdentityTokenAudience == "" {
+	if config.AuthType == authTypePluginWIF && config.IdentityTokenAudience == "" {
 		return logical.ErrorResponse("auth_type 'plugin_wif' requires identity_token_audience to be set"), nil
 	}
 
