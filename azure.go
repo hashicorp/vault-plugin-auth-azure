@@ -45,10 +45,10 @@ const (
 	azureUSGovCloudEnvName  = "AZUREUSGOVERNMENTCLOUD"
 
 	aadErrFederatedCredentialNotReady = "AADSTS70021"
-	authTypeRootCreds = "root_creds"
-	authTypePluginWIF = "plugin_wif"
-	authTypeAKSWI     = "aks_wi"
-	authTypeMSI       = "msi"
+	authTypeRootCreds                 = "root_creds"
+	authTypePluginWIF                 = "plugin_wif"
+	authTypeAKSWI                     = "aks_wi"
+	authTypeMSI                       = "msi"
 )
 
 type provider interface {
