@@ -219,8 +219,8 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		config.ClientSecret = clientSecret.(string)
 	}
 
-	if authTypeRaw, ok := data.GetOk("auth_type"); ok {
-		authType := authTypeRaw.(string)
+	authType := data.Get("auth_type").(string)
+	if authType != "" {
 		validAuthTypes := map[string]bool{
 			authTypeRootCreds: true,
 			authTypePluginWIF: true,
@@ -231,8 +231,9 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 			return logical.ErrorResponse("invalid auth_type %q: must be one of %s, %s, %s, %s",
 				authType, authTypeRootCreds, authTypePluginWIF, authTypeAKSWI, authTypeMSI), nil
 		}
-		config.AuthType = authType
 	}
+	// Omitting auth_type or setting it to an empty string resets it to auto-discovery.
+	config.AuthType = authType
 
 	config.RootPasswordTTL = defaultRootPasswordTTL
 	rootExpirationRaw, ok := data.GetOk("root_password_ttl")
