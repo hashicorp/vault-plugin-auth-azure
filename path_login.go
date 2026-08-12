@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -212,15 +213,21 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 		return nil, err
 	}
 
-	// When auth_type is aks_wi, Vault exchanges a Kubernetes projected service account
-	// token for an Azure access token via the OIDC federated credential flow. Azure AD
-	// propagates newly created federated credentials asynchronously (up to ~60 seconds).
-	// If login is attempted during this window Azure AD returns AADSTS70021.
+	// When auth_type is aks_wi (or auto-detected via AZURE_FEDERATED_TOKEN_FILE), Vault
+	// exchanges a Kubernetes projected service account token for an Azure access token via
+	// the OIDC federated credential flow. Azure AD propagates newly created federated
+	// credentials asynchronously (up to ~60 seconds). If login is attempted during this
+	// window Azure AD returns AADSTS70021.
 	//
 	// VerifyCredential probes token acquisition eagerly so this propagation failure is
 	// surfaced here with a clear, actionable message rather than as a generic ARM failure
 	// later — or undetected for roles using only bound_service_principal_ids (no ARM calls).
-	if config.AuthType == "aks_wi" {
+	//
+	// The auto case (auth_type == "") also resolves to WorkloadIdentityCredential when
+	// AZURE_FEDERATED_TOKEN_FILE is present, so it needs the same check.
+	isWIF := config.AuthType == "aks_wi" ||
+		(config.AuthType == "" && os.Getenv("AZURE_FEDERATED_TOKEN_FILE") != "")
+	if isWIF {
 		if err := provider.VerifyCredential(ctx); err != nil {
 			return nil, err
 		}
