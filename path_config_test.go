@@ -218,17 +218,19 @@ func TestConfig(t *testing.T) {
 
 				testConfigRead(t, b, s, tc.expected)
 
-				// Test that updating one element retains the others
+				// Test that updating one element retains the others.
+				// auth_type is always overwritten by what is sent — omitting it clears it.
 				tc.expected["tenant_id"] = "foo"
+				delete(tc.expected, "auth_type")
 				configSubset := map[string]interface{}{
 					"tenant_id": "foo",
 				}
-
+	
 				_, err = testConfigUpdate(t, b, s, configSubset)
 				if err != nil {
 					t.Fatal(err)
 				}
-
+	
 				testConfigRead(t, b, s, tc.expected)
 			}
 		})
