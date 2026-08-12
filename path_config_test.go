@@ -225,12 +225,12 @@ func TestConfig(t *testing.T) {
 				configSubset := map[string]interface{}{
 					"tenant_id": "foo",
 				}
-	
+
 				_, err = testConfigUpdate(t, b, s, configSubset)
 				if err != nil {
 					t.Fatal(err)
 				}
-	
+
 				testConfigRead(t, b, s, tc.expected)
 			}
 		})
