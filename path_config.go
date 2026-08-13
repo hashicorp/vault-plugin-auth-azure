@@ -219,21 +219,24 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 		config.ClientSecret = clientSecret.(string)
 	}
 
-	authType := data.Get("auth_type").(string)
-	if authType != "" {
-		validAuthTypes := map[string]bool{
-			authTypeRootCreds: true,
-			authTypePluginWIF: true,
-			authTypeAKSWI:     true,
-			authTypeMSI:       true,
+	if _, sent := data.Raw["auth_type"]; sent {
+		// auth_type was explicitly included in the request — always overwrite, even if empty.
+		// omitting auth_type preserves the stored value.
+		authType := data.Get("auth_type").(string)
+		if authType != "" {
+			validAuthTypes := map[string]bool{
+				authTypeRootCreds: true,
+				authTypePluginWIF: true,
+				authTypeAKSWI:     true,
+				authTypeMSI:       true,
+			}
+			if !validAuthTypes[authType] {
+				return logical.ErrorResponse("invalid auth_type %q: must be one of %s, %s, %s, %s",
+					authType, authTypeRootCreds, authTypePluginWIF, authTypeAKSWI, authTypeMSI), nil
+			}
 		}
-		if !validAuthTypes[authType] {
-			return logical.ErrorResponse("invalid auth_type %q: must be one of %s, %s, %s, %s",
-				authType, authTypeRootCreds, authTypePluginWIF, authTypeAKSWI, authTypeMSI), nil
-		}
+		config.AuthType = authType
 	}
-	// Omitting auth_type or setting it to an empty string resets it to auto-discovery.
-	config.AuthType = authType
 
 	config.RootPasswordTTL = defaultRootPasswordTTL
 	rootExpirationRaw, ok := data.GetOk("root_password_ttl")
@@ -372,16 +375,12 @@ func (b *azureAuthBackend) pathConfigRead(ctx context.Context, req *logical.Requ
 			"resource":          config.Resource,
 			"environment":       config.Environment,
 			"client_id":         config.ClientID,
+			"auth_type":         config.AuthType,
 			"root_password_ttl": int(config.RootPasswordTTL.Seconds()),
 			"retry_delay":       config.RetryDelay,
 			"max_retry_delay":   config.MaxRetryDelay,
 			"max_retries":       config.MaxRetries,
 		},
-	}
-
-	// Only include auth_type in response if it's explicitly set
-	if config.AuthType != "" {
-		resp.Data["auth_type"] = config.AuthType
 	}
 
 	config.PopulatePluginIdentityTokenData(resp.Data)

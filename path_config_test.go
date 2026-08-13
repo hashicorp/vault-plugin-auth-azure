@@ -27,6 +27,7 @@ func TestConfig(t *testing.T) {
 				"tenant_id": "tid",
 			},
 			expected: map[string]interface{}{
+				"auth_type":                  "",
 				"client_id":                  "",
 				"environment":                "",
 				"identity_token_audience":    "",
@@ -52,6 +53,7 @@ func TestConfig(t *testing.T) {
 				"environment": "AzurePublicCloud",
 			},
 			expected: map[string]interface{}{
+				"auth_type":                  "",
 				"client_id":                  "",
 				"environment":                "AzurePublicCloud",
 				"identity_token_audience":    "",
@@ -183,6 +185,7 @@ func TestConfig(t *testing.T) {
 				"tenant_id":               "tid",
 			},
 			expected: map[string]interface{}{
+				"auth_type":                  "",
 				"client_id":                  "",
 				"environment":                "",
 				"identity_token_audience":    "vault-azure-secrets-d0f0d253",
@@ -218,10 +221,9 @@ func TestConfig(t *testing.T) {
 
 				testConfigRead(t, b, s, tc.expected)
 
-				// Test that updating one element retains the others.
-				// auth_type is always overwritten by what is sent — omitting it clears it.
+				// Test that updating one element retains the others, including auth_type.
+				// Omitting auth_type in a re-config preserves the stored value.
 				tc.expected["tenant_id"] = "foo"
-				delete(tc.expected, "auth_type")
 				configSubset := map[string]interface{}{
 					"tenant_id": "foo",
 				}
@@ -344,6 +346,7 @@ func TestConfig_RetryDefaults(t *testing.T) {
 	}
 
 	expected := map[string]interface{}{
+		"auth_type":                  "",
 		"client_id":                  "",
 		"environment":                "",
 		"identity_token_audience":    "",
@@ -404,6 +407,7 @@ func TestConfig_RetryCustom(t *testing.T) {
 	}
 
 	expected := map[string]interface{}{
+		"auth_type":                  "",
 		"client_id":                  "",
 		"environment":                "",
 		"identity_token_audience":    "",
