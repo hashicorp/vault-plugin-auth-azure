@@ -99,6 +99,34 @@ func TestConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "auth_type aks_wi without client_id (client_id read from env at runtime)",
+			config: map[string]interface{}{
+				"resource":  "resource",
+				"tenant_id": "tid",
+				"auth_type": "aks_wi",
+				// client_id intentionally omitted: AKS Workload Identity reads
+				// AZURE_CLIENT_ID from the pod environment at runtime.
+			},
+			expected: map[string]interface{}{
+				"auth_type":                  "aks_wi",
+				"client_id":                  "",
+				"environment":                "",
+				"identity_token_audience":    "",
+				"identity_token_ttl":         int64(0),
+				"max_retries":                defaultMaxRetries,
+				"max_retry_delay":            defaultMaxRetryDelay,
+				"resource":                   "resource",
+				"retry_delay":                defaultRetryDelay,
+				"root_password_ttl":          15768000,
+				"tenant_id":                  "tid",
+				"rotation_window":            float64(0),
+				"rotation_period":            float64(0),
+				"rotation_policy":            "",
+				"rotation_schedule":          "",
+				"disable_automated_rotation": false,
+			},
+		},
+		{
 			name: "auth_type msi happy path",
 			config: map[string]interface{}{
 				"resource":  "resource",

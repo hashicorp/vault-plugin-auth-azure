@@ -269,11 +269,11 @@ func (p *azureProvider) VerifyCredential(ctx context.Context) error {
 	})
 	if err != nil {
 		if isFederatedCredentialNotReady(err) {
-			return fmt.Errorf("aks_wi: Vault's federated identity credential has not propagated yet "+
+			return fmt.Errorf("azure workload identity: Vault's federated identity credential has not propagated yet "+
 				"(%s); wait ~60 seconds after creating the credential in Azure AD and retry login: %w",
 				aadErrFederatedCredentialNotReady, err)
 		}
-		return fmt.Errorf("aks_wi: failed to acquire Azure access token: %w", err)
+		return fmt.Errorf("azure workload identity: failed to acquire Azure access token: %w", err)
 	}
 	return nil
 }
