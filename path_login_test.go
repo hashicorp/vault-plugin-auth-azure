@@ -180,6 +180,123 @@ func TestLogin(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 }
 
+// TestLogin_Rootless_AKS_WI verifies the secretless/rootless login path:
+// - auth_type is set to "aks_wi" (no client_secret ever configured)
+// - the role uses only bound_service_principal_ids — no infrastructure bounds
+// - verifyResource exits early, so zero ARM API calls are made
+// - authentication succeeds purely via JWT OIDC verification + claim matching
+func TestLogin_Rootless_AKS_WI(t *testing.T) {
+	b, s := getTestBackend(t)
+
+	// Configure the backend with auth_type=aks_wi and no client_secret.
+	// tenant_id and resource are still required for OIDC token verification.
+	configData := map[string]interface{}{
+		"tenant_id": "test-tenant-id",
+		"resource":  "https://management.azure.com/",
+		"client_id": "test-managed-identity-client-id",
+		"auth_type": "aks_wi",
+	}
+	if _, err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("config write failed: %v", err)
+	}
+	// pathConfigWrite calls b.reset() which clears b.provider. Re-inject the mock
+	// so that login uses the test verifier instead of contacting the real Azure OIDC endpoint.
+	b.provider = newMockProvider(nil, nil, nil, nil, nil)
+
+	// Verify auth_type is stored and returned correctly.
+	resp, err := b.HandleRequest(context.Background(), &logical.Request{
+		Operation: logical.ReadOperation,
+		Path:      "config",
+		Storage:   s,
+	})
+	if err != nil || (resp != nil && resp.IsError()) {
+		t.Fatalf("config read failed: err=%v resp=%v", err, resp)
+	}
+	if got := resp.Data["auth_type"]; got != "aks_wi" {
+		t.Fatalf("expected auth_type=aks_wi, got %q", got)
+	}
+
+	principalID := "aabbccdd-1234-5678-abcd-000000000001"
+	roleName := "rootless-role"
+
+	// Role uses only bound_service_principal_ids — no subscription/resource-group/location/scale-set.
+	// This means verifyResource() will exit early and make NO ARM calls.
+	roleData := map[string]interface{}{
+		"name":                        roleName,
+		"policies":                    []string{"aks-policy"},
+		"bound_service_principal_ids": []string{principalID},
+	}
+	testRoleCreate(t, b, s, roleData)
+
+	// Happy-path: JWT OID matches the bound_service_principal_ids.
+	claimsOK := map[string]interface{}{
+		"exp": time.Now().Add(60 * time.Second).Unix(),
+		"nbf": time.Now().Add(-60 * time.Second).Unix(),
+		"oid": principalID,
+	}
+	loginData := map[string]interface{}{
+		"role": roleName,
+		// No subscription_id / resource_group_name / vm_name / vmss_name — fully rootless.
+	}
+	testLoginSuccess(t, b, s, loginData, claimsOK, roleData)
+
+	// Failure path: JWT OID does NOT match any bound principal.
+	claimsBadOID := map[string]interface{}{
+		"exp": time.Now().Add(60 * time.Second).Unix(),
+		"nbf": time.Now().Add(-60 * time.Second).Unix(),
+		"oid": "00000000-0000-0000-0000-000000000000",
+	}
+	testLoginFailure(t, b, s, loginData, claimsBadOID, roleData)
+}
+
+// TestLogin_AKS_WI_CredentialNotReady verifies the aks_wi login gating:
+// when VerifyCredential fails (e.g. the federated identity credential has not
+// propagated yet and Azure AD returns AADSTS70021), login is rejected before
+// JWT verification with the propagation error surfaced to the caller.
+func TestLogin_AKS_WI_CredentialNotReady(t *testing.T) {
+	b, s := getTestBackend(t)
+
+	configData := map[string]interface{}{
+		"tenant_id": "test-tenant-id",
+		"resource":  "https://management.azure.com/",
+		"client_id": "test-managed-identity-client-id",
+		"auth_type": "aks_wi",
+	}
+	if _, err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("config write failed: %v", err)
+	}
+
+	// Re-inject the mock (pathConfigWrite clears b.provider) and make
+	// VerifyCredential simulate the federated credential propagation window.
+	mp := newMockProvider(nil, nil, nil, nil, nil)
+	mp.verifyCredentialFunc = func(_ context.Context) error {
+		return fmt.Errorf("aks_wi: Vault's federated identity credential has not propagated yet (AADSTS70021)")
+	}
+	b.provider = mp
+
+	principalID := "aabbccdd-1234-5678-abcd-000000000001"
+	roleName := "rootless-role"
+	roleData := map[string]interface{}{
+		"name":                        roleName,
+		"policies":                    []string{"aks-policy"},
+		"bound_service_principal_ids": []string{principalID},
+	}
+	testRoleCreate(t, b, s, roleData)
+
+	claims := map[string]interface{}{
+		"exp": time.Now().Add(60 * time.Second).Unix(),
+		"nbf": time.Now().Add(-60 * time.Second).Unix(),
+		"oid": principalID,
+	}
+	loginData := map[string]interface{}{
+		"role": roleName,
+	}
+
+	// Even though the JWT claims match the bound principal, login must fail
+	// because VerifyCredential returns the propagation error.
+	testLoginFailure(t, b, s, loginData, claims, roleData)
+}
+
 func TestLogin_ManagedIdentity(t *testing.T) {
 	principalID := "123e4567-e89b-12d3-a456-426655440000"
 	subscriptionID := "eb936495-7356-4a35-af3e-ea68af201f0c"
@@ -2366,5 +2483,59 @@ func Test_additionalClaims_verifyResourceGroup(t *testing.T) {
 					tt.args.vmssName,
 					tt.args.resourceID))
 		})
+	}
+}
+
+// TestLogin_AutoDetect_FederatedTokenFile verifies the auto-detection path:
+// when auth_type is "" (unset) but AZURE_FEDERATED_TOKEN_FILE is set in the
+// environment, the login path resolves to WorkloadIdentityCredential and
+// VerifyCredential is called, just as it would be for auth_type=aks_wi.
+func TestLogin_AutoDetect_FederatedTokenFile(t *testing.T) {
+	b, s := getTestBackend(t)
+
+	// Configure the backend with no auth_type (legacy empty string).
+	configData := map[string]interface{}{
+		"tenant_id": "test-tenant-id",
+		"resource":  "https://management.azure.com/",
+		"client_id": "test-managed-identity-client-id",
+		// auth_type intentionally omitted — legacy auto-detection path.
+	}
+	if _, err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("config write failed: %v", err)
+	}
+
+	// Simulate an AKS Workload Identity environment by setting the env var.
+	t.Setenv("AZURE_FEDERATED_TOKEN_FILE", "/var/run/secrets/azure/tokens/azure-identity-token")
+
+	// Re-inject the mock with a VerifyCredential that records whether it was called.
+	verifyCalled := false
+	mp := newMockProvider(nil, nil, nil, nil, nil)
+	mp.verifyCredentialFunc = func(_ context.Context) error {
+		verifyCalled = true
+		return nil
+	}
+	b.provider = mp
+
+	principalID := "aabbccdd-1234-5678-abcd-000000000002"
+	roleName := "auto-detect-role"
+	roleData := map[string]interface{}{
+		"name":                        roleName,
+		"policies":                    []string{"aks-policy"},
+		"bound_service_principal_ids": []string{principalID},
+	}
+	testRoleCreate(t, b, s, roleData)
+
+	claims := map[string]interface{}{
+		"exp": time.Now().Add(60 * time.Second).Unix(),
+		"nbf": time.Now().Add(-60 * time.Second).Unix(),
+		"oid": principalID,
+	}
+	loginData := map[string]interface{}{
+		"role": roleName,
+	}
+	testLoginSuccess(t, b, s, loginData, claims, roleData)
+
+	if !verifyCalled {
+		t.Fatal("expected VerifyCredential to be called for auto-detected AZURE_FEDERATED_TOKEN_FILE path, but it was not")
 	}
 }

@@ -27,6 +27,7 @@ func TestConfig(t *testing.T) {
 				"tenant_id": "tid",
 			},
 			expected: map[string]interface{}{
+				"auth_type":                  "",
 				"client_id":                  "",
 				"environment":                "",
 				"identity_token_audience":    "",
@@ -52,6 +53,7 @@ func TestConfig(t *testing.T) {
 				"environment": "AzurePublicCloud",
 			},
 			expected: map[string]interface{}{
+				"auth_type":                  "",
 				"client_id":                  "",
 				"environment":                "AzurePublicCloud",
 				"identity_token_audience":    "",
@@ -68,6 +70,114 @@ func TestConfig(t *testing.T) {
 				"rotation_schedule":          "",
 				"disable_automated_rotation": false,
 			},
+		},
+		{
+			name: "auth_type aks_wi happy path",
+			config: map[string]interface{}{
+				"resource":  "resource",
+				"tenant_id": "tid",
+				"client_id": "my-managed-identity-client-id",
+				"auth_type": "aks_wi",
+			},
+			expected: map[string]interface{}{
+				"auth_type":                  "aks_wi",
+				"client_id":                  "my-managed-identity-client-id",
+				"environment":                "",
+				"identity_token_audience":    "",
+				"identity_token_ttl":         int64(0),
+				"max_retries":                defaultMaxRetries,
+				"max_retry_delay":            defaultMaxRetryDelay,
+				"resource":                   "resource",
+				"retry_delay":                defaultRetryDelay,
+				"root_password_ttl":          15768000,
+				"tenant_id":                  "tid",
+				"rotation_window":            float64(0),
+				"rotation_period":            float64(0),
+				"rotation_policy":            "",
+				"rotation_schedule":          "",
+				"disable_automated_rotation": false,
+			},
+		},
+		{
+			name: "auth_type aks_wi without client_id (client_id read from env at runtime)",
+			config: map[string]interface{}{
+				"resource":  "resource",
+				"tenant_id": "tid",
+				"auth_type": "aks_wi",
+				// client_id intentionally omitted: AKS Workload Identity reads
+				// AZURE_CLIENT_ID from the pod environment at runtime.
+			},
+			expected: map[string]interface{}{
+				"auth_type":                  "aks_wi",
+				"client_id":                  "",
+				"environment":                "",
+				"identity_token_audience":    "",
+				"identity_token_ttl":         int64(0),
+				"max_retries":                defaultMaxRetries,
+				"max_retry_delay":            defaultMaxRetryDelay,
+				"resource":                   "resource",
+				"retry_delay":                defaultRetryDelay,
+				"root_password_ttl":          15768000,
+				"tenant_id":                  "tid",
+				"rotation_window":            float64(0),
+				"rotation_period":            float64(0),
+				"rotation_policy":            "",
+				"rotation_schedule":          "",
+				"disable_automated_rotation": false,
+			},
+		},
+		{
+			name: "auth_type msi happy path",
+			config: map[string]interface{}{
+				"resource":  "resource",
+				"tenant_id": "tid",
+				"auth_type": "msi",
+			},
+			expected: map[string]interface{}{
+				"auth_type":                  "msi",
+				"client_id":                  "",
+				"environment":                "",
+				"identity_token_audience":    "",
+				"identity_token_ttl":         int64(0),
+				"max_retries":                defaultMaxRetries,
+				"max_retry_delay":            defaultMaxRetryDelay,
+				"resource":                   "resource",
+				"retry_delay":                defaultRetryDelay,
+				"root_password_ttl":          15768000,
+				"tenant_id":                  "tid",
+				"rotation_window":            float64(0),
+				"rotation_period":            float64(0),
+				"rotation_policy":            "",
+				"rotation_schedule":          "",
+				"disable_automated_rotation": false,
+			},
+		},
+		{
+			name: "auth_type invalid value rejected",
+			config: map[string]interface{}{
+				"resource":  "resource",
+				"tenant_id": "tid",
+				"auth_type": "not_a_valid_type",
+			},
+			wantErr: true,
+		},
+		{
+			name: "auth_type root_creds without client_secret rejected",
+			config: map[string]interface{}{
+				"resource":  "resource",
+				"tenant_id": "tid",
+				"auth_type": "root_creds",
+			},
+			wantErr: true,
+		},
+		{
+			name: "auth_type plugin_wif without identity_token_audience rejected",
+			config: map[string]interface{}{
+				"resource":  "resource",
+				"tenant_id": "tid",
+				"auth_type": "plugin_wif",
+			},
+			wantErr: true,
 		},
 		{
 			name:    "errors when required params unset",
@@ -103,6 +213,7 @@ func TestConfig(t *testing.T) {
 				"tenant_id":               "tid",
 			},
 			expected: map[string]interface{}{
+				"auth_type":                  "",
 				"client_id":                  "",
 				"environment":                "",
 				"identity_token_audience":    "vault-azure-secrets-d0f0d253",
@@ -138,7 +249,8 @@ func TestConfig(t *testing.T) {
 
 				testConfigRead(t, b, s, tc.expected)
 
-				// Test that updating one element retains the others
+				// Test that updating one element retains the others, including auth_type.
+				// Omitting auth_type in a re-config preserves the stored value.
 				tc.expected["tenant_id"] = "foo"
 				configSubset := map[string]interface{}{
 					"tenant_id": "foo",
@@ -262,6 +374,7 @@ func TestConfig_RetryDefaults(t *testing.T) {
 	}
 
 	expected := map[string]interface{}{
+		"auth_type":                  "",
 		"client_id":                  "",
 		"environment":                "",
 		"identity_token_audience":    "",
@@ -322,6 +435,7 @@ func TestConfig_RetryCustom(t *testing.T) {
 	}
 
 	expected := map[string]interface{}{
+		"auth_type":                  "",
 		"client_id":                  "",
 		"environment":                "",
 		"identity_token_audience":    "",
