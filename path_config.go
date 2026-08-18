@@ -184,7 +184,7 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 				},
 				ForwardPerformanceSecondary: true,
 				ForwardPerformanceStandby:   true,
-				Summary: "Configure the Azure authentication backend.",
+				Summary:                     "Configure the Azure authentication backend.",
 				Responses: map[int][]framework.Response{
 					204: {{Description: "No Content"}},
 				},
@@ -197,7 +197,7 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 				},
 				ForwardPerformanceSecondary: true,
 				ForwardPerformanceStandby:   true,
-				Summary: "Configure the Azure authentication backend.",
+				Summary:                     "Configure the Azure authentication backend.",
 				Responses: map[int][]framework.Response{
 					204: {{Description: "No Content"}},
 				},
