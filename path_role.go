@@ -28,6 +28,18 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 			Operations: map[logical.Operation]framework.OperationHandler{
 				logical.ListOperation: &framework.PathOperation{
 					Callback: b.pathRoleList,
+					Summary:  "List all roles registered with the Azure authentication backend.",
+					Responses: map[int][]framework.Response{
+						200: {{
+							Description: "OK",
+							Fields: map[string]*framework.FieldSchema{
+								"keys": {
+									Type:        framework.TypeSlice,
+									Description: "List of role names.",
+								},
+							},
+						}},
+					},
 				},
 			},
 			HelpSynopsis:    strings.TrimSpace(roleHelp["role-list"][0]),
@@ -98,15 +110,115 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 			Operations: map[logical.Operation]framework.OperationHandler{
 				logical.CreateOperation: &framework.PathOperation{
 					Callback: b.pathRoleCreateUpdate,
+					Summary:  "Create an Azure authentication role.",
+					Responses: map[int][]framework.Response{
+						204: {{Description: "No Content"}},
+					},
 				},
 				logical.UpdateOperation: &framework.PathOperation{
 					Callback: b.pathRoleCreateUpdate,
+					Summary:  "Update an Azure authentication role.",
+					Responses: map[int][]framework.Response{
+						204: {{Description: "No Content"}},
+					},
 				},
 				logical.ReadOperation: &framework.PathOperation{
 					Callback: b.pathRoleRead,
+					Summary:  "Return the properties of an Azure authentication role.",
+					Responses: map[int][]framework.Response{
+						200: {{
+							Description: "OK",
+							Fields: map[string]*framework.FieldSchema{
+								"bound_service_principal_ids": {
+									Type:        framework.TypeSlice,
+									Description: "List of service principal ids that login is restricted to.",
+								},
+								"bound_group_ids": {
+									Type:        framework.TypeSlice,
+									Description: "List of group ids that login is restricted to.",
+								},
+								"bound_subscription_ids": {
+									Type:        framework.TypeSlice,
+									Description: "List of subscription ids that login is restricted to.",
+								},
+								"bound_resource_groups": {
+									Type:        framework.TypeSlice,
+									Description: "List of resource groups that login is restricted to.",
+								},
+								"bound_locations": {
+									Type:        framework.TypeSlice,
+									Description: "List of locations that login is restricted to.",
+								},
+								"bound_scale_sets": {
+									Type:        framework.TypeSlice,
+									Description: "List of scale sets that login is restricted to.",
+								},
+								"token_bound_cidrs": {
+									Type:        framework.TypeSlice,
+									Description: "List of CIDR blocks that tokens are restricted to.",
+								},
+								"token_explicit_max_ttl": {
+									Type:        framework.TypeInt,
+									Description: "The maximum TTL for tokens, overriding the system maximum.",
+								},
+								"token_max_ttl": {
+									Type:        framework.TypeInt,
+									Description: "The maximum lifetime of the token.",
+								},
+								"token_no_default_policy": {
+									Type:        framework.TypeBool,
+									Description: "If true, the default policy will not be added to tokens.",
+								},
+								"token_period": {
+									Type:        framework.TypeInt,
+									Description: "The period for periodic tokens.",
+								},
+								"token_policies": {
+									Type:        framework.TypeSlice,
+									Description: "List of policies on the token.",
+								},
+								"token_type": {
+									Type:        framework.TypeString,
+									Description: "The token type.",
+								},
+								"token_ttl": {
+									Type:        framework.TypeInt,
+									Description: "The incremental lifetime for generated tokens.",
+								},
+								"token_num_uses": {
+									Type:        framework.TypeInt,
+									Description: "The maximum number of uses for the token.",
+								},
+								"policies": {
+									Type:        framework.TypeSlice,
+									Description: "Deprecated: use token_policies instead.",
+								},
+								"ttl": {
+									Type:        framework.TypeInt,
+									Description: "Deprecated: use token_ttl instead.",
+								},
+								"max_ttl": {
+									Type:        framework.TypeInt,
+									Description: "Deprecated: use token_max_ttl instead.",
+								},
+								"period": {
+									Type:        framework.TypeInt,
+									Description: "Deprecated: use token_period instead.",
+								},
+								"num_uses": {
+									Type:        framework.TypeInt,
+									Description: "Deprecated: use token_num_uses instead.",
+								},
+							},
+						}},
+					},
 				},
 				logical.DeleteOperation: &framework.PathOperation{
 					Callback: b.pathRoleDelete,
+					Summary:  "Delete an Azure authentication role.",
+					Responses: map[int][]framework.Response{
+						204: {{Description: "No Content"}},
+					},
 				},
 			},
 			HelpSynopsis:    strings.TrimSpace(roleHelp["role"][0]),

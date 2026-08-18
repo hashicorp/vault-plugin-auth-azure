@@ -30,6 +30,10 @@ func pathRotateRoot(b *azureAuthBackend) *framework.Path {
 				Callback:                    b.pathRotateRoot,
 				ForwardPerformanceSecondary: true,
 				ForwardPerformanceStandby:   true,
+				Summary: "Rotate the root credentials used to communicate with Azure.",
+				Responses: map[int][]framework.Response{
+					204: {{Description: "No Content"}},
+				},
 			},
 		},
 
