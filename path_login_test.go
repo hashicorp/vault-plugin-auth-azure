@@ -2485,3 +2485,57 @@ func Test_additionalClaims_verifyResourceGroup(t *testing.T) {
 		})
 	}
 }
+
+// TestLogin_AutoDetect_FederatedTokenFile verifies the auto-detection path:
+// when auth_type is "" (unset) but AZURE_FEDERATED_TOKEN_FILE is set in the
+// environment, the login path resolves to WorkloadIdentityCredential and
+// VerifyCredential is called, just as it would be for auth_type=aks_wi.
+func TestLogin_AutoDetect_FederatedTokenFile(t *testing.T) {
+	b, s := getTestBackend(t)
+
+	// Configure the backend with no auth_type (legacy empty string).
+	configData := map[string]interface{}{
+		"tenant_id": "test-tenant-id",
+		"resource":  "https://management.azure.com/",
+		"client_id": "test-managed-identity-client-id",
+		// auth_type intentionally omitted — legacy auto-detection path.
+	}
+	if _, err := testConfigCreate(t, b, s, configData); err != nil {
+		t.Fatalf("config write failed: %v", err)
+	}
+
+	// Simulate an AKS Workload Identity environment by setting the env var.
+	t.Setenv("AZURE_FEDERATED_TOKEN_FILE", "/var/run/secrets/azure/tokens/azure-identity-token")
+
+	// Re-inject the mock with a VerifyCredential that records whether it was called.
+	verifyCalled := false
+	mp := newMockProvider(nil, nil, nil, nil, nil)
+	mp.verifyCredentialFunc = func(_ context.Context) error {
+		verifyCalled = true
+		return nil
+	}
+	b.provider = mp
+
+	principalID := "aabbccdd-1234-5678-abcd-000000000002"
+	roleName := "auto-detect-role"
+	roleData := map[string]interface{}{
+		"name":                        roleName,
+		"policies":                    []string{"aks-policy"},
+		"bound_service_principal_ids": []string{principalID},
+	}
+	testRoleCreate(t, b, s, roleData)
+
+	claims := map[string]interface{}{
+		"exp": time.Now().Add(60 * time.Second).Unix(),
+		"nbf": time.Now().Add(-60 * time.Second).Unix(),
+		"oid": principalID,
+	}
+	loginData := map[string]interface{}{
+		"role": roleName,
+	}
+	testLoginSuccess(t, b, s, loginData, claims, roleData)
+
+	if !verifyCalled {
+		t.Fatal("expected VerifyCredential to be called for auto-detected AZURE_FEDERATED_TOKEN_FILE path, but it was not")
+	}
+}
