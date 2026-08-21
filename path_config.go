@@ -145,7 +145,7 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 								Description: "The expiration date of the root password.",
 							},
 							"identity_token_ttl": {
-								Type:        framework.TypeDurationSecond,
+								Type:        framework.TypeInt,
 								Description: "Time-to-live of plugin identity tokens.",
 							},
 							"identity_token_audience": {
@@ -157,11 +157,11 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 								Description: "The schedule for automated root credential rotation.",
 							},
 							"rotation_window": {
-								Type:        framework.TypeDurationSecond,
+								Type:        framework.TypeInt,
 								Description: "The maximum time allowed for a rotation to complete.",
 							},
 							"rotation_period": {
-								Type:        framework.TypeDurationSecond,
+								Type:        framework.TypeInt,
 								Description: "The period for automated root credential rotation.",
 							},
 							"disable_automated_rotation": {
