@@ -122,12 +122,70 @@ func pathLogin(b *azureAuthBackend) *framework.Path {
 		Operations: map[logical.Operation]framework.OperationHandler{
 			logical.UpdateOperation: &framework.PathOperation{
 				Callback: b.pathLogin,
+				Summary:  "Authenticate to Vault using Azure credentials.",
+				Responses: map[int][]framework.Response{
+					200: {{
+						Description: "OK",
+						Fields: map[string]*framework.FieldSchema{
+							"client_token": {
+								Type:        framework.TypeString,
+								Description: "The issued client token.",
+							},
+							"accessor": {
+								Type:        framework.TypeString,
+								Description: "The accessor for the client token.",
+							},
+							"policies": {
+								Type:        framework.TypeSlice,
+								Description: "The list of policies associated with the token.",
+							},
+							"token_policies": {
+								Type:        framework.TypeSlice,
+								Description: "The list of token policies.",
+							},
+							"metadata": {
+								Type:        framework.TypeMap,
+								Description: "Arbitrary metadata associated with the token.",
+							},
+							"lease_duration": {
+								Type:        framework.TypeInt,
+								Description: "The duration of the issued token in seconds.",
+							},
+							"renewable": {
+								Type:        framework.TypeBool,
+								Description: "Whether the token is renewable.",
+							},
+							"entity_id": {
+								Type:        framework.TypeString,
+								Description: "The entity identifier associated with the token.",
+							},
+							"token_type": {
+								Type:        framework.TypeString,
+								Description: "The type of the token.",
+							},
+							"orphan": {
+								Type:        framework.TypeBool,
+								Description: "Whether the token is an orphan.",
+							},
+							"mfa_requirement": {
+								Type:        framework.TypeMap,
+								Description: "MFA requirements for the token.",
+							},
+							"num_uses": {
+								Type:        framework.TypeInt,
+								Description: "The number of uses remaining for the token.",
+							},
+						},
+					}},
+				},
 			},
 			logical.AliasLookaheadOperation: &framework.PathOperation{
 				Callback: b.pathLogin,
+				Summary:  "Perform alias lookahead for Azure credentials.",
 			},
 			logical.ResolveRoleOperation: &framework.PathOperation{
 				Callback: b.pathResolveRole,
+				Summary:  "Resolve the role for Azure credentials.",
 			},
 		},
 

@@ -99,6 +99,82 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 					OperationVerb:   "read",
 					OperationSuffix: "auth-configuration",
 				},
+				Summary: "Return the current Azure authentication backend configuration.",
+				Responses: map[int][]framework.Response{
+					200: {{
+						Description: "OK",
+						Fields: map[string]*framework.FieldSchema{
+							"tenant_id": {
+								Type:        framework.TypeString,
+								Description: "The tenant id for the Azure Active Directory.",
+							},
+							"resource": {
+								Type:        framework.TypeString,
+								Description: "The resource URL for the vault application in Azure Active Directory.",
+							},
+							"environment": {
+								Type:        framework.TypeString,
+								Description: "The Azure environment name.",
+							},
+							"client_id": {
+								Type:        framework.TypeString,
+								Description: "The OAuth2 client id to connection to Azure.",
+							},
+							"auth_type": {
+								Type:        framework.TypeString,
+								Description: "The authentication type used to connect to Azure.",
+							},
+							"root_password_ttl": {
+								Type:        framework.TypeDurationSecond,
+								Description: "The TTL of the root password in Azure.",
+							},
+							"retry_delay": {
+								Type:        framework.TypeSignedDurationSecond,
+								Description: "The initial amount of delay to use before retrying an operation.",
+							},
+							"max_retry_delay": {
+								Type:        framework.TypeSignedDurationSecond,
+								Description: "The maximum delay allowed before retrying an operation.",
+							},
+							"max_retries": {
+								Type:        framework.TypeInt,
+								Description: "The maximum number of attempts a failed operation will be retried.",
+							},
+							"root_password_expiration_date": {
+								Type:        framework.TypeTime,
+								Description: "The expiration date of the root password.",
+							},
+							"identity_token_ttl": {
+								Type:        framework.TypeInt,
+								Description: "Time-to-live of plugin identity tokens.",
+							},
+							"identity_token_audience": {
+								Type:        framework.TypeString,
+								Description: "Audience of plugin identity tokens.",
+							},
+							"rotation_schedule": {
+								Type:        framework.TypeString,
+								Description: "The schedule for automated root credential rotation.",
+							},
+							"rotation_window": {
+								Type:        framework.TypeDurationSecond,
+								Description: "The maximum time allowed for a rotation to complete.",
+							},
+							"rotation_period": {
+								Type:        framework.TypeDurationSecond,
+								Description: "The period for automated root credential rotation.",
+							},
+							"disable_automated_rotation": {
+								Type:        framework.TypeBool,
+								Description: "Whether automated rotation is disabled.",
+							},
+							"rotation_policy": {
+								Type:        framework.TypeString,
+								Description: "The rotation policy name.",
+							},
+						},
+					}},
+				},
 			},
 			logical.CreateOperation: &framework.PathOperation{
 				Callback: b.pathConfigWrite,
@@ -108,6 +184,10 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 				},
 				ForwardPerformanceSecondary: true,
 				ForwardPerformanceStandby:   true,
+				Summary:                     "Configure the Azure authentication backend.",
+				Responses: map[int][]framework.Response{
+					204: {{Description: "No Content"}},
+				},
 			},
 			logical.UpdateOperation: &framework.PathOperation{
 				Callback: b.pathConfigWrite,
@@ -117,12 +197,20 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 				},
 				ForwardPerformanceSecondary: true,
 				ForwardPerformanceStandby:   true,
+				Summary:                     "Configure the Azure authentication backend.",
+				Responses: map[int][]framework.Response{
+					204: {{Description: "No Content"}},
+				},
 			},
 			logical.DeleteOperation: &framework.PathOperation{
 				Callback: b.pathConfigDelete,
 				DisplayAttrs: &framework.DisplayAttributes{
 					OperationVerb:   "delete",
 					OperationSuffix: "auth-configuration",
+				},
+				Summary: "Delete the Azure authentication backend configuration.",
+				Responses: map[int][]framework.Response{
+					204: {{Description: "No Content"}},
 				},
 			},
 		},
