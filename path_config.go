@@ -141,7 +141,7 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 								Description: "The maximum number of attempts a failed operation will be retried.",
 							},
 							"root_password_expiration_date": {
-								Type:        framework.TypeString,
+								Type:        framework.TypeTime,
 								Description: "The expiration date of the root password.",
 							},
 							"identity_token_ttl": {
