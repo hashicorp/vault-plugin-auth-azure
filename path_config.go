@@ -129,11 +129,11 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 								Description: "The TTL of the root password in Azure.",
 							},
 							"retry_delay": {
-								Type:        framework.TypeDurationSecond,
+								Type:        framework.TypeSignedDurationSecond,
 								Description: "The initial amount of delay to use before retrying an operation.",
 							},
 							"max_retry_delay": {
-								Type:        framework.TypeDurationSecond,
+								Type:        framework.TypeSignedDurationSecond,
 								Description: "The maximum delay allowed before retrying an operation.",
 							},
 							"max_retries": {
@@ -157,11 +157,11 @@ func pathConfig(b *azureAuthBackend) *framework.Path {
 								Description: "The schedule for automated root credential rotation.",
 							},
 							"rotation_window": {
-								Type:        framework.TypeInt,
+								Type:        framework.TypeDurationSecond,
 								Description: "The maximum time allowed for a rotation to complete.",
 							},
 							"rotation_period": {
-								Type:        framework.TypeInt,
+								Type:        framework.TypeDurationSecond,
 								Description: "The period for automated root credential rotation.",
 							},
 							"disable_automated_rotation": {

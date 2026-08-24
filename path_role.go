@@ -158,11 +158,11 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 									Description: "List of CIDR blocks that tokens are restricted to.",
 								},
 								"token_explicit_max_ttl": {
-									Type:        framework.TypeInt,
+									Type:        framework.TypeInt64,
 									Description: "The maximum TTL for tokens, overriding the system maximum.",
 								},
 								"token_max_ttl": {
-									Type:        framework.TypeInt,
+									Type:        framework.TypeInt64,
 									Description: "The maximum lifetime of the token.",
 								},
 								"token_no_default_policy": {
@@ -170,7 +170,7 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 									Description: "If true, the default policy will not be added to tokens.",
 								},
 								"token_period": {
-									Type:        framework.TypeInt,
+									Type:        framework.TypeInt64,
 									Description: "The period for periodic tokens.",
 								},
 								"token_policies": {
@@ -182,7 +182,7 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 									Description: "The token type.",
 								},
 								"token_ttl": {
-									Type:        framework.TypeInt,
+									Type:        framework.TypeInt64,
 									Description: "The incremental lifetime for generated tokens.",
 								},
 								"token_num_uses": {
@@ -192,22 +192,27 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 								"policies": {
 									Type:        framework.TypeSlice,
 									Description: "Deprecated: use token_policies instead.",
+									Deprecated:  true,
 								},
 								"ttl": {
-									Type:        framework.TypeInt,
+									Type:        framework.TypeInt64,
 									Description: "Deprecated: use token_ttl instead.",
+									Deprecated:  true,
 								},
 								"max_ttl": {
-									Type:        framework.TypeInt,
+									Type:        framework.TypeInt64,
 									Description: "Deprecated: use token_max_ttl instead.",
+									Deprecated:  true,
 								},
 								"period": {
-									Type:        framework.TypeInt,
+									Type:        framework.TypeInt64,
 									Description: "Deprecated: use token_period instead.",
+									Deprecated:  true,
 								},
 								"num_uses": {
 									Type:        framework.TypeInt,
 									Description: "Deprecated: use token_num_uses instead.",
+									Deprecated:  true,
 								},
 							},
 						}},
