@@ -185,7 +185,7 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 								},
 								"ttl": {
 									Type:        framework.TypeInt64,
-									Description: "Deprecated: use token_ttl instead.",
+									Description: tokenutil.DeprecationText("token_ttl"),
 									Deprecated:  true,
 								},
 								"max_ttl": {
