@@ -200,7 +200,7 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 								},
 								"num_uses": {
 									Type:        framework.TypeInt,
-									Description: "Deprecated: use token_num_uses instead.",
+									Description: tokenutil.DeprecationText("token_num_uses"),
 									Deprecated:  true,
 								},
 							},
