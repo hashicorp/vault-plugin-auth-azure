@@ -195,7 +195,7 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 								},
 								"period": {
 									Type:        framework.TypeInt64,
-									Description: "Deprecated: use token_period instead.",
+									Description: tokenutil.DeprecationText("token_period"),
 									Deprecated:  true,
 								},
 								"num_uses": {
