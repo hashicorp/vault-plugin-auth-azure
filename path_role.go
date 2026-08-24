@@ -29,17 +29,6 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 				logical.ListOperation: &framework.PathOperation{
 					Callback: b.pathRoleList,
 					Summary:  "List all roles registered with the Azure authentication backend.",
-					Responses: map[int][]framework.Response{
-						200: {{
-							Description: "OK",
-							Fields: map[string]*framework.FieldSchema{
-								"keys": {
-									Type:        framework.TypeSlice,
-									Description: "List of role names.",
-								},
-							},
-						}},
-					},
 				},
 			},
 			HelpSynopsis:    strings.TrimSpace(roleHelp["role-list"][0]),
@@ -130,31 +119,31 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 							Description: "OK",
 							Fields: map[string]*framework.FieldSchema{
 								"bound_service_principal_ids": {
-									Type:        framework.TypeSlice,
+									Type:        framework.TypeCommaStringSlice,
 									Description: "List of service principal ids that login is restricted to.",
 								},
 								"bound_group_ids": {
-									Type:        framework.TypeSlice,
+									Type:        framework.TypeCommaStringSlice,
 									Description: "List of group ids that login is restricted to.",
 								},
 								"bound_subscription_ids": {
-									Type:        framework.TypeSlice,
+									Type:        framework.TypeCommaStringSlice,
 									Description: "List of subscription ids that login is restricted to.",
 								},
 								"bound_resource_groups": {
-									Type:        framework.TypeSlice,
+									Type:        framework.TypeCommaStringSlice,
 									Description: "List of resource groups that login is restricted to.",
 								},
 								"bound_locations": {
-									Type:        framework.TypeSlice,
+									Type:        framework.TypeCommaStringSlice,
 									Description: "List of locations that login is restricted to.",
 								},
 								"bound_scale_sets": {
-									Type:        framework.TypeSlice,
+									Type:        framework.TypeCommaStringSlice,
 									Description: "List of scale sets that login is restricted to.",
 								},
 								"token_bound_cidrs": {
-									Type:        framework.TypeSlice,
+									Type:        framework.TypeCommaStringSlice,
 									Description: "List of CIDR blocks that tokens are restricted to.",
 								},
 								"token_explicit_max_ttl": {
@@ -174,7 +163,7 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 									Description: "The period for periodic tokens.",
 								},
 								"token_policies": {
-									Type:        framework.TypeSlice,
+									Type:        framework.TypeCommaStringSlice,
 									Description: "List of policies on the token.",
 								},
 								"token_type": {
@@ -190,7 +179,7 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 									Description: "The maximum number of uses for the token.",
 								},
 								"policies": {
-									Type:        framework.TypeSlice,
+									Type:        framework.TypeCommaStringSlice,
 									Description: "Deprecated: use token_policies instead.",
 									Deprecated:  true,
 								},
