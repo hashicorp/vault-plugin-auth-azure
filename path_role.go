@@ -180,7 +180,7 @@ func pathsRole(b *azureAuthBackend) []*framework.Path {
 								},
 								"policies": {
 									Type:        framework.TypeCommaStringSlice,
-									Description: "Deprecated: use token_policies instead.",
+									Description: tokenutil.DeprecationText("token_policies"),
 									Deprecated:  true,
 								},
 								"ttl": {
