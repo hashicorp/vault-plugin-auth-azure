@@ -47,7 +47,7 @@ const (
 	aadErrFederatedCredentialNotReady = "AADSTS70021"
 	authTypeRootCreds                 = "root_creds"
 	authTypePluginWIF                 = "plugin_wif"
-	authTypeAKSWIF                     = "aks_wif"
+	authTypeAKSWIF                    = "aks_wif"
 	authTypeMSI                       = "msi"
 )
 

@@ -315,7 +315,7 @@ func (b *azureAuthBackend) pathConfigWrite(ctx context.Context, req *logical.Req
 			validAuthTypes := map[string]bool{
 				authTypeRootCreds: true,
 				authTypePluginWIF: true,
-				authTypeAKSWIF:     true,
+				authTypeAKSWIF:    true,
 				authTypeMSI:       true,
 			}
 			if !validAuthTypes[authType] {
