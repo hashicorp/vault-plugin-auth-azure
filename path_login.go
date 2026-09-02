@@ -271,7 +271,7 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 		return nil, err
 	}
 
-	// When auth_type is aks_wi (or auto-detected via AZURE_FEDERATED_TOKEN_FILE), Vault
+	// When auth_type is aks_wif (or auto-detected via AZURE_FEDERATED_TOKEN_FILE), Vault
 	// exchanges a Kubernetes projected service account token for an Azure access token via
 	// the OIDC federated credential flow. Azure AD propagates newly created federated
 	// credentials asynchronously (up to ~60 seconds). If login is attempted during this
@@ -283,7 +283,7 @@ func (b *azureAuthBackend) pathLogin(ctx context.Context, req *logical.Request, 
 	//
 	// The auto case (auth_type == "") also resolves to WorkloadIdentityCredential when
 	// AZURE_FEDERATED_TOKEN_FILE is present, so it needs the same check.
-	isWIF := config.AuthType == authTypeAKSWI ||
+	isWIF := config.AuthType == authTypeAKSWIF ||
 		(config.AuthType == "" && os.Getenv("AZURE_FEDERATED_TOKEN_FILE") != "")
 	if isWIF {
 		if err := provider.VerifyCredential(ctx); err != nil {

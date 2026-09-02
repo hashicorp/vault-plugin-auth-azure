@@ -47,7 +47,7 @@ const (
 	aadErrFederatedCredentialNotReady = "AADSTS70021"
 	authTypeRootCreds                 = "root_creds"
 	authTypePluginWIF                 = "plugin_wif"
-	authTypeAKSWI                     = "aks_wi"
+	authTypeAKSWIF                     = "aks_wif"
 	authTypeMSI                       = "msi"
 )
 
@@ -314,7 +314,7 @@ func (p *azureProvider) getTokenCredential() (azcore.TokenCredential, error) {
 		return newClientAssertionCred(p.settings.TenantID, p.settings.ClientID,
 			getAssertionFunc(p.logger, p.systemView, p.settings), cloudOpts)
 
-	case authTypeAKSWI:
+	case authTypeAKSWIF:
 		// Explicit AKS Workload Identity. The SDK reads AZURE_FEDERATED_TOKEN_FILE automatically.
 		return newWorkloadIdentityCred(p.settings.TenantID, p.settings.ClientID, cloudOpts)
 

@@ -72,15 +72,15 @@ func TestConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "auth_type aks_wi happy path",
+			name: "auth_type aks_wif happy path",
 			config: map[string]interface{}{
 				"resource":  "resource",
 				"tenant_id": "tid",
 				"client_id": "my-managed-identity-client-id",
-				"auth_type": "aks_wi",
+				"auth_type": "aks_wif",
 			},
 			expected: map[string]interface{}{
-				"auth_type":                  "aks_wi",
+				"auth_type":                  "aks_wif",
 				"client_id":                  "my-managed-identity-client-id",
 				"environment":                "",
 				"identity_token_audience":    "",
@@ -99,16 +99,16 @@ func TestConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "auth_type aks_wi without client_id (client_id read from env at runtime)",
+			name: "auth_type aks_wif without client_id (client_id read from env at runtime)",
 			config: map[string]interface{}{
 				"resource":  "resource",
 				"tenant_id": "tid",
-				"auth_type": "aks_wi",
+				"auth_type": "aks_wif",
 				// client_id intentionally omitted: AKS Workload Identity reads
 				// AZURE_CLIENT_ID from the pod environment at runtime.
 			},
 			expected: map[string]interface{}{
-				"auth_type":                  "aks_wi",
+				"auth_type":                  "aks_wif",
 				"client_id":                  "",
 				"environment":                "",
 				"identity_token_audience":    "",
