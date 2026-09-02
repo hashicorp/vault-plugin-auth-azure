@@ -180,21 +180,21 @@ func TestLogin(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claims, roleData)
 }
 
-// TestLogin_Rootless_AKS_WI verifies the secretless/rootless login path:
-// - auth_type is set to "aks_wi" (no client_secret ever configured)
+// TestLogin_Rootless_AKS_WIF verifies the secretless/rootless login path:
+// - auth_type is set to "aks_wif" (no client_secret ever configured)
 // - the role uses only bound_service_principal_ids — no infrastructure bounds
 // - verifyResource exits early, so zero ARM API calls are made
 // - authentication succeeds purely via JWT OIDC verification + claim matching
-func TestLogin_Rootless_AKS_WI(t *testing.T) {
+func TestLogin_Rootless_AKS_WIF(t *testing.T) {
 	b, s := getTestBackend(t)
 
-	// Configure the backend with auth_type=aks_wi and no client_secret.
+	// Configure the backend with auth_type=aks_wif and no client_secret.
 	// tenant_id and resource are still required for OIDC token verification.
 	configData := map[string]interface{}{
 		"tenant_id": "test-tenant-id",
 		"resource":  "https://management.azure.com/",
 		"client_id": "test-managed-identity-client-id",
-		"auth_type": "aks_wi",
+		"auth_type": "aks_wif",
 	}
 	if _, err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatalf("config write failed: %v", err)
@@ -212,8 +212,8 @@ func TestLogin_Rootless_AKS_WI(t *testing.T) {
 	if err != nil || (resp != nil && resp.IsError()) {
 		t.Fatalf("config read failed: err=%v resp=%v", err, resp)
 	}
-	if got := resp.Data["auth_type"]; got != "aks_wi" {
-		t.Fatalf("expected auth_type=aks_wi, got %q", got)
+	if got := resp.Data["auth_type"]; got != "aks_wif" {
+		t.Fatalf("expected auth_type=aks_wif, got %q", got)
 	}
 
 	principalID := "aabbccdd-1234-5678-abcd-000000000001"
@@ -249,18 +249,18 @@ func TestLogin_Rootless_AKS_WI(t *testing.T) {
 	testLoginFailure(t, b, s, loginData, claimsBadOID, roleData)
 }
 
-// TestLogin_AKS_WI_CredentialNotReady verifies the aks_wi login gating:
+// TestLogin_AKS_WIF_CredentialNotReady verifies the aks_wif login gating:
 // when VerifyCredential fails (e.g. the federated identity credential has not
 // propagated yet and Azure AD returns AADSTS70021), login is rejected before
 // JWT verification with the propagation error surfaced to the caller.
-func TestLogin_AKS_WI_CredentialNotReady(t *testing.T) {
+func TestLogin_AKS_WIF_CredentialNotReady(t *testing.T) {
 	b, s := getTestBackend(t)
 
 	configData := map[string]interface{}{
 		"tenant_id": "test-tenant-id",
 		"resource":  "https://management.azure.com/",
 		"client_id": "test-managed-identity-client-id",
-		"auth_type": "aks_wi",
+		"auth_type": "aks_wif",
 	}
 	if _, err := testConfigCreate(t, b, s, configData); err != nil {
 		t.Fatalf("config write failed: %v", err)
@@ -270,7 +270,7 @@ func TestLogin_AKS_WI_CredentialNotReady(t *testing.T) {
 	// VerifyCredential simulate the federated credential propagation window.
 	mp := newMockProvider(nil, nil, nil, nil, nil)
 	mp.verifyCredentialFunc = func(_ context.Context) error {
-		return fmt.Errorf("aks_wi: Vault's federated identity credential has not propagated yet (AADSTS70021)")
+		return fmt.Errorf("aks_wif: Vault's federated identity credential has not propagated yet (AADSTS70021)")
 	}
 	b.provider = mp
 
@@ -2489,7 +2489,7 @@ func Test_additionalClaims_verifyResourceGroup(t *testing.T) {
 // TestLogin_AutoDetect_FederatedTokenFile verifies the auto-detection path:
 // when auth_type is "" (unset) but AZURE_FEDERATED_TOKEN_FILE is set in the
 // environment, the login path resolves to WorkloadIdentityCredential and
-// VerifyCredential is called, just as it would be for auth_type=aks_wi.
+// VerifyCredential is called, just as it would be for auth_type=aks_wif.
 func TestLogin_AutoDetect_FederatedTokenFile(t *testing.T) {
 	b, s := getTestBackend(t)
 
