@@ -1,3 +1,13 @@
+## v0.25.0
+### September 22, 2026
+
+* Bump go version and deps (#278)
+* dep bump for crypto (#277)
+* Update AKS Workload Identity auth type in Vault Azure Auth Method from aks_wi to aks_wif (#274)
+* Added missing OpenAPI metadata to the API endpoints (#272)
+* Add native AKS Workload Identity support to Vault Azure Auth (#271)
+* upgraded kiota-http-go and ran go mod tidy (#267)
+
 ## Unreleased
 
 ## v0.24.0
