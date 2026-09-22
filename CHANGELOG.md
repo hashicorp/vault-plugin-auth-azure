@@ -1,3 +1,8 @@
+## v0.25.1
+### September 22, 2026
+
+* pgx: Use v5.10.0 (#280)
+
 ## Unreleased
 
 ## v0.24.0
