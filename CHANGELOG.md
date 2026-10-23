@@ -1,3 +1,8 @@
+## v0.25.2
+### October 23, 2026
+
+* update go version to 1.27.3 and deps (#282)
+
 ## Unreleased
 
 ## v0.24.0
